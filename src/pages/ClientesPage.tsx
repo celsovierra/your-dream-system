@@ -96,7 +96,7 @@ const ClientesPage = () => {
               </div>
               <div>
                 <Label>Telefone *</Label>
-                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="11999990000" />
+                <Input value={form.phone} onChange={(e) => !editingClient && setForm({ ...form, phone: e.target.value })} placeholder="11999990000" readOnly={!!editingClient} className={editingClient ? 'bg-muted cursor-not-allowed' : ''} />
               </div>
               <div>
                 <Label>CPF/CNPJ</Label>
