@@ -155,16 +155,15 @@ serve(async (req) => {
     }
 
     if (action === "send-text") {
-      const { to, message } = await req.json().catch(() => ({}));
-      // to and message come from the original body, already parsed above
-      const body = await req.text().catch(() => "");
-      const parsed = JSON.parse(body || "{}");
-      
+      if (!to || !message) {
+        return new Response(JSON.stringify({ error: "Parâmetros obrigatórios: to, message" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const sendUrl = `${baseUrl}/message/sendText/${instance_name}`;
-      const sendBody = JSON.stringify({
-        number: to,
-        text: message,
-      });
+      const sendBody = JSON.stringify({ number: to, text: message });
 
       const result = await tryFetch(sendUrl, { method: "POST", headers, body: sendBody });
       
