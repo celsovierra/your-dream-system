@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Users, ChevronDown } from 'lucide-react';
+import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Users, ChevronDown, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import asaasLogo from '@/assets/asaas.png';
 import mercadoPagoLogo from '@/assets/mercado-pago.png';
@@ -224,6 +224,27 @@ const ConfiguracoesPage = () => {
                     <SelectItem value="pix_manual">PIX Manual</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Webhook URL */}
+              <div className="rounded-lg border p-4 space-y-2 bg-muted/30">
+                <Label className="text-xs font-medium">URL do Webhook (configure no gateway)</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    readOnly 
+                    value={`${window.location.origin}/api/webhook/${payment.gateway}`} 
+                    className="text-xs bg-background cursor-text" 
+                  />
+                  <Button size="icon" variant="outline" onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/api/webhook/${payment.gateway}`);
+                    toast.success('URL do Webhook copiada!');
+                  }}>
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Cole esta URL nas configurações de webhook do {payment.gateway === 'mercadopago' ? 'Mercado Pago' : payment.gateway === 'asaas' ? 'Asaas' : 'gateway'}.
+                </p>
               </div>
 
               {/* Mercado Pago Config */}
