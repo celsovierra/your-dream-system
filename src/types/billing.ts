@@ -7,6 +7,8 @@ export interface Client {
   email: string;
   phone: string;
   document: string; // CPF/CNPJ
+  amount?: number;
+  due_date?: string;
   address?: string;
   city?: string;
   state?: string;
