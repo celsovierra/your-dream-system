@@ -20,6 +20,13 @@ const typeLabels: Record<string, string> = {
 
 const MensagensPage = () => {
   const [templates, setTemplates] = useState(mockTemplates);
+  const [reminderDays, setReminderDays] = useState(() => {
+    return Number(localStorage.getItem('cobranca_reminder_days') || '3');
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cobranca_reminder_days', String(reminderDays));
+  }, [reminderDays]);
 
   const handleSave = (id: number, content: string) => {
     setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, content } : t)));
