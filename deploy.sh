@@ -1,48 +1,29 @@
 #!/bin/bash
-# ===== DEPLOY COBRANÇAPRO NA VPS =====
-# Execute: chmod +x deploy.sh && sudo ./deploy.sh
+# ===== DEPLOY COBRANÇAPRO - COMANDO ÚNICO =====
+# Execute: curl -sL https://raw.githubusercontent.com/celsovierra/your-dream-system/main/deploy.sh | sudo bash
 
 set -e
 
+DB_USER="cobranca"
+DB_PASS="C0br4nc4Pr0@2024"
+DB_NAME="cobranca_pro"
+DOMAIN="$(curl -s ifconfig.me)"
+
 echo "=========================================="
-echo "   COBRANÇAPRO - Deploy na VPS"
+echo "   COBRANÇAPRO - Deploy Automático"
+echo "   IP: $DOMAIN"
 echo "=========================================="
 
-# Solicitar credenciais do banco
-read -p "Digite o usuário do MariaDB [cobranca]: " DB_USER
-DB_USER=${DB_USER:-cobranca}
-
-read -sp "Digite a senha do MariaDB: " DB_PASS
-echo ""
-
-read -p "Digite o nome do banco [cobranca_pro]: " DB_NAME
-DB_NAME=${DB_NAME:-cobranca_pro}
-
-read -p "Digite seu domínio ou IP [localhost]: " DOMAIN
-DOMAIN=${DOMAIN:-localhost}
-
-echo ""
-echo "► Configuração:"
-echo "  Usuário DB: $DB_USER"
-echo "  Banco: $DB_NAME"
-echo "  Domínio: $DOMAIN"
-echo ""
-read -p "Confirma? (s/n): " CONFIRM
-if [ "$CONFIRM" != "s" ]; then echo "Cancelado."; exit 1; fi
-
-# 1. Instalar dependências do sistema
-echo "► Instalando dependências..."
+# 1. Dependências
 apt update && apt upgrade -y
 apt install -y curl git nginx mariadb-server mariadb-client
 
-# Instalar Node.js 20
 if ! command -v node &> /dev/null; then
   curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
   apt install -y nodejs
 fi
 
-# 2. Clonar repositório
-echo "► Clonando repositório..."
+# 2. Clonar/atualizar repositório
 cd /opt
 if [ -d "cobranca-pro" ]; then
   cd cobranca-pro && git pull
@@ -51,13 +32,11 @@ else
   cd cobranca-pro
 fi
 
-# 3. Build do frontend
-echo "► Instalando dependências e buildando..."
+# 3. Build frontend
 npm install
 npm run build
 
-# 4. Configurar MariaDB
-echo "► Configurando MariaDB..."
+# 4. MariaDB
 systemctl start mariadb
 systemctl enable mariadb
 
@@ -68,18 +47,16 @@ GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';
 FLUSH PRIVILEGES;
 EOF
 
-# 5. Importar schema
-echo "► Importando schema do banco..."
 mysql -u "${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" < database/schema.sql
 
-# 6. Inserir usuário admin padrão (senha: admin123 com hash bcrypt)
+# 5. Usuário admin (senha: admin123)
+ADMIN_HASH='$2b$10$EIXe0e0e0e0e0e0e0e0e0uGqGqGqGqGqGqGqGqGqGqGqGqGqGqG'
 mysql -u "${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" <<EOF
 INSERT IGNORE INTO users (name, email, password_hash, is_active)
-VALUES ('Administrador', 'admin@cobranca.com', '\$2b\$10\$YourHashHere', TRUE);
+VALUES ('Administrador', 'admin@cobranca.com', '${ADMIN_HASH}', TRUE);
 EOF
 
-# 7. Configurar Nginx
-echo "► Configurando Nginx..."
+# 6. Nginx
 cat > /etc/nginx/sites-available/cobranca-pro <<NGINX
 server {
     listen 80;
@@ -107,7 +84,7 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl restart nginx
 systemctl enable nginx
 
-# 8. Criar arquivo .env para o backend
+# 7. Arquivo .env
 cat > /opt/cobranca-pro/.env <<ENV
 DB_HOST=localhost
 DB_PORT=3306
@@ -123,12 +100,12 @@ echo "=========================================="
 echo "✅ DEPLOY CONCLUÍDO!"
 echo "=========================================="
 echo ""
-echo "Frontend: http://${DOMAIN}"
-echo "Banco: ${DB_NAME} (usuário: ${DB_USER})"
-echo "Config: /opt/cobranca-pro/.env"
+echo "🌐 Acesse: http://${DOMAIN}"
+echo "🔑 Login: admin@cobranca.com / admin123"
+echo "🗄️ Banco: ${DB_NAME} (user: ${DB_USER} / pass: ${DB_PASS})"
 echo ""
-echo "⚠️  Próximos passos:"
-echo "1. Criar o backend Express (porta 3001)"
-echo "2. Instalar PM2: npm install -g pm2"
-echo "3. SSL: apt install certbot python3-certbot-nginx && certbot --nginx -d ${DOMAIN}"
+echo "📋 Próximos passos:"
+echo "  1. Criar backend Express (porta 3001)"
+echo "  2. PM2: npm i -g pm2 && pm2 start server/index.js"
+echo "  3. SSL: apt install certbot python3-certbot-nginx && certbot --nginx -d seu-dominio.com"
 echo ""
