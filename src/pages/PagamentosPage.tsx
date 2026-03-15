@@ -176,6 +176,9 @@ const PagamentosPage = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <p className="text-sm text-muted-foreground">Cobranças PIX via</p>
+          {gatewayLogos[activeGateway] && (
+            <img src={gatewayLogos[activeGateway]} alt={gatewayLabel} className="h-6 w-auto" />
+          )}
           <Badge variant="outline">{gatewayLabel}</Badge>
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setPixResult(null); }}>
