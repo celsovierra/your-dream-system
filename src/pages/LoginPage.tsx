@@ -84,7 +84,6 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     localStorage.setItem('app_users', JSON.stringify(users));
     toast.success('Conta criada! Faça login com seu nome e senha.');
     setRegName('');
-    setRegEmail('');
     setRegPassword('');
     setMode('login');
   };
