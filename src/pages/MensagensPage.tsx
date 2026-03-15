@@ -23,17 +23,28 @@ const MensagensPage = () => {
   const [reminderDays, setReminderDays] = useState(() => {
     return Number(localStorage.getItem('cobranca_reminder_days') || '3');
   });
-  const [sendTime, setSendTime] = useState(() => {
-    return localStorage.getItem('cobranca_send_time') || '08:00';
+  const [sendTimeReminder, setSendTimeReminder] = useState(() => {
+    return localStorage.getItem('cobranca_send_time_reminder') || '08:00';
+  });
+  const [sendTimeDue, setSendTimeDue] = useState(() => {
+    return localStorage.getItem('cobranca_send_time_due') || '08:00';
+  });
+  const [sendTimeOverdue, setSendTimeOverdue] = useState(() => {
+    return localStorage.getItem('cobranca_send_time_overdue') || '09:00';
   });
 
   useEffect(() => {
     localStorage.setItem('cobranca_reminder_days', String(reminderDays));
   }, [reminderDays]);
-
   useEffect(() => {
-    localStorage.setItem('cobranca_send_time', sendTime);
-  }, [sendTime]);
+    localStorage.setItem('cobranca_send_time_reminder', sendTimeReminder);
+  }, [sendTimeReminder]);
+  useEffect(() => {
+    localStorage.setItem('cobranca_send_time_due', sendTimeDue);
+  }, [sendTimeDue]);
+  useEffect(() => {
+    localStorage.setItem('cobranca_send_time_overdue', sendTimeOverdue);
+  }, [sendTimeOverdue]);
 
   const handleSave = (id: number, content: string) => {
     setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, content } : t)));
