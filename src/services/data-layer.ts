@@ -13,6 +13,38 @@ const isLovableEnv = () => {
   return hostname.includes('lovable.app') || hostname.includes('lovableproject.com') || hostname === 'localhost';
 };
 
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeDateOnly(value: unknown): string | undefined {
+  if (!value) return undefined;
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return formatLocalDate(value);
+  }
+
+  if (typeof value !== 'string') return undefined;
+
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  if (DATE_ONLY_REGEX.test(trimmed)) return trimmed;
+
+  const datePart = trimmed.split('T')[0]?.split(' ')[0];
+  if (datePart && DATE_ONLY_REGEX.test(datePart)) return datePart;
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return undefined;
+
+  return formatLocalDate(parsed);
+}
+
 // ===== CLIENTES =====
 
 export async function fetchClients(): Promise<Client[]> {
@@ -24,13 +56,17 @@ export async function fetchClients(): Promise<Client[]> {
     if (error) throw error;
     return (data || []).map((c: any) => ({
       ...c,
-      due_date: c.due_date || undefined,
+      due_date: normalizeDateOnly(c.due_date),
       amount: c.amount ? Number(c.amount) : undefined,
     }));
   } else {
     const res = await api.getClients();
     if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar clientes');
-    return res.data.data;
+    return (res.data.data || []).map((c: any) => ({
+      ...c,
+      due_date: normalizeDateOnly(c.due_date),
+      amount: c.amount ? Number(c.amount) : undefined,
+    }));
   }
 }
 

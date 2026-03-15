@@ -3,6 +3,45 @@ import { query } from '../db.js';
 
 const router = express.Router();
 
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+function formatDateOnly(value) {
+  if (!value) return null;
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  if (typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (DATE_ONLY_REGEX.test(trimmed)) return trimmed;
+
+  const datePart = trimmed.split('T')[0]?.split(' ')[0];
+  if (datePart && DATE_ONLY_REGEX.test(datePart)) return datePart;
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeClientRow(row) {
+  if (!row || typeof row !== 'object' || !('id' in row)) return row;
+  return {
+    ...row,
+    due_date: formatDateOnly(row.due_date),
+  };
+}
+
 // Listar clientes
 router.get('/', async (req, res) => {
   try {
@@ -31,8 +70,10 @@ router.get('/', async (req, res) => {
     const [countResult] = await query(countSql, countParams);
     const rows = await query(sql, params);
 
-    // Remove metadata row from mariadb driver
-    const data = Array.isArray(rows) ? rows.filter(r => r && typeof r === 'object' && 'id' in r) : [];
+    // Remove metadata row from mariadb driver e normaliza datas
+    const data = Array.isArray(rows)
+      ? rows.filter(r => r && typeof r === 'object' && 'id' in r).map(normalizeClientRow)
+      : [];
 
     res.json({
       data,
@@ -52,7 +93,7 @@ router.get('/:id', async (req, res) => {
   try {
     const rows = await query('SELECT * FROM clients WHERE id = ?', [req.params.id]);
     if (!rows.length) return res.status(404).json({ message: 'Cliente não encontrado' });
-    res.json(rows[0]);
+    res.json(normalizeClientRow(rows[0]));
   } catch (err) {
     res.status(500).json({ message: 'Erro ao buscar cliente' });
   }
@@ -70,7 +111,7 @@ router.post('/', async (req, res) => {
     );
 
     const newClient = await query('SELECT * FROM clients WHERE id = ?', [Number(result.insertId)]);
-    res.status(201).json(newClient[0]);
+    res.status(201).json(normalizeClientRow(newClient[0]));
   } catch (err) {
     console.error('POST /clients error:', err);
     res.status(500).json({ message: `Erro ao criar cliente: ${err.message || err}` });
@@ -105,7 +146,7 @@ router.put('/:id', async (req, res) => {
     await query(`UPDATE clients SET ${fields.join(', ')} WHERE id = ?`, values);
 
     const updated = await query('SELECT * FROM clients WHERE id = ?', [req.params.id]);
-    res.json(updated[0]);
+    res.json(normalizeClientRow(updated[0]));
   } catch (err) {
     console.error('PUT /clients error:', err);
     res.status(500).json({ message: 'Erro ao atualizar cliente' });

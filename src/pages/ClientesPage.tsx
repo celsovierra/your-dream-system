@@ -13,6 +13,53 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate } from '@/services/data-layer';
 
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+const formatLocalDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const toDateOnly = (value?: string | null) => {
+  if (!value) return undefined;
+
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  if (DATE_ONLY_REGEX.test(trimmed)) return trimmed;
+
+  const datePart = trimmed.split('T')[0]?.split(' ')[0];
+  if (datePart && DATE_ONLY_REGEX.test(datePart)) return datePart;
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return undefined;
+
+  return formatLocalDate(parsed);
+};
+
+const parseDateOnly = (value?: string | null) => {
+  const normalized = toDateOnly(value);
+  if (!normalized) return null;
+
+  const [year, month, day] = normalized.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const formatDatePtBr = (value?: string | null) => {
+  const date = parseDateOnly(value);
+  return date ? date.toLocaleDateString('pt-BR') : '-';
+};
+
+const addMonthsToDateOnly = (value: string, months: number) => {
+  const date = parseDateOnly(value);
+  if (!date) return undefined;
+
+  date.setMonth(date.getMonth() + months);
+  return formatLocalDate(date);
+};
+
 const ClientesPage = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +143,7 @@ const ClientesPage = () => {
       phone2: normalizePhone(client.phone2 || '55'),
       document: client.document,
       amount: client.amount?.toString() || '',
-      due_date: client.due_date || '',
+      due_date: toDateOnly(client.due_date) || '',
     });
     setDialogOpen(true);
   };
@@ -124,7 +171,9 @@ const ClientesPage = () => {
     if (!waConfig?.api_url || !waConfig?.api_key || !waConfig?.instance_name) { toast.error('Configure o WhatsApp em Configurações primeiro'); return; }
     try {
       toast.loading('Enviando cobrança...', { id: `billing-${client.id}` });
-      const message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${client.due_date ? ` com vencimento em ${new Date(client.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}. Qualquer dúvida estamos à disposição!`;
+      const formattedDueDate = formatDatePtBr(client.due_date);
+      const dueDateText = formattedDueDate !== '-' ? ` com vencimento em ${formattedDueDate}` : '';
+      const message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${dueDateText}. Qualquer dúvida estamos à disposição!`;
       const { error } = await supabase.functions.invoke('evolution-proxy', {
         body: { action: 'send-text', to: client.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name },
       });
@@ -141,13 +190,15 @@ const ClientesPage = () => {
 
   const handleConfirmBaixa = async () => {
     if (!baixaClient) return;
-    const months = parseInt(baixaMonths);
+    const months = Number.parseInt(baixaMonths, 10);
 
-    let newDueDate = baixaClient.due_date || undefined;
-    if (baixaClient.due_date) {
-      const date = new Date(baixaClient.due_date + 'T00:00:00');
-      date.setMonth(date.getMonth() + months);
-      newDueDate = date.toISOString().split('T')[0];
+    const newDueDate = baixaClient.due_date
+      ? addMonthsToDateOnly(baixaClient.due_date, months)
+      : undefined;
+
+    if (baixaClient.due_date && !newDueDate) {
+      toast.error('Data de vencimento inválida para baixa manual');
+      return;
     }
 
     try {
@@ -213,7 +264,7 @@ const ClientesPage = () => {
         <DialogContent>
           <DialogHeader><DialogTitle>Baixa Manual - {baixaClient?.name}</DialogTitle></DialogHeader>
           <div className="space-y-4 pt-2">
-            <p className="text-sm text-muted-foreground">Vencimento atual: <strong>{baixaClient?.due_date ? new Date(baixaClient.due_date + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não definido'}</strong></p>
+            <p className="text-sm text-muted-foreground">Vencimento atual: <strong>{formatDatePtBr(baixaClient?.due_date) === '-' ? 'Não definido' : formatDatePtBr(baixaClient?.due_date)}</strong></p>
             <div>
               <Label>Quantos meses dar baixa?</Label>
               <Select value={baixaMonths} onValueChange={setBaixaMonths}>
@@ -226,9 +277,9 @@ const ClientesPage = () => {
               </Select>
             </div>
             {baixaClient?.due_date && (
-              <p className="text-sm text-muted-foreground">Novo vencimento: <strong>{(() => { const d = new Date(baixaClient.due_date + 'T00:00:00'); d.setMonth(d.getMonth() + parseInt(baixaMonths)); return d.toLocaleDateString('pt-BR'); })()}</strong></p>
+              <p className="text-sm text-muted-foreground">Novo vencimento: <strong>{formatDatePtBr(addMonthsToDateOnly(baixaClient.due_date, Number.parseInt(baixaMonths, 10)))}</strong></p>
             )}
-            <p className="text-sm font-medium">Valor total da baixa: <strong className="text-primary">R$ {((baixaClient?.amount || 0) * parseInt(baixaMonths)).toFixed(2)}</strong></p>
+            <p className="text-sm font-medium">Valor total da baixa: <strong className="text-primary">R$ {((baixaClient?.amount || 0) * Number.parseInt(baixaMonths, 10)).toFixed(2)}</strong></p>
             <p className="text-sm text-muted-foreground">Após confirmar, um recibo será enviado via WhatsApp.</p>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => setBaixaDialogOpen(false)}>Cancelar</Button>
@@ -264,7 +315,7 @@ const ClientesPage = () => {
                     <TableCell>{client.phone}</TableCell>
                     <TableCell className="hidden sm:table-cell">{client.document || '-'}</TableCell>
                     <TableCell>{client.amount ? `R$ ${Number(client.amount).toFixed(2)}` : '-'}</TableCell>
-                    <TableCell>{client.due_date ? new Date(client.due_date + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</TableCell>
+                    <TableCell>{formatDatePtBr(client.due_date)}</TableCell>
                     <TableCell><Badge variant={client.is_active ? 'default' : 'secondary'}>{client.is_active ? 'Ativo' : 'Inativo'}</Badge></TableCell>
                     <TableCell className="text-right space-x-1">
                       <Button variant="ghost" size="icon" title="Enviar cobrança WhatsApp" onClick={() => handleSendBilling(client)}><MessageCircle className="h-4 w-4 text-green-600" /></Button>
