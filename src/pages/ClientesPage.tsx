@@ -13,6 +13,53 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate } from '@/services/data-layer';
 
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+const formatLocalDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const toDateOnly = (value?: string | null) => {
+  if (!value) return undefined;
+
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  if (DATE_ONLY_REGEX.test(trimmed)) return trimmed;
+
+  const datePart = trimmed.split('T')[0]?.split(' ')[0];
+  if (datePart && DATE_ONLY_REGEX.test(datePart)) return datePart;
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return undefined;
+
+  return formatLocalDate(parsed);
+};
+
+const parseDateOnly = (value?: string | null) => {
+  const normalized = toDateOnly(value);
+  if (!normalized) return null;
+
+  const [year, month, day] = normalized.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const formatDatePtBr = (value?: string | null) => {
+  const date = parseDateOnly(value);
+  return date ? date.toLocaleDateString('pt-BR') : '-';
+};
+
+const addMonthsToDateOnly = (value: string, months: number) => {
+  const date = parseDateOnly(value);
+  if (!date) return undefined;
+
+  date.setMonth(date.getMonth() + months);
+  return formatLocalDate(date);
+};
+
 const ClientesPage = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
