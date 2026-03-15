@@ -163,6 +163,24 @@ const ClientesPage = () => {
     try { return JSON.parse(saved); } catch { return null; }
   };
 
+  const ensureWhatsAppConnected = async (waConfig: { api_url: string; api_key: string; instance_name: string }) => {
+    const { data, error } = await invokeEvolutionProxy({
+      action: 'status',
+      api_url: waConfig.api_url,
+      api_key: waConfig.api_key,
+      instance_name: waConfig.instance_name,
+    });
+
+    if (error) {
+      throw new Error(error);
+    }
+
+    const state = data?.state;
+    if (state !== 'open' && state !== 'connected') {
+      throw new Error('WhatsApp desconectado na VPS. Gere novo QR Code em Configurações.');
+    }
+  };
+
   const handleSendBilling = async (client: Client) => {
     if (!client.phone || client.phone.length <= 2) { toast.error('Cliente sem telefone cadastrado'); return; }
     if (!client.amount) { toast.error('Cliente sem valor de cobrança definido'); return; }
