@@ -47,6 +47,25 @@ export interface BillingQueue {
   created_at: string;
 }
 
+export interface BillPayable {
+  id: number;
+  description: string;
+  supplier: string | null;
+  category: string | null;
+  payment_type: 'single' | 'installment';
+  total_amount: number;
+  installments_count: number;
+  current_installment: number;
+  parent_bill_id: number | null;
+  amount: number;
+  due_date: string;
+  paid_date: string | null;
+  status: 'pending' | 'paid' | 'overdue' | 'cancelled';
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PaymentLink {
   id: number;
   client_id: number;

@@ -114,6 +114,31 @@ class ApiService {
     return this.request<void>(`/clients/${id}`, { method: 'DELETE' });
   }
 
+  // ===== CONTAS A PAGAR =====
+  async getBills() {
+    return this.request<BillPayable[]>('/bills');
+  }
+
+  async createBill(bill: Partial<BillPayable>) {
+    return this.request<BillPayable>('/bills', { method: 'POST', body: JSON.stringify(bill) });
+  }
+
+  async createBillsBatch(bills: Partial<BillPayable>[]) {
+    return this.request<void>('/bills/batch', { method: 'POST', body: JSON.stringify({ bills }) });
+  }
+
+  async updateBill(id: number, bill: Partial<BillPayable>) {
+    return this.request<BillPayable>(`/bills/${id}`, { method: 'PUT', body: JSON.stringify(bill) });
+  }
+
+  async deleteBill(id: number) {
+    return this.request<void>(`/bills/${id}`, { method: 'DELETE' });
+  }
+
+  async markBillPaid(id: number) {
+    return this.request<void>(`/bills/${id}/pay`, { method: 'PATCH' });
+  }
+
   // ===== COBRANÇA =====
   async getBillingConfigs(clientId?: number) {
     const query = clientId ? `?client_id=${clientId}` : '';
