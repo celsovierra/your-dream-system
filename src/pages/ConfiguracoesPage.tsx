@@ -64,15 +64,36 @@ const ConfiguracoesPage = () => {
     const savedAsaasToken = localStorage.getItem('asaas_access_token') || '';
     setPayment({ gateway: savedGateway as any, access_token: savedMpToken, asaas_token: savedAsaasToken });
 
-    // Carregar config WhatsApp salva
+    // Carregar config WhatsApp salva (mantendo instance_name padronizado pela VPS)
     const savedWa = localStorage.getItem('whatsapp_config');
-    if (savedWa) {
-      try {
-        const parsed = JSON.parse(savedWa);
-        setWhatsapp(prev => ({ ...prev, ...parsed }));
-      } catch {}
-    }
-  }, []);
+    if (!savedWa) return;
+
+    try {
+      const parsed = JSON.parse(savedWa);
+      const api_url = parsed?.api_url || '';
+      const api_key = parsed?.api_key || '';
+
+      setWhatsapp({
+        api_url,
+        api_key,
+        instance_name: autoInstanceName,
+        status: 'disconnected',
+      });
+
+      if (api_url && api_key) {
+        invokeEvolutionProxy({
+          api_url,
+          api_key,
+          instance_name: autoInstanceName,
+          action: 'status',
+        }).then(({ data }) => {
+          if (data?.state === 'open' || data?.state === 'connected') {
+            setWhatsapp(prev => ({ ...prev, status: 'connected' }));
+          }
+        }).catch(() => undefined);
+      }
+    } catch {}
+  }, [autoInstanceName]);
 
   const [users, setUsers] = useState<AppUser[]>([]);
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '' });
@@ -231,11 +252,10 @@ const ConfiguracoesPage = () => {
                 localStorage.setItem('whatsapp_config', JSON.stringify({
                   api_url: whatsapp.api_url,
                   api_key: whatsapp.api_key,
-                  instance_name: whatsapp.instance_name,
-                  status: 'connected',
+                  instance_name: autoInstanceName,
+                  status: whatsapp.status,
                 }));
-                setWhatsapp(prev => ({ ...prev, status: 'connected' }));
-                toast.success('WhatsApp configurado e conectado!');
+                toast.success('Configuração salva! Agora gere o QR Code para conectar.');
               }}>
                 <Save className="mr-2 h-3 w-3" /> Salvar
               </Button>
@@ -246,7 +266,7 @@ const ConfiguracoesPage = () => {
                   const { data, error } = await invokeEvolutionProxy({
                     api_url: whatsapp.api_url,
                     api_key: whatsapp.api_key,
-                    instance_name: whatsapp.instance_name,
+                    instance_name: autoInstanceName,
                     action: 'create',
                   });
                   if (error) throw new Error(error);

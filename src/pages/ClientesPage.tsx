@@ -163,6 +163,24 @@ const ClientesPage = () => {
     try { return JSON.parse(saved); } catch { return null; }
   };
 
+  const ensureWhatsAppConnected = async (waConfig: { api_url: string; api_key: string; instance_name: string }) => {
+    const { data, error } = await invokeEvolutionProxy({
+      action: 'status',
+      api_url: waConfig.api_url,
+      api_key: waConfig.api_key,
+      instance_name: waConfig.instance_name,
+    });
+
+    if (error) {
+      throw new Error(error);
+    }
+
+    const state = data?.state;
+    if (state !== 'open' && state !== 'connected') {
+      throw new Error('WhatsApp desconectado na VPS. Gere novo QR Code em Configurações.');
+    }
+  };
+
   const handleSendBilling = async (client: Client) => {
     if (!client.phone || client.phone.length <= 2) { toast.error('Cliente sem telefone cadastrado'); return; }
     if (!client.amount) { toast.error('Cliente sem valor de cobrança definido'); return; }
@@ -170,13 +188,17 @@ const ClientesPage = () => {
     if (!waConfig?.api_url || !waConfig?.api_key || !waConfig?.instance_name) { toast.error('Configure o WhatsApp em Configurações primeiro'); return; }
     try {
       toast.loading('Enviando cobrança...', { id: `billing-${client.id}` });
+      await ensureWhatsAppConnected(waConfig);
+
       const formattedDueDate = formatDatePtBr(client.due_date);
       const dueDateText = formattedDueDate !== '-' ? ` com vencimento em ${formattedDueDate}` : '';
       const message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${dueDateText}. Qualquer dúvida estamos à disposição!`;
       const { error } = await invokeEvolutionProxy({ action: 'send-text', to: client.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name });
       if (error) throw new Error(error);
       toast.success('Cobrança enviada via WhatsApp!', { id: `billing-${client.id}` });
-    } catch { toast.error('Erro ao enviar cobrança', { id: `billing-${client.id}` }); }
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao enviar cobrança', { id: `billing-${client.id}` });
+    }
   };
 
   const openBaixaDialog = (client: Client) => {
@@ -214,10 +236,11 @@ const ClientesPage = () => {
           .replace('{valor}', `R$ ${totalAmount.toFixed(2)}`);
         try {
           toast.loading('Enviando recibo...', { id: `receipt-${baixaClient.id}` });
+          await ensureWhatsAppConnected(waConfig);
           const { error } = await invokeEvolutionProxy({ action: 'send-text', to: baixaClient.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name });
           if (error) throw new Error(error);
           toast.success('Recibo enviado via WhatsApp!', { id: `receipt-${baixaClient.id}` });
-        } catch { toast.error('Erro ao enviar recibo', { id: `receipt-${baixaClient.id}` }); }
+        } catch (err: any) { toast.error(err?.message || 'Erro ao enviar recibo', { id: `receipt-${baixaClient.id}` }); }
       }
     }
 
