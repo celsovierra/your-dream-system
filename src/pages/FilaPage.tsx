@@ -67,9 +67,6 @@ const FilaPage = () => {
           <Button variant="destructive" onClick={() => { setQueue([]); toast.success('Fila limpa!'); }}>
             <Trash2 className="mr-2 h-4 w-4" /> Limpar Fila
           </Button>
-          <Button variant="outline" onClick={handlePopulate}>
-            <RefreshCw className="mr-2 h-4 w-4" /> Popular Fila
-          </Button>
           <Button onClick={handleProcess}>
             <Send className="mr-2 h-4 w-4" /> Processar Fila
           </Button>
