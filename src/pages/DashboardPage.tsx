@@ -11,7 +11,7 @@ function getLast12Months() {
   for (let i = 11; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const label = d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
-    months.push({ month: label, receita: 0, pendente: 0 });
+    months.push({ month: label, recebido: 0, a_receber: 0, atraso: 0 });
   }
   return months;
 }
