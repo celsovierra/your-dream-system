@@ -190,7 +190,7 @@ const ClientesPage = () => {
 
   const handleConfirmBaixa = async () => {
     if (!baixaClient) return;
-    const months = parseInt(baixaMonths);
+    const months = Number.parseInt(baixaMonths, 10);
 
     const newDueDate = baixaClient.due_date
       ? addMonthsToDateOnly(baixaClient.due_date, months)
