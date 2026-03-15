@@ -210,13 +210,13 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             <h2 className="text-lg font-semibold text-card-foreground">
               {location.pathname === '/financeiro' ? 'Financeiro' : navItems.find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
             </h2>
-            {['/','', '/financeiro'].includes(location.pathname) && (
+            {(location.pathname === '/' || location.pathname === '/financeiro') ? (
               <div className="flex items-center gap-1">
                 <Link
                   to="/"
                   className={cn(
                     "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                    location.pathname === '/' || location.pathname === ''
+                    location.pathname === '/'
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                   )}
@@ -237,7 +237,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
                   Financeiro
                 </Link>
               </div>
-            )}
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
             <button
