@@ -45,15 +45,16 @@ const DashboardPage = () => {
     stats.revenue_by_month.forEach((item: any) => {
       const found = monthlyData.find(m => m.month === item.month);
       if (found) {
-        found.receita = item.receita || item.revenue || 0;
-        found.pendente = item.pendente || item.pending || 0;
+        found.recebido = item.recebido || item.revenue || 0;
+        found.a_receber = item.a_receber || item.pending || 0;
+        found.atraso = item.atraso || item.overdue || 0;
       }
     });
   } else {
-    // Put current totals in current month
     const current = monthlyData[monthlyData.length - 1];
-    current.receita = stats.total_revenue_month || 0;
-    current.pendente = stats.total_pending || 0;
+    current.recebido = Math.max(0, (stats.total_revenue_month || 0) - (stats.total_pending || 0) - (stats.total_overdue || 0));
+    current.a_receber = stats.total_pending || 0;
+    current.atraso = stats.total_overdue || 0;
   }
 
   return (
