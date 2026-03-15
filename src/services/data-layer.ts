@@ -1,41 +1,49 @@
 // ===================================================================
-// CAMADA DE DADOS UNIFICADA — REGRA @@
+// CAMADA DE DADOS UNIFICADA — REGRA @@ (ISOLAMENTO RÍGIDO)
 // ===================================================================
 // REGRA DE OURO (@@):
-// Todo acesso a dados (leitura/escrita) DEVE passar por este arquivo.
-// NUNCA importe o supabase client diretamente nas páginas/componentes.
+// 1) Toda leitura/escrita de dados passa por este arquivo.
+// 2) Nenhuma página/componente pode importar cliente de banco direto.
+// 3) Preview/teste e VPS nunca compartilham escrita.
 //
-// AMBIENTES ISOLADOS:
+// MAPA DE AMBIENTE:
 // ┌─────────────────────────┬────────────────────────────────────┐
-// │ Lovable (preview/teste) │ Lovable Cloud (Supabase)           │
-// │ *.lovable.app           │ Banco de teste — dados de teste    │
-// │ *.lovableproject.com    │                                    │
+// │ Host com .lovable.app   │ Cloud de teste                     │
+// │ Host com .lovableproject│ Cloud de teste                     │
 // ├─────────────────────────┼────────────────────────────────────┤
-// │ VPS / Produção          │ API REST → MariaDB                 │
-// │ Qualquer outro hostname │ Banco de produção — dados reais    │
+// │ localhost / VPS / domínio próprio │ API REST -> MariaDB VPS │
 // └─────────────────────────┴────────────────────────────────────┘
 //
-// IMPORTANTE: Criar dados no ambiente Lovable NÃO pode afetar a VPS
-// e vice-versa. Se isso acontecer, há um bug neste arquivo.
-//
-// OVERRIDE (opcional no .env da VPS):
-//   VITE_DATA_BACKEND=api   → força uso da API REST (MariaDB)
-//   VITE_DATA_BACKEND=cloud → força uso do Lovable Cloud
+// BLOQUEIO RÍGIDO:
+// - Em host Lovable, SEMPRE usa Cloud de teste.
+// - Fora de host Lovable, padrão SEMPRE API da VPS.
+// - VITE_DATA_BACKEND é aceito apenas fora de host Lovable.
 // ===================================================================
 
 import { supabase } from '@/integrations/supabase/client';
 import api from '@/services/api';
 import type { Client, MessageTemplate, DashboardStats } from '@/types/billing';
 
-// Detecta automaticamente qual backend usar com base no hostname
-const isLovableEnv = () => {
-  const forcedBackend = String(import.meta.env.VITE_DATA_BACKEND || '').toLowerCase();
-  if (forcedBackend === 'cloud') return true;
-  if (forcedBackend === 'api') return false;
+type DataBackend = 'cloud' | 'api';
 
+function resolveDataBackend(): DataBackend {
   const hostname = window.location.hostname.toLowerCase();
-  return hostname.endsWith('.lovable.app') || hostname.endsWith('.lovableproject.com');
-};
+  const isLovableHost =
+    hostname.endsWith('.lovable.app') || hostname.endsWith('.lovableproject.com');
+
+  // @@ Isolamento absoluto: host Lovable sempre no banco de teste
+  if (isLovableHost) return 'cloud';
+
+  // Fora do host Lovable (localhost, VPS, domínio próprio) usa VPS por padrão
+  const forcedBackend = String(import.meta.env.VITE_DATA_BACKEND || '').toLowerCase();
+  if (forcedBackend === 'cloud' || forcedBackend === 'api') return forcedBackend;
+
+  return 'api';
+}
+
+const ACTIVE_DATA_BACKEND: DataBackend = resolveDataBackend();
+
+const isLovableEnv = () => ACTIVE_DATA_BACKEND === 'cloud';
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
