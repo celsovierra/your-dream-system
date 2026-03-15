@@ -87,6 +87,37 @@ const ClientesPage = () => {
     toast.success('Cliente removido');
   };
 
+  const handleSendBilling = async (client: Client) => {
+    if (!client.phone || client.phone.length <= 2) {
+      toast.error('Cliente sem telefone cadastrado');
+      return;
+    }
+    if (!client.amount) {
+      toast.error('Cliente sem valor de cobrança definido');
+      return;
+    }
+    try {
+      toast.loading('Enviando cobrança...', { id: `billing-${client.id}` });
+      const message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${client.due_date ? ` com vencimento em ${new Date(client.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}. Qualquer dúvida estamos à disposição!`;
+      const { data, error } = await supabase.functions.invoke('evolution-proxy', {
+        body: { action: 'send-text', to: client.phone, message },
+      });
+      if (error) throw error;
+      toast.success('Cobrança enviada via WhatsApp!', { id: `billing-${client.id}` });
+    } catch (err) {
+      toast.error('Erro ao enviar cobrança', { id: `billing-${client.id}` });
+    }
+  };
+
+  const handleManualPayment = (client: Client) => {
+    setClients((prev) =>
+      prev.map((c) =>
+        c.id === client.id ? { ...c, is_active: false, updated_at: new Date().toISOString() } : c
+      )
+    );
+    toast.success(`Baixa manual registrada para ${client.name}`);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
