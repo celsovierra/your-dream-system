@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Wifi, WifiOff, CreditCard, Save } from 'lucide-react';
+import { Wifi, WifiOff, CreditCard, Save, Download, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ConfiguracoesPage = () => {
@@ -77,6 +77,24 @@ const ConfiguracoesPage = () => {
           </div>
           <Button size="sm" onClick={() => { localStorage.setItem('mp_access_token', payment.access_token); toast.success('Access Token do Mercado Pago salvo!'); }}>
             <Save className="mr-2 h-3 w-3" /> Salvar
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Backup */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Download className="h-5 w-5 text-primary" />
+            Backup do Sistema
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex gap-3">
+          <Button size="sm" variant="outline" onClick={() => toast.info('Função de backup será implementada em breve')}>
+            <Download className="mr-2 h-3 w-3" /> Fazer Backup
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => toast.info('Função de restauração será implementada em breve')}>
+            <Upload className="mr-2 h-3 w-3" /> Restaurar Backup
           </Button>
         </CardContent>
       </Card>
