@@ -282,9 +282,12 @@ const PagamentosPage = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="text-xs">
-                        {gatewayLabels[p.gateway] || p.gateway}
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        {gatewayLogos[p.gateway] && (
+                          <img src={gatewayLogos[p.gateway]} alt={gatewayLabels[p.gateway]} className="h-4 w-auto" />
+                        )}
+                        <span className="text-xs text-muted-foreground">{gatewayLabels[p.gateway] || p.gateway}</span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={statusMap[p.status]?.variant || 'outline'}>
