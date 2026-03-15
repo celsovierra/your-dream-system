@@ -118,32 +118,68 @@ PORT=3001
 DEPLOY_TOKEN=cobranca-deploy-2024
 ENV
 
-# 8. Criar servidor Express se não existir
+# 8. Criar servidor Express se não existir (compatível com ESM)
 echo "► [8/9] Configurando servidor Node.js..."
+mkdir -p /opt/cobranca-pro/server/routes
+
 if [ ! -f "/opt/cobranca-pro/server/index.js" ]; then
-  mkdir -p /opt/cobranca-pro/server
   cat > /opt/cobranca-pro/server/index.js <<'SERVERJS'
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import deployRouter from './routes/deploy.js';
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Rotas
-app.use('/api', require('./routes/deploy'));
+app.use('/api', deployRouter);
+app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
-// Health check
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
-
-const PORT = process.env.PORT || 3001;
+const PORT = Number(process.env.PORT || 3001);
 app.listen(PORT, () => console.log(`API rodando na porta ${PORT}`));
 SERVERJS
-
-  cd /opt/cobranca-pro
-  npm install express cors dotenv
 fi
+
+if [ ! -f "/opt/cobranca-pro/server/routes/deploy.js" ]; then
+  cat > /opt/cobranca-pro/server/routes/deploy.js <<'DEPLOYROUTE'
+import express from 'express';
+import { exec } from 'node:child_process';
+
+const router = express.Router();
+const DEPLOY_TOKEN = process.env.DEPLOY_TOKEN || 'cobranca-deploy-2024';
+
+router.post('/deploy', (req, res) => {
+  const token = req.headers['x-deploy-token'];
+
+  if (token !== DEPLOY_TOKEN) {
+    return res.status(403).json({ success: false, error: 'Token inválido' });
+  }
+
+  const command = "cd /opt/cobranca-pro && git pull && npm install && npm run build && mysql -u cobranca_admin -p'Xk9mL2vR7pQ4nW' cobranca_pro < database/schema.sql && pm2 restart cobranca-api && sudo systemctl restart nginx";
+
+  res.json({ success: true, message: 'Deploy iniciado...' });
+
+  exec(command, (error, stdout) => {
+    if (error) {
+      console.error('Deploy error:', error.message);
+      return;
+    }
+
+    console.log('Deploy concluído:', stdout);
+  });
+
+  return undefined;
+});
+
+export default router;
+DEPLOYROUTE
+fi
+
+cd /opt/cobranca-pro
+npm install express cors dotenv
 
 # 9. Iniciar backend com PM2
 echo "► [9/9] Iniciando backend..."
