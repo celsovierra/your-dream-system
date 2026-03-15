@@ -16,7 +16,7 @@ const ClientesPage = () => {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', phone: '55', document: '', amount: '', due_date: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '55', phone2: '55', document: '', amount: '', due_date: '' });
 
   const normalizePhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
