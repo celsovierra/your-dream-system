@@ -230,8 +230,17 @@ const ConfiguracoesPage = () => {
                     toast.success('Instância já está conectada!');
                     setWhatsapp(prev => ({ ...prev, status: 'connected' }));
                   } else {
-                    console.log('No QR code in response. Debug:', data?.debug);
-                    toast.warning('QR Code não disponível. A instância pode já estar conectada ou precisa ser criada na Evolution API.');
+                    console.log('Evolution API debug:', JSON.stringify(data?.debug, null, 2));
+                    const debugInfo = data?.debug;
+                    const createStatus = debugInfo?.create?.status;
+                    const connectStatus = debugInfo?.connect?.status;
+                    if (createStatus === 401 || connectStatus === 401) {
+                      toast.error('API Key inválida. Verifique a chave na Evolution API.');
+                    } else if (createStatus === 404 || connectStatus === 404) {
+                      toast.error('Endpoint não encontrado. Verifique a URL da Evolution API (ex: https://seudominio.com).');
+                    } else {
+                      toast.warning('QR Code não disponível. Verifique se a instância existe na Evolution API. Resposta: ' + JSON.stringify(debugInfo?.create?.data || debugInfo?.connect?.data || {}).substring(0, 200));
+                    }
                   }
                 } catch (err: any) {
                   toast.error('Erro ao gerar QR Code: ' + (err?.message || 'verifique a URL e API Key'));
