@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockClients } from '@/services/mock-data';
+import { mockClients, mockTemplates } from '@/services/mock-data';
 import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle } from 'lucide-react';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
@@ -18,6 +19,11 @@ const ClientesPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [form, setForm] = useState({ name: '', email: '', phone: '55', phone2: '55', document: '', amount: '', due_date: '' });
+
+  // Baixa manual state
+  const [baixaDialogOpen, setBaixaDialogOpen] = useState(false);
+  const [baixaClient, setBaixaClient] = useState<Client | null>(null);
+  const [baixaMonths, setBaixaMonths] = useState('1');
 
   const normalizePhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -109,13 +115,57 @@ const ClientesPage = () => {
     }
   };
 
-  const handleManualPayment = (client: Client) => {
+  const openBaixaDialog = (client: Client) => {
+    setBaixaClient(client);
+    setBaixaMonths('1');
+    setBaixaDialogOpen(true);
+  };
+
+  const handleConfirmBaixa = async () => {
+    if (!baixaClient) return;
+    const months = parseInt(baixaMonths);
+
+    // Advance due_date by N months
+    let newDueDate = baixaClient.due_date;
+    if (baixaClient.due_date) {
+      const date = new Date(baixaClient.due_date + 'T00:00:00');
+      date.setMonth(date.getMonth() + months);
+      newDueDate = date.toISOString().split('T')[0];
+    }
+
     setClients((prev) =>
       prev.map((c) =>
-        c.id === client.id ? { ...c, is_active: false, updated_at: new Date().toISOString() } : c
+        c.id === baixaClient.id
+          ? { ...c, due_date: newDueDate, updated_at: new Date().toISOString() }
+          : c
       )
     );
-    toast.success(`Baixa manual registrada para ${client.name}`);
+
+    toast.success(`Baixa de ${months} mês(es) registrada para ${baixaClient.name}`);
+
+    // Send receipt via WhatsApp using the receipt template
+    if (baixaClient.phone && baixaClient.phone.length > 2) {
+      const receiptTemplate = mockTemplates.find((t) => t.type === 'receipt' && t.is_active);
+      if (receiptTemplate) {
+        const message = receiptTemplate.content
+          .replace('{nome}', baixaClient.name)
+          .replace('{valor}', `R$ ${Number(baixaClient.amount || 0).toFixed(2)}`);
+
+        try {
+          toast.loading('Enviando recibo...', { id: `receipt-${baixaClient.id}` });
+          const { error } = await supabase.functions.invoke('evolution-proxy', {
+            body: { action: 'send-text', to: baixaClient.phone, message },
+          });
+          if (error) throw error;
+          toast.success('Recibo enviado via WhatsApp!', { id: `receipt-${baixaClient.id}` });
+        } catch {
+          toast.error('Erro ao enviar recibo', { id: `receipt-${baixaClient.id}` });
+        }
+      }
+    }
+
+    setBaixaDialogOpen(false);
+    setBaixaClient(null);
   };
 
   return (
@@ -173,6 +223,53 @@ const ClientesPage = () => {
         </Dialog>
       </div>
 
+      {/* Dialog Baixa Manual */}
+      <Dialog open={baixaDialogOpen} onOpenChange={setBaixaDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Baixa Manual - {baixaClient?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-muted-foreground">
+              Vencimento atual: <strong>{baixaClient?.due_date ? new Date(baixaClient.due_date + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não definido'}</strong>
+            </p>
+            <div>
+              <Label>Quantos meses dar baixa?</Label>
+              <Select value={baixaMonths} onValueChange={setBaixaMonths}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                    <SelectItem key={m} value={String(m)}>
+                      {m} {m === 1 ? 'mês' : 'meses'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {baixaClient?.due_date && (
+              <p className="text-sm text-muted-foreground">
+                Novo vencimento: <strong>
+                  {(() => {
+                    const d = new Date(baixaClient.due_date + 'T00:00:00');
+                    d.setMonth(d.getMonth() + parseInt(baixaMonths));
+                    return d.toLocaleDateString('pt-BR');
+                  })()}
+                </strong>
+              </p>
+            )}
+            <p className="text-sm text-muted-foreground">
+              Após confirmar, um recibo será enviado via WhatsApp.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setBaixaDialogOpen(false)}>Cancelar</Button>
+              <Button className="flex-1" onClick={handleConfirmBaixa}>Confirmar Baixa</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -204,7 +301,7 @@ const ClientesPage = () => {
                     <Button variant="ghost" size="icon" title="Enviar cobrança WhatsApp" onClick={() => handleSendBilling(client)}>
                       <MessageCircle className="h-4 w-4 text-green-600" />
                     </Button>
-                    <Button variant="ghost" size="icon" title="Baixa manual" onClick={() => handleManualPayment(client)}>
+                    <Button variant="ghost" size="icon" title="Baixa manual" onClick={() => openBaixaDialog(client)}>
                       <CheckCircle className="h-4 w-4 text-blue-600" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(client)}>
