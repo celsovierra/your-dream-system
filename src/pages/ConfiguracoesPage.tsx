@@ -64,15 +64,36 @@ const ConfiguracoesPage = () => {
     const savedAsaasToken = localStorage.getItem('asaas_access_token') || '';
     setPayment({ gateway: savedGateway as any, access_token: savedMpToken, asaas_token: savedAsaasToken });
 
-    // Carregar config WhatsApp salva
+    // Carregar config WhatsApp salva (mantendo instance_name padronizado pela VPS)
     const savedWa = localStorage.getItem('whatsapp_config');
-    if (savedWa) {
-      try {
-        const parsed = JSON.parse(savedWa);
-        setWhatsapp(prev => ({ ...prev, ...parsed }));
-      } catch {}
-    }
-  }, []);
+    if (!savedWa) return;
+
+    try {
+      const parsed = JSON.parse(savedWa);
+      const api_url = parsed?.api_url || '';
+      const api_key = parsed?.api_key || '';
+
+      setWhatsapp({
+        api_url,
+        api_key,
+        instance_name: autoInstanceName,
+        status: 'disconnected',
+      });
+
+      if (api_url && api_key) {
+        invokeEvolutionProxy({
+          api_url,
+          api_key,
+          instance_name: autoInstanceName,
+          action: 'status',
+        }).then(({ data }) => {
+          if (data?.state === 'open' || data?.state === 'connected') {
+            setWhatsapp(prev => ({ ...prev, status: 'connected' }));
+          }
+        }).catch(() => undefined);
+      }
+    } catch {}
+  }, [autoInstanceName]);
 
   const [users, setUsers] = useState<AppUser[]>([]);
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '' });
