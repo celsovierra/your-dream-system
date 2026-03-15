@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import asaasLogo from '@/assets/asaas.png';
+import mercadoPagoLogo from '@/assets/mercado-pago.png';
 
 interface PixPayment {
   id: number | string;
