@@ -115,15 +115,20 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-sidebar text-sidebar-foreground transition-transform lg:static lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 flex flex-col bg-sidebar text-sidebar-foreground transition-all lg:static lg:translate-x-0',
+          sidebarCollapsed ? 'w-16' : 'w-64',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
-          <Receipt className="h-7 w-7 text-sidebar-primary" />
-          <span className="text-lg font-bold tracking-tight text-sidebar-primary-foreground">
-            CobrançaPro
-          </span>
+        <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-3">
+          <div className={cn("flex items-center gap-2", sidebarCollapsed && "justify-center w-full")}>
+            <Receipt className="h-7 w-7 shrink-0 text-sidebar-primary" />
+            {!sidebarCollapsed && (
+              <span className="text-lg font-bold tracking-tight text-sidebar-primary-foreground">
+                CobrançaPro
+              </span>
+            )}
+          </div>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
