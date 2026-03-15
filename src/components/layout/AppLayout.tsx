@@ -145,22 +145,21 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             )}
             <button
               onClick={() => { handleDeploy(); setHasUpdate(false); }}
-              disabled={deploying}
+              disabled={deploying || !hasUpdate}
               className={cn(
                 "w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold transition-all duration-200",
                 hasUpdate
-                  ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-red-600"
-                  : "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:from-emerald-600 hover:to-teal-600",
-                "hover:scale-[1.02] active:scale-[0.98]",
+                  ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-red-600 hover:scale-[1.02] active:scale-[0.98]"
+                  : "bg-muted text-muted-foreground cursor-not-allowed",
                 "disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
               )}
             >
               <RefreshCw className={cn("h-4 w-4 shrink-0", deploying && "animate-spin")} />
-              <span>{deploying ? 'Atualizando...' : hasUpdate ? 'Atualização disponível!' : 'Atualizar VPS'}</span>
+              <span>{deploying ? 'Atualizando...' : hasUpdate ? 'Atualização disponível!' : 'VPS atualizada'}</span>
             </button>
           </div>
           <p className="text-[11px] text-sidebar-foreground/50 text-center">
-            {hasUpdate ? '🔴 Nova versão disponível' : '✅ VPS atualizada'}
+            {hasUpdate ? '🔴 Nova versão disponível' : '✅ Nenhuma atualização disponível'}
           </p>
         </div>
       </aside>
