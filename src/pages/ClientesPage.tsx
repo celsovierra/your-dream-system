@@ -329,7 +329,7 @@ const ClientesPage = () => {
               ))}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                     Nenhum cliente encontrado
                   </TableCell>
                 </TableRow>
