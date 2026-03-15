@@ -6,6 +6,9 @@ import whatsappRouter from './routes/whatsapp.js';
 import clientsRouter from './routes/clients.js';
 import templatesRouter from './routes/templates.js';
 import dashboardRouter from './routes/dashboard.js';
+import queueRouter from './routes/queue.js';
+import settingsRouter from './routes/settings.js';
+import { startScheduler } from './scheduler.js';
 
 const envPath = new URL('../.env', import.meta.url);
 dotenv.config({ path: envPath.pathname });
@@ -21,6 +24,8 @@ app.use('/api/clients', clientsRouter);
 app.use('/api/templates/messages', templatesRouter);
 app.use('/api/dashboard/stats', dashboardRouter);
 app.use('/api/whatsapp', whatsappRouter);
+app.use('/api/queue', queueRouter);
+app.use('/api/settings', settingsRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
@@ -31,6 +36,7 @@ const HOST = '0.0.0.0';
 
 const server = app.listen(PORT, HOST, () => {
   console.log(`API rodando em http://${HOST}:${PORT}`);
+  startScheduler();
 });
 
 server.on('error', (err) => {
