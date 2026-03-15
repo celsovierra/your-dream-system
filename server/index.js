@@ -2,6 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import deployRouter from './routes/deploy.js';
+import clientsRouter from './routes/clients.js';
+import templatesRouter from './routes/templates.js';
+import dashboardRouter from './routes/dashboard.js';
 
 const envPath = new URL('../.env', import.meta.url);
 dotenv.config({ path: envPath.pathname });
@@ -11,7 +14,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Rotas da API
 app.use('/api', deployRouter);
+app.use('/api/clients', clientsRouter);
+app.use('/api/templates/messages', templatesRouter);
+app.use('/api/dashboard/stats', dashboardRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
