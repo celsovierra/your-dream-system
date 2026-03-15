@@ -226,27 +226,6 @@ const ConfiguracoesPage = () => {
                 </Select>
               </div>
 
-              {/* Webhook URL */}
-              <div className="rounded-lg border p-4 space-y-2 bg-muted/30">
-                <Label className="text-xs font-medium">URL do Webhook (configure no gateway)</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    readOnly 
-                    value={`${window.location.origin}/api/webhook/${payment.gateway}`} 
-                    className="text-xs bg-background cursor-text" 
-                  />
-                  <Button size="icon" variant="outline" onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/api/webhook/${payment.gateway}`);
-                    toast.success('URL do Webhook copiada!');
-                  }}>
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Cole esta URL nas configurações de webhook do {payment.gateway === 'mercadopago' ? 'Mercado Pago' : payment.gateway === 'asaas' ? 'Asaas' : 'gateway'}.
-                </p>
-              </div>
-
               {/* Mercado Pago Config */}
               <div className={`rounded-lg border p-4 space-y-3 ${payment.gateway === 'mercadopago' ? 'border-primary bg-primary/5' : 'opacity-70'}`}>
                 <div className="flex items-center gap-2">
@@ -281,6 +260,29 @@ const ConfiguracoesPage = () => {
               }}>
                 <Save className="mr-2 h-3 w-3" /> Salvar
               </Button>
+
+              {/* Webhook URL - sempre visível no final */}
+              <div className="rounded-lg border-2 border-dashed border-primary/40 p-4 space-y-2 bg-primary/5">
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  🔗 URL do Webhook
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Copie e cole nas configurações de webhook do {payment.gateway === 'mercadopago' ? 'Mercado Pago' : payment.gateway === 'asaas' ? 'Asaas' : 'gateway'}
+                </p>
+                <div className="flex gap-2">
+                  <Input 
+                    readOnly 
+                    value={`${window.location.origin}/api/webhook/${payment.gateway}`} 
+                    className="text-xs font-mono bg-background" 
+                  />
+                  <Button size="sm" variant="outline" onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/api/webhook/${payment.gateway}`);
+                    toast.success('URL do Webhook copiada!');
+                  }}>
+                    <Copy className="h-4 w-4 mr-1" /> Copiar
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </CollapsibleContent>
         </Card>
