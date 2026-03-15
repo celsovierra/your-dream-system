@@ -20,7 +20,14 @@ interface AppUser {
 const ConfiguracoesPage = () => {
   const autoInstanceName = window.location.hostname.replace(/\./g, '_') + '_cobrancapro';
   const [whatsapp, setWhatsapp] = useState<{ api_url: string; api_key: string; instance_name: string; status: 'connected' | 'disconnected' | 'connecting' }>({ api_url: '', api_key: '', instance_name: autoInstanceName, status: 'disconnected' });
-  const [payment, setPayment] = useState({ gateway: 'mercadopago' as const, access_token: '' });
+  const [payment, setPayment] = useState({ gateway: 'mercadopago' as 'mercadopago' | 'asaas' | 'pix_manual', access_token: '', asaas_token: '' });
+
+  useEffect(() => {
+    const savedGateway = localStorage.getItem('payment_gateway') || 'mercadopago';
+    const savedMpToken = localStorage.getItem('mp_access_token') || '';
+    const savedAsaasToken = localStorage.getItem('asaas_access_token') || '';
+    setPayment({ gateway: savedGateway as any, access_token: savedMpToken, asaas_token: savedAsaasToken });
+  }, []);
 
   const [users, setUsers] = useState<AppUser[]>([]);
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '' });
