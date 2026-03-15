@@ -75,7 +75,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
     const newUser = {
       id: Date.now().toString(),
-      email: regEmail || regName.toLowerCase().replace(/\s+/g, '.'),
+      email: regName.toLowerCase().trim().replace(/\s+/g, '.'),
       password: regPassword,
       name: regName,
       createdAt: new Date().toISOString(),
