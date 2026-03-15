@@ -95,7 +95,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             </Button>
           </form>
           <p className="mt-4 text-center text-xs text-muted-foreground">
-            Dev: admin@cobranca.com / admin123
+            Gerencie usuários em Configurações
           </p>
         </CardContent>
       </Card>
