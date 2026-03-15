@@ -104,7 +104,8 @@ router.post('/', async (req, res) => {
         return res.json({ success: true, data: result.data });
       }
 
-      return res.status(500).json({ error: 'Erro ao enviar mensagem', debug: result.data });
+      const providerMessage = result?.data?.response?.message?.[0] || result?.data?.error || result?.data?.message;
+      return res.status(500).json({ error: providerMessage ? `Erro ao enviar mensagem: ${providerMessage}` : 'Erro ao enviar mensagem', debug: result.data });
     }
 
     return res.status(400).json({ error: 'Ação inválida' });
