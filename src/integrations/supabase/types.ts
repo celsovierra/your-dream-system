@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_queue: {
+        Row: {
+          amount: number | null
+          client_id: number
+          client_name: string
+          client_phone: string
+          created_at: string | null
+          days_overdue: number | null
+          due_date: string | null
+          id: number
+          message: string | null
+          sent_at: string | null
+          status: string
+          type: string
+        }
+        Insert: {
+          amount?: number | null
+          client_id: number
+          client_name: string
+          client_phone: string
+          created_at?: string | null
+          days_overdue?: number | null
+          due_date?: string | null
+          id?: number
+          message?: string | null
+          sent_at?: string | null
+          status?: string
+          type: string
+        }
+        Update: {
+          amount?: number | null
+          client_id?: number
+          client_name?: string
+          client_phone?: string
+          created_at?: string | null
+          days_overdue?: number | null
+          due_date?: string | null
+          id?: number
+          message?: string | null
+          sent_at?: string | null
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_queue_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_settings: {
+        Row: {
+          key: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null

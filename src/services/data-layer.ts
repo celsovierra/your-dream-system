@@ -194,6 +194,117 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
   }
 }
 
+// ===== FILA DE COBRANÇA =====
+
+export interface QueueItem {
+  id: number;
+  client_id: number;
+  client_name: string;
+  client_phone: string;
+  type: string;
+  amount: number;
+  due_date: string;
+  days_overdue: number;
+  status: string;
+  message?: string;
+  created_at?: string;
+  sent_at?: string;
+}
+
+export async function fetchQueue(): Promise<QueueItem[]> {
+  if (isLovableEnv()) {
+    const { data, error } = await supabase
+      .from('billing_queue')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []) as QueueItem[];
+  } else {
+    const res = await fetch('/api/queue');
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao buscar fila');
+    return json.data || [];
+  }
+}
+
+export async function clearQueue(): Promise<void> {
+  if (isLovableEnv()) {
+    const { error } = await supabase.from('billing_queue').delete().gte('id', 0);
+    if (error) throw error;
+  } else {
+    const res = await fetch('/api/queue', { method: 'DELETE' });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao limpar fila');
+  }
+}
+
+export async function updateQueueItemStatus(id: number, status: string): Promise<void> {
+  if (isLovableEnv()) {
+    const update: any = { status };
+    if (status === 'sent') update.sent_at = new Date().toISOString();
+    const { error } = await supabase.from('billing_queue').update(update).eq('id', id);
+    if (error) throw error;
+  } else {
+    await fetch(`/api/queue/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, sent_at: status === 'sent' ? new Date().toISOString() : null }),
+    });
+  }
+}
+
+// ===== CONFIGURAÇÕES =====
+
+export interface BillingSettings {
+  reminder_days: string;
+  send_time_reminder: string;
+  send_time_due: string;
+  send_time_overdue: string;
+  overdue_frequency: string;
+  [key: string]: string;
+}
+
+export async function fetchSettings(): Promise<BillingSettings> {
+  const defaults: BillingSettings = {
+    reminder_days: '3',
+    send_time_reminder: '08:00',
+    send_time_due: '08:00',
+    send_time_overdue: '09:00',
+    overdue_frequency: '3',
+  };
+
+  if (isLovableEnv()) {
+    const { data, error } = await supabase.from('billing_settings').select('*');
+    if (error) return defaults;
+    const settings = { ...defaults };
+    (data || []).forEach((row: any) => { settings[row.key] = row.value; });
+    return settings;
+  } else {
+    try {
+      const res = await fetch('/api/settings');
+      const json = await res.json();
+      if (!json.success) return defaults;
+      return { ...defaults, ...json.data };
+    } catch {
+      return defaults;
+    }
+  }
+}
+
+export async function saveSettings(settings: Partial<BillingSettings>): Promise<void> {
+  if (isLovableEnv()) {
+    for (const [key, value] of Object.entries(settings)) {
+      await supabase.from('billing_settings').upsert({ key, value: String(value), updated_at: new Date().toISOString() });
+    }
+  } else {
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings),
+    });
+  }
+}
+
 // ===== WHATSAPP (Evolution API) =====
 
 interface EvolutionPayload {
