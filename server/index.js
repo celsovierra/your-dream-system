@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import deployRouter from './routes/deploy.js';
+import whatsappRouter from './routes/whatsapp.js';
 import clientsRouter from './routes/clients.js';
 import templatesRouter from './routes/templates.js';
 import dashboardRouter from './routes/dashboard.js';
