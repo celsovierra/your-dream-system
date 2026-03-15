@@ -143,7 +143,7 @@ const ClientesPage = () => {
       phone2: normalizePhone(client.phone2 || '55'),
       document: client.document,
       amount: client.amount?.toString() || '',
-      due_date: client.due_date || '',
+      due_date: toDateOnly(client.due_date) || '',
     });
     setDialogOpen(true);
   };
