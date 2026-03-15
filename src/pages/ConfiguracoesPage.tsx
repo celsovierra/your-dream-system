@@ -255,16 +255,7 @@ const ConfiguracoesPage = () => {
                 </div>
               )}
 
-              <Button size="sm" onClick={() => {
-                localStorage.setItem('payment_gateway', payment.gateway);
-                localStorage.setItem('mp_access_token', payment.access_token);
-                localStorage.setItem('asaas_access_token', payment.asaas_token);
-                toast.success('Configuração de pagamento salva!');
-              }}>
-                <Save className="mr-2 h-3 w-3" /> Salvar
-              </Button>
-
-              {/* Webhook URL - sempre visível no final */}
+              {/* Webhook URL */}
               <div className="rounded-lg border-2 border-dashed border-primary/40 p-4 space-y-2 bg-primary/5">
                 <Label className="text-sm font-semibold flex items-center gap-2">
                   🔗 URL do Webhook
@@ -286,6 +277,15 @@ const ConfiguracoesPage = () => {
                   </Button>
                 </div>
               </div>
+
+              <Button size="sm" onClick={() => {
+                localStorage.setItem('payment_gateway', payment.gateway);
+                localStorage.setItem('mp_access_token', payment.access_token);
+                localStorage.setItem('asaas_access_token', payment.asaas_token);
+                toast.success('Configuração de pagamento salva!');
+              }}>
+                <Save className="mr-2 h-3 w-3" /> Salvar
+              </Button>
             </CardContent>
           </CollapsibleContent>
         </Card>
