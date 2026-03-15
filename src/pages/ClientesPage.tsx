@@ -279,7 +279,7 @@ const ClientesPage = () => {
             {baixaClient?.due_date && (
               <p className="text-sm text-muted-foreground">Novo vencimento: <strong>{formatDatePtBr(addMonthsToDateOnly(baixaClient.due_date, Number.parseInt(baixaMonths, 10)))}</strong></p>
             )}
-            <p className="text-sm font-medium">Valor total da baixa: <strong className="text-primary">R$ {((baixaClient?.amount || 0) * parseInt(baixaMonths)).toFixed(2)}</strong></p>
+            <p className="text-sm font-medium">Valor total da baixa: <strong className="text-primary">R$ {((baixaClient?.amount || 0) * Number.parseInt(baixaMonths, 10)).toFixed(2)}</strong></p>
             <p className="text-sm text-muted-foreground">Após confirmar, um recibo será enviado via WhatsApp.</p>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => setBaixaDialogOpen(false)}>Cancelar</Button>
