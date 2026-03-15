@@ -29,7 +29,7 @@ interface LayoutProps {
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard, color: 'text-blue-400' },
   { path: '/clientes', label: 'Clientes', icon: Users, color: 'text-emerald-400' },
-  { path: '/financeiro', label: 'Financeiro', icon: DollarSign, color: 'text-yellow-400' },
+  
   { path: '/fila', label: 'Fila de Envio', icon: ListTodo, color: 'text-purple-400' },
   { path: '/mensagens', label: 'Mensagens', icon: MessageSquare, color: 'text-green-400' },
   { path: '/contratos', label: 'Contratos', icon: FileText, color: 'text-orange-400' },
@@ -208,8 +208,20 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
               <Menu className="h-5 w-5" />
             </button>
             <h2 className="text-lg font-semibold text-card-foreground">
-              {navItems.find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
+              {location.pathname === '/financeiro' ? 'Financeiro' : navItems.find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
             </h2>
+            <Link
+              to="/financeiro"
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                location.pathname === '/financeiro'
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+              )}
+            >
+              <DollarSign className="h-4 w-4" />
+              Financeiro
+            </Link>
           </div>
           <div className="flex items-center gap-2">
             <button
