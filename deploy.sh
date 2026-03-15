@@ -129,7 +129,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import deployRouter from './routes/deploy.js';
 
-dotenv.config();
+const envPath = new URL('../.env', import.meta.url);
+dotenv.config({ path: envPath.pathname });
 
 const app = express();
 app.use(cors());
@@ -139,7 +140,13 @@ app.use('/api', deployRouter);
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
 const PORT = Number(process.env.PORT || 3001);
-app.listen(PORT, () => console.log(`API rodando na porta ${PORT}`));
+const HOST = '0.0.0.0';
+
+const server = app.listen(PORT, HOST, () => console.log(`API rodando em http://${HOST}:${PORT}`));
+server.on('error', (err) => {
+  console.error('Falha ao subir API:', err);
+  process.exit(1);
+});
 SERVERJS
 fi
 
