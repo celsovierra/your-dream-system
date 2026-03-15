@@ -23,17 +23,28 @@ const MensagensPage = () => {
   const [reminderDays, setReminderDays] = useState(() => {
     return Number(localStorage.getItem('cobranca_reminder_days') || '3');
   });
-  const [sendTime, setSendTime] = useState(() => {
-    return localStorage.getItem('cobranca_send_time') || '08:00';
+  const [sendTimeReminder, setSendTimeReminder] = useState(() => {
+    return localStorage.getItem('cobranca_send_time_reminder') || '08:00';
+  });
+  const [sendTimeDue, setSendTimeDue] = useState(() => {
+    return localStorage.getItem('cobranca_send_time_due') || '08:00';
+  });
+  const [sendTimeOverdue, setSendTimeOverdue] = useState(() => {
+    return localStorage.getItem('cobranca_send_time_overdue') || '09:00';
   });
 
   useEffect(() => {
     localStorage.setItem('cobranca_reminder_days', String(reminderDays));
   }, [reminderDays]);
-
   useEffect(() => {
-    localStorage.setItem('cobranca_send_time', sendTime);
-  }, [sendTime]);
+    localStorage.setItem('cobranca_send_time_reminder', sendTimeReminder);
+  }, [sendTimeReminder]);
+  useEffect(() => {
+    localStorage.setItem('cobranca_send_time_due', sendTimeDue);
+  }, [sendTimeDue]);
+  useEffect(() => {
+    localStorage.setItem('cobranca_send_time_overdue', sendTimeOverdue);
+  }, [sendTimeOverdue]);
 
   const handleSave = (id: number, content: string) => {
     setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, content } : t)));
@@ -70,24 +81,32 @@ const MensagensPage = () => {
                 <div className="flex flex-wrap gap-4">
                   <div>
                     <Label>Dias antes do vencimento</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={30}
-                      value={reminderDays}
+                    <Input type="number" min={1} max={30} value={reminderDays}
                       onChange={(e) => setReminderDays(Math.max(1, Math.min(30, Number(e.target.value) || 1)))}
-                      className="w-32 mt-1"
-                    />
+                      className="w-32 mt-1" />
                   </div>
                   <div>
                     <Label>Horário de envio</Label>
-                    <Input
-                      type="time"
-                      value={sendTime}
-                      onChange={(e) => setSendTime(e.target.value)}
-                      className="w-32 mt-1"
-                    />
+                    <Input type="time" value={sendTimeReminder}
+                      onChange={(e) => setSendTimeReminder(e.target.value)}
+                      className="w-32 mt-1" />
                   </div>
+                </div>
+              )}
+              {template.type === 'due' && (
+                <div>
+                  <Label>Horário de envio</Label>
+                  <Input type="time" value={sendTimeDue}
+                    onChange={(e) => setSendTimeDue(e.target.value)}
+                    className="w-32 mt-1" />
+                </div>
+              )}
+              {template.type === 'overdue' && (
+                <div>
+                  <Label>Horário de envio</Label>
+                  <Input type="time" value={sendTimeOverdue}
+                    onChange={(e) => setSendTimeOverdue(e.target.value)}
+                    className="w-32 mt-1" />
                 </div>
               )}
               <div>
