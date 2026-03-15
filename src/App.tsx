@@ -12,7 +12,7 @@ import ClientesPage from "./pages/ClientesPage";
 import FilaPage from "./pages/FilaPage";
 import MensagensPage from "./pages/MensagensPage";
 import ContratosPage from "./pages/ContratosPage";
-import PagamentosPage from "./pages/PagamentosPage";
+
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import NotFound from "./pages/NotFound";
 
