@@ -8,7 +8,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import ClientesPage from "./pages/ClientesPage";
-import CobrancasPage from "./pages/CobrancasPage";
+
 import FilaPage from "./pages/FilaPage";
 import MensagensPage from "./pages/MensagensPage";
 import ContratosPage from "./pages/ContratosPage";
