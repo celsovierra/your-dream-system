@@ -168,8 +168,8 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             <h2 className="text-2xl font-bold tracking-tight">
               {mode === 'login' ? 'Bem-vindo de volta' : 'Criar nova conta'}
             </h2>
-            <p className="text-muted-foreground">
-              {mode === 'login' ? 'Entre com suas credenciais para acessar o painel' : 'Preencha os dados para criar sua conta'}
+             <p className="text-muted-foreground">
+              {mode === 'login' ? 'Entre com seu nome ou email e senha' : 'Preencha os dados para criar sua conta'}
             </p>
           </div>
 
