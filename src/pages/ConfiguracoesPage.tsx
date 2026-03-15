@@ -212,31 +212,27 @@ const ConfiguracoesPage = () => {
                 setQrLoading(true);
                 setQrCode(null);
                 try {
-                  const baseUrl = whatsapp.api_url.replace(/\/+$/, '');
-                  // Tenta criar instância (se já existe, a API retorna a existente)
-                  await fetch(`${baseUrl}/instance/create`, {
-                    method: 'POST',
-                    headers: { 'apikey': whatsapp.api_key, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ instanceName: whatsapp.instance_name, qrcode: true }),
-                  }).catch(() => {});
-                  // Buscar QR Code
-                  const res = await fetch(`${baseUrl}/instance/connect/${whatsapp.instance_name}`, {
-                    headers: { 'apikey': whatsapp.api_key },
+                  const { data, error } = await supabase.functions.invoke('evolution-proxy', {
+                    body: {
+                      api_url: whatsapp.api_url,
+                      api_key: whatsapp.api_key,
+                      instance_name: whatsapp.instance_name,
+                      action: 'create',
+                    },
                   });
-                  if (res.ok) {
-                    const data = await res.json();
-                    const base64 = data?.base64 || data?.qrcode?.base64 || data?.qr || null;
-                    if (base64) {
-                      setQrCode(base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`);
-                      toast.success('QR Code gerado! Escaneie com seu WhatsApp.');
-                    } else {
-                      toast.warning('Instância já conectada ou QR Code não disponível.');
-                    }
+                  if (error) throw error;
+                  const base64 = data?.qrcode;
+                  if (base64) {
+                    setQrCode(base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`);
+                    toast.success('QR Code gerado! Escaneie com seu WhatsApp.');
+                  } else if (data?.state === 'open' || data?.state === 'connected') {
+                    toast.success('Instância já está conectada!');
+                    setWhatsapp(prev => ({ ...prev, status: 'connected' }));
                   } else {
-                    toast.error('Erro ao gerar QR Code (HTTP ' + res.status + ')');
+                    toast.warning('QR Code não disponível. Verifique a instância na Evolution API.');
                   }
-                } catch (err) {
-                  toast.error('Não foi possível conectar à Evolution API. Verifique a URL e se o CORS está habilitado.');
+                } catch (err: any) {
+                  toast.error('Erro ao gerar QR Code: ' + (err?.message || 'verifique a URL e API Key'));
                 } finally {
                   setQrLoading(false);
                 }
