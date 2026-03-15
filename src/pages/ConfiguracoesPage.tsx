@@ -232,14 +232,13 @@ const ConfiguracoesPage = () => {
                   } else {
                     console.log('Evolution API debug:', JSON.stringify(data?.debug, null, 2));
                     const debugInfo = data?.debug;
-                    const createStatus = debugInfo?.create?.status;
-                    const connectStatus = debugInfo?.connect?.status;
-                    if (createStatus === 401 || connectStatus === 401) {
+                    const createStatus = debugInfo?.createResult?.status;
+                    if (createStatus === 401) {
                       toast.error('API Key inválida. Verifique a chave na Evolution API.');
-                    } else if (createStatus === 404 || connectStatus === 404) {
-                      toast.error('Endpoint não encontrado. Verifique a URL da Evolution API (ex: https://seudominio.com).');
                     } else {
-                      toast.warning('QR Code não disponível. Verifique se a instância existe na Evolution API. Resposta: ' + JSON.stringify(debugInfo?.create?.data || debugInfo?.connect?.data || {}).substring(0, 200));
+                      const instances = debugInfo?.instances;
+                      const detail = instances ? ` Instâncias encontradas: ${JSON.stringify(instances).substring(0, 150)}` : '';
+                      toast.warning('QR Code não disponível. Verifique o console para debug.' + detail);
                     }
                   }
                 } catch (err: any) {
