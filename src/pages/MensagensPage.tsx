@@ -67,16 +67,27 @@ const MensagensPage = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               {template.type === 'reminder' && (
-                <div>
-                  <Label>Cobrar quantos dias antes do vencimento</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={30}
-                    value={reminderDays}
-                    onChange={(e) => setReminderDays(Math.max(1, Math.min(30, Number(e.target.value) || 1)))}
-                    className="w-32 mt-1"
-                  />
+                <div className="flex flex-wrap gap-4">
+                  <div>
+                    <Label>Dias antes do vencimento</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={30}
+                      value={reminderDays}
+                      onChange={(e) => setReminderDays(Math.max(1, Math.min(30, Number(e.target.value) || 1)))}
+                      className="w-32 mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label>Horário de envio</Label>
+                    <Input
+                      type="time"
+                      value={sendTime}
+                      onChange={(e) => setSendTime(e.target.value)}
+                      className="w-32 mt-1"
+                    />
+                  </div>
                 </div>
               )}
               <div>
