@@ -106,11 +106,19 @@ const MensagensPage = () => {
                 </div>
               )}
               {template.type === 'overdue' && (
-                <div>
-                  <Label>Horário de envio</Label>
-                  <Input type="time" value={sendTimeOverdue}
-                    onChange={(e) => setSendTimeOverdue(e.target.value)}
-                    className="w-32 mt-1" />
+                <div className="flex flex-wrap gap-4">
+                  <div>
+                    <Label>Cobrar a cada (dias)</Label>
+                    <Input type="number" min={1} max={30} value={overdueFrequency}
+                      onChange={(e) => setOverdueFrequency(Math.max(1, Math.min(30, Number(e.target.value) || 1)))}
+                      className="w-32 mt-1" />
+                  </div>
+                  <div>
+                    <Label>Horário de envio</Label>
+                    <Input type="time" value={sendTimeOverdue}
+                      onChange={(e) => setSendTimeOverdue(e.target.value)}
+                      className="w-32 mt-1" />
+                  </div>
                 </div>
               )}
               <div>
