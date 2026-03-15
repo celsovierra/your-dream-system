@@ -167,7 +167,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               {mode === 'login' ? 'Bem-vindo de volta' : 'Criar nova conta'}
             </h2>
              <p className="text-muted-foreground">
-              {mode === 'login' ? 'Entre com seu nome ou email e senha' : 'Preencha os dados para criar sua conta'}
+              {mode === 'login' ? 'Entre com seu usuário e senha' : 'Crie sua conta com nome e senha'}
             </p>
           </div>
 
