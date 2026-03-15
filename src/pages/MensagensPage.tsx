@@ -32,6 +32,16 @@ const MensagensPage = () => {
   const [sendTimeOverdue, setSendTimeOverdue] = useState(() => {
     return localStorage.getItem('cobranca_send_time_overdue') || '09:00';
   });
+  const [overdueFrequency, setOverdueFrequency] = useState(() => {
+    return Number(localStorage.getItem('cobranca_overdue_frequency') || '3');
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cobranca_overdue_frequency', String(overdueFrequency));
+  }, [overdueFrequency]);
+  useEffect(() => {
+    localStorage.setItem('cobranca_send_time_overdue', sendTimeOverdue);
+  }, [sendTimeOverdue]);
 
   useEffect(() => {
     localStorage.setItem('cobranca_reminder_days', String(reminderDays));
@@ -102,11 +112,19 @@ const MensagensPage = () => {
                 </div>
               )}
               {template.type === 'overdue' && (
-                <div>
-                  <Label>Horário de envio</Label>
-                  <Input type="time" value={sendTimeOverdue}
-                    onChange={(e) => setSendTimeOverdue(e.target.value)}
-                    className="w-32 mt-1" />
+                <div className="flex flex-wrap gap-4">
+                  <div>
+                    <Label>Cobrar a cada (dias)</Label>
+                    <Input type="number" min={1} max={30} value={overdueFrequency}
+                      onChange={(e) => setOverdueFrequency(Math.max(1, Math.min(30, Number(e.target.value) || 1)))}
+                      className="w-32 mt-1" />
+                  </div>
+                  <div>
+                    <Label>Horário de envio</Label>
+                    <Input type="time" value={sendTimeOverdue}
+                      onChange={(e) => setSendTimeOverdue(e.target.value)}
+                      className="w-32 mt-1" />
+                  </div>
                 </div>
               )}
               <div>
