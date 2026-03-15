@@ -16,7 +16,14 @@ const ClientesPage = () => {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', document: '', amount: '', due_date: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '55', document: '', amount: '', due_date: '' });
+
+  const normalizePhone = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length <= 2) return '55';
+    if (digits.startsWith('55')) return `55${digits.slice(2, 13)}`;
+    return `55${digits.slice(0, 11)}`;
+  };
 
   const filtered = clients.filter(
     (c) =>
@@ -26,12 +33,17 @@ const ClientesPage = () => {
   );
 
   const handleSave = () => {
-    if (!form.name || !form.phone) {
+    if (!form.name || form.phone.length <= 2) {
       toast.error('Nome e telefone são obrigatórios');
       return;
     }
 
-    const parsedData = { ...form, amount: form.amount ? parseFloat(form.amount) : undefined, due_date: form.due_date || undefined };
+    const parsedData = {
+      ...form,
+      phone: normalizePhone(form.phone),
+      amount: form.amount ? parseFloat(form.amount) : undefined,
+      due_date: form.due_date || undefined,
+    };
 
     if (editingClient) {
       setClients((prev) =>
@@ -51,12 +63,19 @@ const ClientesPage = () => {
     }
     setDialogOpen(false);
     setEditingClient(null);
-    setForm({ name: '', email: '', phone: '', document: '', amount: '', due_date: '' });
+    setForm({ name: '', email: '', phone: '55', document: '', amount: '', due_date: '' });
   };
 
   const handleEdit = (client: Client) => {
     setEditingClient(client);
-    setForm({ name: client.name, email: client.email, phone: client.phone, document: client.document, amount: client.amount?.toString() || '', due_date: client.due_date || '' });
+    setForm({
+      name: client.name,
+      email: client.email,
+      phone: normalizePhone(client.phone || '55'),
+      document: client.document,
+      amount: client.amount?.toString() || '',
+      due_date: client.due_date || '',
+    });
     setDialogOpen(true);
   };
 
@@ -77,7 +96,7 @@ const ClientesPage = () => {
             className="pl-9"
           />
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingClient(null); setForm({ name: '', email: '', phone: '', document: '', amount: '', due_date: '' }); } }}>
+        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingClient(null); setForm({ name: '', email: '', phone: '55', document: '', amount: '', due_date: '' }); } }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" /> Novo Cliente</Button>
           </DialogTrigger>
@@ -96,7 +115,7 @@ const ClientesPage = () => {
               </div>
               <div>
                 <Label>Telefone *</Label>
-                <Input value={form.phone} onChange={(e) => !editingClient && setForm({ ...form, phone: e.target.value })} placeholder="11999990000" readOnly={!!editingClient} className={editingClient ? 'bg-muted cursor-not-allowed' : ''} />
+                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizePhone(e.target.value) })} placeholder="5511999990000" inputMode="numeric" />
               </div>
               <div>
                 <Label>CPF/CNPJ</Label>
