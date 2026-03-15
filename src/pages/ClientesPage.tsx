@@ -173,10 +173,8 @@ const ClientesPage = () => {
       const formattedDueDate = formatDatePtBr(client.due_date);
       const dueDateText = formattedDueDate !== '-' ? ` com vencimento em ${formattedDueDate}` : '';
       const message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${dueDateText}. Qualquer dúvida estamos à disposição!`;
-      const { error } = await supabase.functions.invoke('evolution-proxy', {
-        body: { action: 'send-text', to: client.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name },
-      });
-      if (error) throw error;
+      const { error } = await invokeEvolutionProxy({ action: 'send-text', to: client.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name });
+      if (error) throw new Error(error);
       toast.success('Cobrança enviada via WhatsApp!', { id: `billing-${client.id}` });
     } catch { toast.error('Erro ao enviar cobrança', { id: `billing-${client.id}` }); }
   };
