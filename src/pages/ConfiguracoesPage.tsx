@@ -5,35 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Wifi, WifiOff, CreditCard, Save, Server } from 'lucide-react';
+import { Wifi, WifiOff, CreditCard, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ConfiguracoesPage = () => {
   const [whatsapp, setWhatsapp] = useState<{ api_url: string; api_key: string; instance_name: string; status: 'connected' | 'disconnected' | 'connecting' }>({ api_url: '', api_key: '', instance_name: '', status: 'disconnected' });
   const [payment, setPayment] = useState({ gateway: 'mercadopago' as const, access_token: '' });
-  const [apiUrl, setApiUrl] = useState(localStorage.getItem('api_base_url') || '');
 
   return (
     <div className="space-y-6 max-w-2xl">
-      {/* URL da API (VPS) */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Server className="h-5 w-5 text-primary" />
-            Servidor (VPS)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">URL da API para o botão "Atualizar VPS" funcionar.</p>
-          <div>
-            <Label>URL da API</Label>
-            <Input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="https://api.seudominio.com.br" />
-          </div>
-          <Button size="sm" onClick={() => { localStorage.setItem('api_base_url', apiUrl); toast.success('URL da API salva!'); }}>
-            <Save className="mr-2 h-3 w-3" /> Salvar
-          </Button>
-        </CardContent>
-      </Card>
 
       {/* WhatsApp */}
       <Card>
