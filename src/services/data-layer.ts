@@ -7,10 +7,17 @@ import { supabase } from '@/integrations/supabase/client';
 import api from '@/services/api';
 import type { Client, MessageTemplate, DashboardStats } from '@/types/billing';
 
-// Detecta se está rodando no ambiente Lovable (preview) ou na VPS
+// Detecta se está rodando no ambiente de teste (Lovable Cloud) ou na VPS
+// Regra de isolamento:
+// - preview/publish do Lovable => Lovable Cloud
+// - localhost/VPS/domínio próprio => API REST (MariaDB)
 const isLovableEnv = () => {
-  const hostname = window.location.hostname;
-  return hostname.includes('lovable.app') || hostname.includes('lovableproject.com') || hostname === 'localhost';
+  const forcedBackend = String(import.meta.env.VITE_DATA_BACKEND || '').toLowerCase();
+  if (forcedBackend === 'cloud') return true;
+  if (forcedBackend === 'api') return false;
+
+  const hostname = window.location.hostname.toLowerCase();
+  return hostname.endsWith('.lovable.app') || hostname.endsWith('.lovableproject.com');
 };
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
