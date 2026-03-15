@@ -43,6 +43,11 @@ const gatewayLabels: Record<string, string> = {
   asaas: 'Asaas',
 };
 
+const gatewayLogos: Record<string, string> = {
+  mercadopago: mercadoPagoLogo,
+  asaas: asaasLogo,
+};
+
 const PagamentosPage = () => {
   const [payments, setPayments] = useState<PixPayment[]>([]);
   const [open, setOpen] = useState(false);
