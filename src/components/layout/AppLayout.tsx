@@ -131,7 +131,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           </div>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        <nav className="flex-1 space-y-1 overflow-y-auto p-2">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -139,19 +139,39 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
                 key={item.path}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
+                title={sidebarCollapsed ? item.label : undefined}
                 className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
+                  'flex items-center rounded-md py-2.5 text-sm font-medium transition-colors',
+                  sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3',
                   isActive
                     ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                     : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                 )}
               >
-                <item.icon className={cn("h-4 w-4", isActive ? "text-sidebar-primary-foreground" : item.color)} />
-                {item.label}
+                <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-sidebar-primary-foreground" : item.color)} />
+                {!sidebarCollapsed && item.label}
               </Link>
             );
           })}
         </nav>
+
+        {/* Dark mode + collapse toggles */}
+        <div className="border-t border-sidebar-border p-2 flex items-center justify-around">
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            title={darkMode ? 'Modo claro' : 'Modo escuro'}
+            className="rounded-md p-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          >
+            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+            className="hidden lg:block rounded-md p-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          >
+            {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
+        </div>
 
         <div className="border-t border-sidebar-border p-4 space-y-3">
           <div className="relative">
