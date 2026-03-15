@@ -214,16 +214,16 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
           ) : (
             <form onSubmit={handleRegister} className="space-y-5">
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Nome</Label>
+                <Label className="text-sm font-medium">Nome de Usuário</Label>
                 <Input value={regName} onChange={(e) => setRegName(e.target.value)} placeholder="Seu nome" className="h-11" />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Email</Label>
+                <Label className="text-sm font-medium">Email <span className="text-muted-foreground font-normal">(opcional)</span></Label>
                 <Input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="seu@email.com" className="h-11" />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Senha</Label>
-                <Input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="Mínimo 6 caracteres" className="h-11" />
+                <Input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="Mínimo 4 caracteres" className="h-11" />
               </div>
               <Button type="submit" className="w-full h-11 text-sm font-semibold">
                 <UserPlus className="mr-2 h-4 w-4" />
