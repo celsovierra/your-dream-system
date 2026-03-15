@@ -1,0 +1,111 @@
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Users,
+  MessageSquare,
+  ListTodo,
+  CreditCard,
+  FileText,
+  Settings,
+  Menu,
+  X,
+  Receipt,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const navItems = [
+  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/clientes', label: 'Clientes', icon: Users },
+  { path: '/cobrancas', label: 'Cobranças', icon: Receipt },
+  { path: '/fila', label: 'Fila de Envio', icon: ListTodo },
+  { path: '/mensagens', label: 'Mensagens', icon: MessageSquare },
+  { path: '/contratos', label: 'Contratos', icon: FileText },
+  { path: '/pagamentos', label: 'Pagamentos', icon: CreditCard },
+  { path: '/configuracoes', label: 'Configurações', icon: Settings },
+];
+
+const AppLayout = ({ children }: LayoutProps) => {
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  return (
+    <div className="flex h-screen overflow-hidden">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-foreground/20 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-sidebar text-sidebar-foreground transition-transform lg:static lg:translate-x-0',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
+        <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
+          <Receipt className="h-7 w-7 text-sidebar-primary" />
+          <span className="text-lg font-bold tracking-tight text-sidebar-primary-foreground">
+            CobrançaPro
+          </span>
+        </div>
+
+        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => setSidebarOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="border-t border-sidebar-border p-4">
+          <p className="text-xs text-sidebar-foreground/60">
+            Preparado para VPS + MariaDB
+          </p>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <header className="flex h-16 items-center gap-4 border-b border-border bg-card px-4 lg:px-6">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="rounded-md p-2 text-muted-foreground hover:bg-secondary lg:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <h2 className="text-lg font-semibold text-card-foreground">
+            {navItems.find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
+          </h2>
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default AppLayout;
