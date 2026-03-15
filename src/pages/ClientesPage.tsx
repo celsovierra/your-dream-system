@@ -272,6 +272,9 @@ const ClientesPage = () => {
                 </strong>
               </p>
             )}
+            <p className="text-sm font-medium">
+              Valor total da baixa: <strong className="text-primary">R$ {((baixaClient?.amount || 0) * parseInt(baixaMonths)).toFixed(2)}</strong>
+            </p>
             <p className="text-sm text-muted-foreground">
               Após confirmar, um recibo será enviado via WhatsApp.
             </p>
