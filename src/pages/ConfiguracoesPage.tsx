@@ -154,7 +154,7 @@ const ConfiguracoesPage = () => {
                   {whatsapp.status === 'connected' ? 'Conectado' : 'Desconectado'}
                 </Badge>
               </div>
-              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSections.whatsapp ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'whatsapp' ? 'rotate-180' : ''}`} />
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
