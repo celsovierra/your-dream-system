@@ -26,40 +26,24 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     setLoading(true);
 
     try {
-      const apiUrl = localStorage.getItem('api_base_url') || '/api';
-      const res = await fetch(`${apiUrl}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      // Verifica usuários cadastrados no localStorage
+      const storedUsers = localStorage.getItem('app_users');
+      const users = storedUsers ? JSON.parse(storedUsers) : [
+        { email: 'admin@cobranca.com', password: 'admin123' }
+      ];
 
-      if (!res.ok) {
-        // Em modo dev sem backend, aceita credenciais padrão
-        if (email === 'admin@cobranca.com' && password === 'admin123') {
-          const devToken = 'dev-token-' + Date.now();
-          localStorage.setItem('auth_token', devToken);
-          onLogin(devToken);
-          toast.success('Login realizado (modo desenvolvimento)');
-          return;
-        }
+      const user = users.find((u: { email: string; password: string }) => u.email === email && u.password === password);
+
+      if (user) {
+        const token = 'token-' + Date.now();
+        localStorage.setItem('auth_token', token);
+        onLogin(token);
+        toast.success('Login realizado com sucesso!');
+      } else {
         toast.error('Email ou senha incorretos');
-        return;
       }
-
-      const data = await res.json();
-      localStorage.setItem('auth_token', data.token);
-      onLogin(data.token);
-      toast.success('Login realizado com sucesso!');
     } catch {
-      // Sem backend - aceita credenciais de dev
-      if (email === 'admin@cobranca.com' && password === 'admin123') {
-        const devToken = 'dev-token-' + Date.now();
-        localStorage.setItem('auth_token', devToken);
-        onLogin(devToken);
-        toast.success('Login realizado (modo desenvolvimento)');
-        return;
-      }
-      toast.error('Erro ao conectar com o servidor');
+      toast.error('Erro ao realizar login');
     } finally {
       setLoading(false);
     }
