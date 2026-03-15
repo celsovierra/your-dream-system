@@ -138,6 +138,12 @@ const MensagensPage = () => {
           </Card>
         ))}
       </div>
+
+      <div className="flex justify-end">
+        <Button onClick={handleSaveAll}>
+          <Save className="mr-2 h-4 w-4" /> Salvar Tudo
+        </Button>
+      </div>
     </div>
   );
 };
