@@ -130,38 +130,38 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             )}
           </div>
           {!sidebarCollapsed && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setDarkMode(!darkMode)}
                 title={darkMode ? 'Modo claro' : 'Modo escuro'}
-                className="rounded p-1 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                className="rounded-lg p-2 text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all duration-200 hover:shadow-sm"
               >
-                {darkMode ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
               <button
                 onClick={() => setSidebarCollapsed(true)}
                 title="Recolher menu"
-                className="hidden lg:block rounded p-1 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                className="hidden lg:block rounded-lg p-2 text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all duration-200 hover:shadow-sm"
               >
-                <PanelLeftClose className="h-3.5 w-3.5" />
+                <PanelLeftClose className="h-5 w-5" />
               </button>
             </div>
           )}
           {sidebarCollapsed && (
-            <div className="absolute top-1 right-1 flex flex-col gap-1">
+            <div className="absolute top-3 right-1.5 flex flex-col gap-1.5">
               <button
                 onClick={() => setDarkMode(!darkMode)}
                 title={darkMode ? 'Modo claro' : 'Modo escuro'}
-                className="rounded p-1 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                className="rounded-lg p-1.5 text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all duration-200 hover:shadow-sm"
               >
-                {darkMode ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
+                {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
               <button
                 onClick={() => setSidebarCollapsed(false)}
                 title="Expandir menu"
-                className="hidden lg:block rounded p-1 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                className="hidden lg:block rounded-lg p-1.5 text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all duration-200 hover:shadow-sm"
               >
-                <PanelLeft className="h-3 w-3" />
+                <PanelLeft className="h-4 w-4" />
               </button>
             </div>
           )}
