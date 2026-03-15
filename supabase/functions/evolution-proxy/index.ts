@@ -21,100 +21,87 @@ serve(async (req) => {
     }
 
     const baseUrl = api_url.replace(/\/+$/, "");
+    const results: Record<string, any> = {};
 
     if (action === "create") {
-      // Step 1: Tentar criar instância
-      console.log("Creating instance:", instance_name);
-      let createData: any = null;
+      // Step 1: Create instance
       try {
         const createRes = await fetch(`${baseUrl}/instance/create`, {
           method: "POST",
           headers: { "apikey": api_key, "Content-Type": "application/json" },
           body: JSON.stringify({ instanceName: instance_name, qrcode: true }),
         });
-        createData = await createRes.json();
-        console.log("Create response:", JSON.stringify(createData));
+        results.create = { status: createRes.status, data: await createRes.json() };
       } catch (e) {
-        console.log("Create failed (may already exist):", e.message);
+        results.create = { error: e.message };
       }
 
-      // Check if create response has QR code
-      const createQr = createData?.qrcode?.base64 || createData?.base64 || createData?.qrcode;
-      if (createQr && typeof createQr === "string" && createQr.length > 50) {
-        console.log("QR from create response, length:", createQr.length);
-        return new Response(JSON.stringify({ success: true, qrcode: createQr }), {
+      // Extract QR from create
+      const cd = results.create?.data;
+      let qr = cd?.qrcode?.base64 || cd?.base64 || cd?.qrcode;
+      if (qr && typeof qr === "string" && qr.length > 50) {
+        return new Response(JSON.stringify({ success: true, qrcode: qr }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Step 2: Tentar connect endpoint
-      console.log("Trying connect endpoint...");
+      // Step 2: Connect
       try {
         const connectRes = await fetch(`${baseUrl}/instance/connect/${instance_name}`, {
           headers: { "apikey": api_key },
         });
-        const connectData = await connectRes.json();
-        console.log("Connect response:", JSON.stringify(connectData));
-        
-        const connectQr = connectData?.base64 || connectData?.qrcode?.base64 || connectData?.qrcode || connectData?.qr;
-        if (connectQr && typeof connectQr === "string" && connectQr.length > 50) {
-          return new Response(JSON.stringify({ success: true, qrcode: connectQr }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-
-        // Check if already connected
-        const state = connectData?.instance?.state || connectData?.state || "";
-        if (state === "open" || state === "connected") {
-          return new Response(JSON.stringify({ success: true, state: "connected", qrcode: null }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
+        results.connect = { status: connectRes.status, data: await connectRes.json() };
       } catch (e) {
-        console.log("Connect failed:", e.message);
+        results.connect = { error: e.message };
       }
 
-      // Step 3: Tentar fetchInstances para ver status
-      console.log("Trying fetchInstances...");
-      try {
-        const fetchRes = await fetch(`${baseUrl}/instance/fetchInstances?instanceName=${instance_name}`, {
-          headers: { "apikey": api_key },
+      const cn = results.connect?.data;
+      qr = cn?.base64 || cn?.qrcode?.base64 || cn?.qrcode || cn?.qr;
+      if (qr && typeof qr === "string" && qr.length > 50) {
+        return new Response(JSON.stringify({ success: true, qrcode: qr }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
-        const fetchData = await fetchRes.json();
-        console.log("FetchInstances response:", JSON.stringify(fetchData));
-      } catch (e) {
-        console.log("FetchInstances failed:", e.message);
       }
 
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "QR Code não encontrado nas respostas da API",
-        debug: { createData },
-      }), {
+      // Check if connected
+      const state = cn?.instance?.state || cn?.state || cd?.instance?.state || cd?.state || "";
+      if (state === "open" || state === "connected") {
+        return new Response(JSON.stringify({ success: true, state: "connected", qrcode: null }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Return debug info so frontend can show it
+      return new Response(JSON.stringify({ success: false, error: "QR não encontrado", debug: results }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (action === "status") {
-      const res = await fetch(`${baseUrl}/instance/connectionState/${instance_name}`, {
-        headers: { "apikey": api_key },
-      });
-      const data = await res.json();
-      console.log("Status response:", JSON.stringify(data));
-      return new Response(JSON.stringify({
-        success: true,
-        state: data?.instance?.state || data?.state || "unknown",
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      try {
+        const res = await fetch(`${baseUrl}/instance/connectionState/${instance_name}`, {
+          headers: { "apikey": api_key },
+        });
+        const data = await res.json();
+        return new Response(JSON.stringify({
+          success: true,
+          state: data?.instance?.state || data?.state || "unknown",
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
-    return new Response(JSON.stringify({ error: "Ação inválida. Use 'create' ou 'status'" }), {
+    return new Response(JSON.stringify({ error: "Ação inválida" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Evolution proxy error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
