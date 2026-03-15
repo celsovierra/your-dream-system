@@ -288,6 +288,7 @@ const ClientesPage = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
+                <TableHead className="hidden md:table-cell">Email</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead className="hidden sm:table-cell">CPF/CNPJ</TableHead>
                 <TableHead>Valor</TableHead>
@@ -300,6 +301,7 @@ const ClientesPage = () => {
               {filtered.map((client) => (
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.name}</TableCell>
+                  <TableCell className="hidden md:table-cell">{client.email || '-'}</TableCell>
                   <TableCell>{client.phone}</TableCell>
                   <TableCell className="hidden sm:table-cell">{client.document}</TableCell>
                   <TableCell>{client.amount ? `R$ ${Number(client.amount).toFixed(2)}` : '-'}</TableCell>
