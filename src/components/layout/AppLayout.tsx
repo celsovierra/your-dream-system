@@ -191,23 +191,6 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           })}
         </nav>
 
-        {/* Dark mode + collapse toggles */}
-        <div className="border-t border-sidebar-border p-2 flex items-center justify-around">
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            title={darkMode ? 'Modo claro' : 'Modo escuro'}
-            className="rounded-md p-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-          >
-            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
-            className="hidden lg:block rounded-md p-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-          >
-            {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </button>
-        </div>
 
         {!sidebarCollapsed && (
           <div className="border-t border-sidebar-border p-4 space-y-3">
