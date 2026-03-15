@@ -119,6 +119,10 @@ const ClientesPage = () => {
                 <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizePhone(e.target.value) })} placeholder="5511999990000" inputMode="numeric" />
               </div>
               <div>
+                <Label>Telefone 2 <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                <Input value={form.phone2} onChange={(e) => setForm({ ...form, phone2: normalizePhone(e.target.value) })} placeholder="5511999990000" inputMode="numeric" />
+              </div>
+              <div>
                 <Label>CPF/CNPJ</Label>
                 <Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} />
               </div>
