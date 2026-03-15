@@ -70,8 +70,10 @@ router.get('/', async (req, res) => {
     const [countResult] = await query(countSql, countParams);
     const rows = await query(sql, params);
 
-    // Remove metadata row from mariadb driver
-    const data = Array.isArray(rows) ? rows.filter(r => r && typeof r === 'object' && 'id' in r) : [];
+    // Remove metadata row from mariadb driver e normaliza datas
+    const data = Array.isArray(rows)
+      ? rows.filter(r => r && typeof r === 'object' && 'id' in r).map(normalizeClientRow)
+      : [];
 
     res.json({
       data,
