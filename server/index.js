@@ -20,6 +20,7 @@ app.use('/api', deployRouter);
 app.use('/api/clients', clientsRouter);
 app.use('/api/templates/messages', templatesRouter);
 app.use('/api/dashboard/stats', dashboardRouter);
+app.use('/api/whatsapp', whatsappRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
