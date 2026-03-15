@@ -188,7 +188,7 @@ const ConfiguracoesPage = () => {
                 <CreditCard className="h-5 w-5 text-primary" />
                 Gateway de Pagamento
               </div>
-              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSections.payment ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'payment' ? 'rotate-180' : ''}`} />
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
