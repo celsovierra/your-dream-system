@@ -56,13 +56,12 @@ const MensagensPage = () => {
     localStorage.setItem('cobranca_send_time_overdue', sendTimeOverdue);
   }, [sendTimeOverdue]);
 
-  const handleSave = (id: number, content: string) => {
-    setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, content } : t)));
-    toast.success('Template salvo!');
-  };
-
   const handleToggle = (id: number) => {
     setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, is_active: !t.is_active } : t)));
+  };
+
+  const handleSaveAll = () => {
+    toast.success('Todas as configurações salvas!');
   };
 
   return (
@@ -135,12 +134,15 @@ const MensagensPage = () => {
                   rows={4}
                 />
               </div>
-              <Button size="sm" onClick={() => handleSave(template.id, template.content)}>
-                <Save className="mr-2 h-3 w-3" /> Salvar
-              </Button>
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={handleSaveAll}>
+          <Save className="mr-2 h-4 w-4" /> Salvar Tudo
+        </Button>
       </div>
     </div>
   );
