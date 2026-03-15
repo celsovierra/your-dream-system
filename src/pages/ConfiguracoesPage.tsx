@@ -168,8 +168,8 @@ const ConfiguracoesPage = () => {
                   <WifiOff className="h-5 w-5 text-destructive" />
                 )}
                 WhatsApp (Evolution API)
-                <Badge variant={whatsapp.status === 'connected' ? 'default' : 'secondary'}>
-                  {whatsapp.status === 'connected' ? 'Conectado' : 'Desconectado'}
+                <Badge variant={whatsapp.status === 'connected' ? 'default' : whatsapp.status === 'connecting' ? 'outline' : 'secondary'}>
+                  {whatsapp.status === 'connected' ? 'Conectado' : whatsapp.status === 'connecting' ? 'Conectando...' : 'Desconectado'}
                 </Badge>
               </div>
               <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'whatsapp' ? 'rotate-180' : ''}`} />
