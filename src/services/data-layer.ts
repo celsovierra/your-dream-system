@@ -1,16 +1,33 @@
-// ===== CAMADA DE DADOS UNIFICADA =====
-// Detecta automaticamente o ambiente:
-// - Lovable (preview/teste): usa Supabase (Lovable Cloud)
-// - VPS (produção): usa API REST + MariaDB
+// ===================================================================
+// CAMADA DE DADOS UNIFICADA — REGRA @@
+// ===================================================================
+// REGRA DE OURO (@@):
+// Todo acesso a dados (leitura/escrita) DEVE passar por este arquivo.
+// NUNCA importe o supabase client diretamente nas páginas/componentes.
+//
+// AMBIENTES ISOLADOS:
+// ┌─────────────────────────┬────────────────────────────────────┐
+// │ Lovable (preview/teste) │ Lovable Cloud (Supabase)           │
+// │ *.lovable.app           │ Banco de teste — dados de teste    │
+// │ *.lovableproject.com    │                                    │
+// ├─────────────────────────┼────────────────────────────────────┤
+// │ VPS / Produção          │ API REST → MariaDB                 │
+// │ Qualquer outro hostname │ Banco de produção — dados reais    │
+// └─────────────────────────┴────────────────────────────────────┘
+//
+// IMPORTANTE: Criar dados no ambiente Lovable NÃO pode afetar a VPS
+// e vice-versa. Se isso acontecer, há um bug neste arquivo.
+//
+// OVERRIDE (opcional no .env da VPS):
+//   VITE_DATA_BACKEND=api   → força uso da API REST (MariaDB)
+//   VITE_DATA_BACKEND=cloud → força uso do Lovable Cloud
+// ===================================================================
 
 import { supabase } from '@/integrations/supabase/client';
 import api from '@/services/api';
 import type { Client, MessageTemplate, DashboardStats } from '@/types/billing';
 
-// Detecta se está rodando no ambiente de teste (Lovable Cloud) ou na VPS
-// Regra de isolamento:
-// - preview/publish do Lovable => Lovable Cloud
-// - localhost/VPS/domínio próprio => API REST (MariaDB)
+// Detecta automaticamente qual backend usar com base no hostname
 const isLovableEnv = () => {
   const forcedBackend = String(import.meta.env.VITE_DATA_BACKEND || '').toLowerCase();
   if (forcedBackend === 'cloud') return true;
