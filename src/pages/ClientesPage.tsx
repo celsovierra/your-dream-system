@@ -31,15 +31,17 @@ const ClientesPage = () => {
       return;
     }
 
+    const parsedData = { ...form, amount: form.amount ? parseFloat(form.amount) : undefined, due_date: form.due_date || undefined };
+
     if (editingClient) {
       setClients((prev) =>
-        prev.map((c) => (c.id === editingClient.id ? { ...c, ...form, updated_at: new Date().toISOString() } : c))
+        prev.map((c) => (c.id === editingClient.id ? { ...c, ...parsedData, updated_at: new Date().toISOString() } : c))
       );
       toast.success('Cliente atualizado!');
     } else {
       const newClient: Client = {
         id: Date.now(),
-        ...form,
+        ...parsedData,
         is_active: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
