@@ -16,7 +16,7 @@ const ClientesPage = () => {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', phone: '55', document: '', amount: '', due_date: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '55', phone2: '55', document: '', amount: '', due_date: '' });
 
   const normalizePhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -41,6 +41,7 @@ const ClientesPage = () => {
     const parsedData = {
       ...form,
       phone: normalizePhone(form.phone),
+      phone2: form.phone2.length > 2 ? normalizePhone(form.phone2) : undefined,
       amount: form.amount ? parseFloat(form.amount) : undefined,
       due_date: form.due_date || undefined,
     };
@@ -63,7 +64,7 @@ const ClientesPage = () => {
     }
     setDialogOpen(false);
     setEditingClient(null);
-    setForm({ name: '', email: '', phone: '55', document: '', amount: '', due_date: '' });
+    setForm({ name: '', email: '', phone: '55', phone2: '55', document: '', amount: '', due_date: '' });
   };
 
   const handleEdit = (client: Client) => {
@@ -72,6 +73,7 @@ const ClientesPage = () => {
       name: client.name,
       email: client.email,
       phone: normalizePhone(client.phone || '55'),
+      phone2: normalizePhone(client.phone2 || '55'),
       document: client.document,
       amount: client.amount?.toString() || '',
       due_date: client.due_date || '',
@@ -96,7 +98,7 @@ const ClientesPage = () => {
             className="pl-9"
           />
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingClient(null); setForm({ name: '', email: '', phone: '55', document: '', amount: '', due_date: '' }); } }}>
+        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingClient(null); setForm({ name: '', email: '', phone: '55', phone2: '55', document: '', amount: '', due_date: '' }); } }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" /> Novo Cliente</Button>
           </DialogTrigger>
@@ -116,6 +118,10 @@ const ClientesPage = () => {
               <div>
                 <Label>Telefone *</Label>
                 <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizePhone(e.target.value) })} placeholder="5511999990000" inputMode="numeric" />
+              </div>
+              <div>
+                <Label>Telefone 2 <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                <Input value={form.phone2} onChange={(e) => setForm({ ...form, phone2: normalizePhone(e.target.value) })} placeholder="5511999990000" inputMode="numeric" />
               </div>
               <div>
                 <Label>CPF/CNPJ</Label>
