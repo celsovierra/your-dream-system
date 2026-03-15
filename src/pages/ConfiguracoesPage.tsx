@@ -221,15 +221,17 @@ const ConfiguracoesPage = () => {
                     },
                   });
                   if (error) throw error;
+                  console.log('Evolution proxy response:', data);
                   const base64 = data?.qrcode;
                   if (base64) {
                     setQrCode(base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`);
                     toast.success('QR Code gerado! Escaneie com seu WhatsApp.');
-                  } else if (data?.state === 'open' || data?.state === 'connected') {
+                  } else if (data?.state === 'connected') {
                     toast.success('Instância já está conectada!');
                     setWhatsapp(prev => ({ ...prev, status: 'connected' }));
                   } else {
-                    toast.warning('QR Code não disponível. Verifique a instância na Evolution API.');
+                    console.log('No QR code in response. Debug:', data?.debug);
+                    toast.warning('QR Code não disponível. A instância pode já estar conectada ou precisa ser criada na Evolution API.');
                   }
                 } catch (err: any) {
                   toast.error('Erro ao gerar QR Code: ' + (err?.message || 'verifique a URL e API Key'));
