@@ -22,7 +22,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast.error('Preencha email e senha');
+      toast.error('Preencha usuário e senha');
       return;
     }
 
@@ -30,18 +30,21 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     try {
       const storedUsers = localStorage.getItem('app_users');
       const users = storedUsers ? JSON.parse(storedUsers) : [
-        { id: '1', email: 'admin@cobranca.com', password: 'admin123', name: 'Administrador' }
+        { id: '1', email: 'admin', password: 'admin123', name: 'Administrador' }
       ];
       if (!storedUsers) localStorage.setItem('app_users', JSON.stringify(users));
 
-      const user = users.find((u: { email: string; password: string }) => u.email === email && u.password === password);
+      const loginValue = email.toLowerCase().trim();
+      const user = users.find((u: { email: string; name: string; password: string }) => 
+        (u.email.toLowerCase() === loginValue || u.name.toLowerCase() === loginValue) && u.password === password
+      );
       if (user) {
         const token = 'token-' + Date.now();
         localStorage.setItem('auth_token', token);
         onLogin(token);
         toast.success('Login realizado com sucesso!');
       } else {
-        toast.error('Email ou senha incorretos');
+        toast.error('Usuário ou senha incorretos');
       }
     } catch {
       toast.error('Erro ao realizar login');
