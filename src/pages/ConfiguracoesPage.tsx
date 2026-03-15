@@ -174,7 +174,7 @@ const ConfiguracoesPage = () => {
               </div>
               <div>
                 <Label>API Key</Label>
-                <Input type="password" value={whatsapp.api_key} onChange={(e) => setWhatsapp({ ...whatsapp, api_key: e.target.value })} />
+                <Input type="password" value={whatsapp.api_key} onChange={(e) => setWhatsapp({ ...whatsapp, api_key: e.target.value })} onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()} className="select-none" />
               </div>
               <div>
                 <Label>Nome da Instância</Label>
