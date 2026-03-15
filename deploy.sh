@@ -100,8 +100,11 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl restart nginx
 systemctl enable nginx
 
-# 7. Criar .env do backend
-echo "► [7/7] Gerando configuração..."
+# 7. Instalar PM2 e configurar backend
+echo "► [7/9] Configurando backend Express..."
+npm install -g pm2
+
+# Gerar .env do backend
 JWT_SECRET=$(openssl rand -hex 32)
 
 cat > /opt/cobranca-pro/.env <<ENV
@@ -112,7 +115,43 @@ DB_PASS=${DB_PASS}
 DB_NAME=${DB_NAME}
 JWT_SECRET=${JWT_SECRET}
 PORT=3001
+DEPLOY_TOKEN=cobranca-deploy-2024
 ENV
+
+# 8. Criar servidor Express se não existir
+echo "► [8/9] Configurando servidor Node.js..."
+if [ ! -f "/opt/cobranca-pro/server/index.js" ]; then
+  mkdir -p /opt/cobranca-pro/server
+  cat > /opt/cobranca-pro/server/index.js <<'SERVERJS'
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Rotas
+app.use('/api', require('./routes/deploy'));
+
+// Health check
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => console.log(`API rodando na porta ${PORT}`));
+SERVERJS
+
+  cd /opt/cobranca-pro
+  npm install express cors dotenv
+fi
+
+# 9. Iniciar backend com PM2
+echo "► [9/9] Iniciando backend..."
+cd /opt/cobranca-pro
+pm2 delete cobranca-api 2>/dev/null || true
+pm2 start server/index.js --name cobranca-api
+pm2 save
+pm2 startup systemd -u root --hp /root 2>/dev/null || true
 
 echo ""
 echo "=========================================="
@@ -120,6 +159,7 @@ echo "✅ DEPLOY CONCLUÍDO COM SUCESSO!"
 echo "=========================================="
 echo ""
 echo "🌐 Frontend: http://${DOMAIN}"
+echo "🔌 API: http://${DOMAIN}/api/health"
 echo ""
 echo "🗄️ BANCO DE DADOS MariaDB:"
 echo "   Host: localhost"
@@ -137,7 +177,9 @@ echo "   Projeto: /opt/cobranca-pro/"
 echo "   Config:  /opt/cobranca-pro/.env"
 echo "   Frontend: /opt/cobranca-pro/dist/"
 echo ""
-echo "📋 PRÓXIMO PASSO:"
-echo "   Criar o backend Express na porta 3001"
-echo "   SSL: apt install certbot python3-certbot-nginx && certbot --nginx -d seu-dominio.com"
+echo "⚡ COMANDO DE ATUALIZAÇÃO (via sistema ou manual):"
+echo "   cd /opt/cobranca-pro && git pull && npm install && npm run build && mysql -u ${DB_USER} -p'${DB_PASS}' ${DB_NAME} < database/schema.sql && pm2 restart cobranca-api && sudo systemctl restart nginx"
+echo ""
+echo "🔒 SSL (opcional):"
+echo "   apt install certbot python3-certbot-nginx && certbot --nginx -d seu-dominio.com"
 echo ""

@@ -16,7 +16,7 @@ router.post('/deploy', (req, res) => {
     return res.status(403).json({ success: false, error: 'Token inválido' });
   }
 
-  const command = `cd /opt/cobranca-pro && git pull && npm install && npm run build && mysql -u cobranca_admin -p'Xk9mL2vR7pQ4nW' cobranca_pro < database/schema.sql && sudo systemctl restart nginx`;
+  const command = `cd /opt/cobranca-pro && git pull && npm install && npm run build && mysql -u cobranca_admin -p'Xk9mL2vR7pQ4nW' cobranca_pro < database/schema.sql && pm2 restart cobranca-api && sudo systemctl restart nginx`;
 
   res.json({ success: true, message: 'Deploy iniciado...' });
 
