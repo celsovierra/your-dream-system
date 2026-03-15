@@ -56,7 +56,7 @@ const ClientesPage = () => {
 
   const handleEdit = (client: Client) => {
     setEditingClient(client);
-    setForm({ name: client.name, email: client.email, phone: client.phone, document: client.document, amount: '', due_date: '' });
+    setForm({ name: client.name, email: client.email, phone: client.phone, document: client.document, amount: client.amount?.toString() || '', due_date: client.due_date || '' });
     setDialogOpen(true);
   };
 
