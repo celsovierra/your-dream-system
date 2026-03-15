@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -19,6 +20,13 @@ const typeLabels: Record<string, string> = {
 
 const MensagensPage = () => {
   const [templates, setTemplates] = useState(mockTemplates);
+  const [reminderDays, setReminderDays] = useState(() => {
+    return Number(localStorage.getItem('cobranca_reminder_days') || '3');
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cobranca_reminder_days', String(reminderDays));
+  }, [reminderDays]);
 
   const handleSave = (id: number, content: string) => {
     setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, content } : t)));
@@ -51,6 +59,19 @@ const MensagensPage = () => {
               <Switch checked={template.is_active} onCheckedChange={() => handleToggle(template.id)} />
             </CardHeader>
             <CardContent className="space-y-3">
+              {template.type === 'reminder' && (
+                <div>
+                  <Label>Cobrar quantos dias antes do vencimento</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={reminderDays}
+                    onChange={(e) => setReminderDays(Math.max(1, Math.min(30, Number(e.target.value) || 1)))}
+                    className="w-32 mt-1"
+                  />
+                </div>
+              )}
               <div>
                 <Label>Conteúdo da mensagem</Label>
                 <Textarea
