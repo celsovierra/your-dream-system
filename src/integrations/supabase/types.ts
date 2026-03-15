@@ -14,7 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          address: string | null
+          amount: number | null
+          city: string | null
+          created_at: string | null
+          document: string | null
+          due_date: string | null
+          email: string | null
+          id: number
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          phone: string
+          phone2: string | null
+          state: string | null
+          updated_at: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          amount?: number | null
+          city?: string | null
+          created_at?: string | null
+          document?: string | null
+          due_date?: string | null
+          email?: string | null
+          id?: number
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          phone: string
+          phone2?: string | null
+          state?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          amount?: number | null
+          city?: string | null
+          created_at?: string | null
+          document?: string | null
+          due_date?: string | null
+          email?: string | null
+          id?: number
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          phone?: string
+          phone2?: string | null
+          state?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
+      message_templates: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: number
+          is_active: boolean | null
+          name: string
+          type: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          name: string
+          type: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          name?: string
+          type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
