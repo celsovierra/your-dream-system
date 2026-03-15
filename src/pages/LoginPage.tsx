@@ -16,7 +16,6 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
