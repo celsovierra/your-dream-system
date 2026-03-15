@@ -26,6 +26,39 @@ const ConfiguracoesPage = () => {
   const [payment, setPayment] = useState({ gateway: 'mercadopago' as 'mercadopago' | 'asaas' | 'pix_manual', access_token: '', asaas_token: '' });
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
+  const [pollingStatus, setPollingStatus] = useState(false);
+
+  // Poll for connection status after QR code is shown
+  useEffect(() => {
+    if (!qrCode || !whatsapp.api_url || !whatsapp.api_key || !whatsapp.instance_name) return;
+    
+    setPollingStatus(true);
+    let active = true;
+    
+    const checkStatus = async () => {
+      try {
+        const { data } = await supabase.functions.invoke('evolution-proxy', {
+          body: {
+            api_url: whatsapp.api_url,
+            api_key: whatsapp.api_key,
+            instance_name: whatsapp.instance_name,
+            action: 'status',
+          },
+        });
+        if (data?.state === 'open' || data?.state === 'connected') {
+          setQrCode(null);
+          setPollingStatus(false);
+          setWhatsapp(prev => ({ ...prev, status: 'connected' }));
+          toast.success('WhatsApp conectado com sucesso!');
+          return;
+        }
+      } catch {}
+      if (active) setTimeout(checkStatus, 3000);
+    };
+    
+    const timeout = setTimeout(checkStatus, 3000);
+    return () => { active = false; clearTimeout(timeout); };
+  }, [qrCode, whatsapp.api_url, whatsapp.api_key, whatsapp.instance_name]);
 
   useEffect(() => {
     const savedGateway = localStorage.getItem('payment_gateway') || 'mercadopago';
@@ -253,7 +286,14 @@ const ConfiguracoesPage = () => {
                 <div className="mt-4 flex flex-col items-center gap-2 p-4 border rounded-lg bg-white">
                   <p className="text-sm font-medium text-foreground">Escaneie o QR Code com seu WhatsApp:</p>
                   <img src={qrCode} alt="QR Code WhatsApp" className="w-64 h-64 object-contain" />
-                  <Button size="sm" variant="ghost" onClick={() => setQrCode(null)}>Fechar</Button>
+                  {pollingStatus && <p className="text-xs text-muted-foreground animate-pulse">Aguardando conexão...</p>}
+                  <Button size="sm" variant="ghost" onClick={() => { setQrCode(null); setPollingStatus(false); }}>Fechar</Button>
+                </div>
+              )}
+              {whatsapp.status === 'connected' && !qrCode && (
+                <div className="mt-4 flex items-center gap-2 p-3 border rounded-lg bg-green-50 text-green-700">
+                  <Wifi className="h-4 w-4" />
+                  <span className="text-sm font-medium">WhatsApp conectado!</span>
                 </div>
               )}
             </CardContent>
