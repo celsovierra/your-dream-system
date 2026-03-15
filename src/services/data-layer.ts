@@ -84,7 +84,7 @@ export async function fetchMessageTemplates(): Promise<MessageTemplate[]> {
       .select('*')
       .order('id');
     if (error) throw error;
-    return data || [];
+    return (data || []) as MessageTemplate[];
   } else {
     const res = await api.getMessageTemplates();
     if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar templates');
