@@ -72,6 +72,7 @@ const MensagensPage = () => {
                   />
                 </div>
               )}
+              <div>
                 <Label>Conteúdo da mensagem</Label>
                 <Textarea
                   value={template.content}
