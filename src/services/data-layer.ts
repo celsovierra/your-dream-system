@@ -219,8 +219,11 @@ export async function invokeEvolutionProxy(payload: EvolutionPayload): Promise<{
       });
       const data = await res.json();
       if (!res.ok) {
-        const debugMessage = data?.debug?.response?.message?.[0] || data?.debug?.error || data?.debug?.message;
-        const errorMessage = [data?.error, debugMessage].filter(Boolean).join(' - ');
+        let debugMessage = data?.debug?.response?.message?.[0] || data?.debug?.error || data?.debug?.message;
+        if (debugMessage && typeof debugMessage === 'object') debugMessage = JSON.stringify(debugMessage);
+        let mainError = data?.error;
+        if (mainError && typeof mainError === 'object') mainError = JSON.stringify(mainError);
+        const errorMessage = [mainError, debugMessage].filter(Boolean).join(' - ');
         return { error: errorMessage || `Erro ${res.status}` };
       }
       return { data };

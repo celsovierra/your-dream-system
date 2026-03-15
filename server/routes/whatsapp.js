@@ -104,7 +104,8 @@ router.post('/', async (req, res) => {
         return res.json({ success: true, data: result.data });
       }
 
-      const providerMessage = result?.data?.response?.message?.[0] || result?.data?.error || result?.data?.message;
+      let providerMessage = result?.data?.response?.message?.[0] || result?.data?.error || result?.data?.message;
+      if (providerMessage && typeof providerMessage === 'object') providerMessage = JSON.stringify(providerMessage);
       return res.status(500).json({ error: providerMessage ? `Erro ao enviar mensagem: ${providerMessage}` : 'Erro ao enviar mensagem', debug: result.data });
     }
 
