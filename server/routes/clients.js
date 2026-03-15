@@ -146,7 +146,7 @@ router.put('/:id', async (req, res) => {
     await query(`UPDATE clients SET ${fields.join(', ')} WHERE id = ?`, values);
 
     const updated = await query('SELECT * FROM clients WHERE id = ?', [req.params.id]);
-    res.json(updated[0]);
+    res.json(normalizeClientRow(updated[0]));
   } catch (err) {
     console.error('PUT /clients error:', err);
     res.status(500).json({ message: 'Erro ao atualizar cliente' });
