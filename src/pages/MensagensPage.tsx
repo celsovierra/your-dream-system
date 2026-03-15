@@ -23,10 +23,17 @@ const MensagensPage = () => {
   const [reminderDays, setReminderDays] = useState(() => {
     return Number(localStorage.getItem('cobranca_reminder_days') || '3');
   });
+  const [sendTime, setSendTime] = useState(() => {
+    return localStorage.getItem('cobranca_send_time') || '08:00';
+  });
 
   useEffect(() => {
     localStorage.setItem('cobranca_reminder_days', String(reminderDays));
   }, [reminderDays]);
+
+  useEffect(() => {
+    localStorage.setItem('cobranca_send_time', sendTime);
+  }, [sendTime]);
 
   const handleSave = (id: number, content: string) => {
     setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, content } : t)));
