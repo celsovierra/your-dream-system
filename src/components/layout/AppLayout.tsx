@@ -114,7 +114,17 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           })}
         </nav>
 
-        <div className="border-t border-sidebar-border p-4">
+        <div className="border-t border-sidebar-border p-4 space-y-3">
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full justify-start gap-2 text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent"
+            onClick={handleDeploy}
+            disabled={deploying}
+          >
+            <RefreshCw className={cn("h-4 w-4", deploying && "animate-spin")} />
+            {deploying ? 'Atualizando...' : 'Atualizar VPS'}
+          </Button>
           <p className="text-xs text-sidebar-foreground/60">
             Preparado para VPS + MariaDB
           </p>
