@@ -9,7 +9,8 @@ import { Wifi, WifiOff, CreditCard, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ConfiguracoesPage = () => {
-  const [whatsapp, setWhatsapp] = useState<{ api_url: string; api_key: string; instance_name: string; status: 'connected' | 'disconnected' | 'connecting' }>({ api_url: '', api_key: '', instance_name: '', status: 'disconnected' });
+  const autoInstanceName = window.location.hostname.replace(/\./g, '_') + '_cobrancapro';
+  const [whatsapp, setWhatsapp] = useState<{ api_url: string; api_key: string; instance_name: string; status: 'connected' | 'disconnected' | 'connecting' }>({ api_url: '', api_key: '', instance_name: autoInstanceName, status: 'disconnected' });
   const [payment, setPayment] = useState({ gateway: 'mercadopago' as const, access_token: '' });
 
   return (
@@ -41,7 +42,7 @@ const ConfiguracoesPage = () => {
           </div>
           <div>
             <Label>Nome da Instância</Label>
-            <Input value={whatsapp.instance_name} onChange={(e) => setWhatsapp({ ...whatsapp, instance_name: e.target.value })} />
+            <Input value={whatsapp.instance_name} readOnly className="bg-muted cursor-not-allowed" />
           </div>
           <Button size="sm" onClick={() => toast.success('Configuração WhatsApp salva!')}>
             <Save className="mr-2 h-3 w-3" /> Salvar
