@@ -214,10 +214,8 @@ const ClientesPage = () => {
           .replace('{valor}', `R$ ${totalAmount.toFixed(2)}`);
         try {
           toast.loading('Enviando recibo...', { id: `receipt-${baixaClient.id}` });
-          const { error } = await supabase.functions.invoke('evolution-proxy', {
-            body: { action: 'send-text', to: baixaClient.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name },
-          });
-          if (error) throw error;
+          const { error } = await invokeEvolutionProxy({ action: 'send-text', to: baixaClient.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name });
+          if (error) throw new Error(error);
           toast.success('Recibo enviado via WhatsApp!', { id: `receipt-${baixaClient.id}` });
         } catch { toast.error('Erro ao enviar recibo', { id: `receipt-${baixaClient.id}` }); }
       }
