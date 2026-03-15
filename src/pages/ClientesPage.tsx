@@ -49,7 +49,7 @@ const ClientesPage = () => {
     }
     setDialogOpen(false);
     setEditingClient(null);
-    setForm({ name: '', email: '', phone: '', document: '' });
+    setForm({ name: '', email: '', phone: '', document: '', amount: '', due_date: '' });
   };
 
   const handleEdit = (client: Client) => {
