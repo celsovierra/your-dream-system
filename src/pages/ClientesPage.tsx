@@ -100,6 +100,14 @@ const ClientesPage = () => {
                 <Label>CPF/CNPJ</Label>
                 <Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} />
               </div>
+              <div>
+                <Label>Valor (R$) *</Label>
+                <Input type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="150.00" />
+              </div>
+              <div>
+                <Label>Data de Vencimento *</Label>
+                <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+              </div>
               <Button onClick={handleSave} className="w-full">Salvar</Button>
             </div>
           </DialogContent>
