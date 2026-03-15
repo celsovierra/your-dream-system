@@ -13,8 +13,10 @@ import {
   Menu,
   X,
   Receipt,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface LayoutProps {
   children: React.ReactNode;
