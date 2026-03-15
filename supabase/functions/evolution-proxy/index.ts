@@ -26,7 +26,8 @@ serve(async (req) => {
   }
 
   try {
-    const { api_url, api_key, instance_name, action } = await req.json();
+    const body = await req.json();
+    const { api_url, api_key, instance_name, action, to, message } = body;
 
     if (!api_url || !api_key || !instance_name) {
       return new Response(JSON.stringify({ error: "Parâmetros obrigatórios: api_url, api_key, instance_name" }), {
@@ -148,6 +149,31 @@ serve(async (req) => {
       }
 
       return new Response(JSON.stringify({ error: "Não foi possível verificar status" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "send-text") {
+      if (!to || !message) {
+        return new Response(JSON.stringify({ error: "Parâmetros obrigatórios: to, message" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const sendUrl = `${baseUrl}/message/sendText/${instance_name}`;
+      const sendBody = JSON.stringify({ number: to, text: message });
+
+      const result = await tryFetch(sendUrl, { method: "POST", headers, body: sendBody });
+      
+      if (result.status === 200 || result.status === 201) {
+        return new Response(JSON.stringify({ success: true, data: result.data }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ error: "Erro ao enviar mensagem", debug: result.data }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
