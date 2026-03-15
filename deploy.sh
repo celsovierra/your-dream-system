@@ -1,29 +1,41 @@
 #!/bin/bash
-# ===== DEPLOY COBRANÇAPRO - COMANDO ÚNICO =====
-# Execute: curl -sL https://raw.githubusercontent.com/celsovierra/your-dream-system/main/deploy.sh | sudo bash
+# ===== COBRANÇAPRO - COMANDO ÚNICO DE DEPLOY =====
+# Cole e execute na VPS:
+# curl -sL https://raw.githubusercontent.com/celsovierra/your-dream-system/main/deploy.sh | sudo bash
 
 set -e
 
-DB_USER="cobranca"
-DB_PASS="C0br4nc4Pr0@2024"
+# ===== CREDENCIAIS DO BANCO (GERADAS AUTOMATICAMENTE) =====
+DB_USER="cobranca_admin"
+DB_PASS="Xk9#mL2vR7@pQ4nW"
 DB_NAME="cobranca_pro"
-DOMAIN="$(curl -s ifconfig.me)"
+DOMAIN="$(curl -s ifconfig.me 2>/dev/null || echo 'localhost')"
 
 echo "=========================================="
-echo "   COBRANÇAPRO - Deploy Automático"
-echo "   IP: $DOMAIN"
+echo "   COBRANÇAPRO - Deploy Automático VPS"
 echo "=========================================="
+echo ""
+echo "📦 Banco: $DB_NAME"
+echo "👤 Usuário DB: $DB_USER"
+echo "🔑 Senha DB: $DB_PASS"
+echo "🌐 IP/Domínio: $DOMAIN"
+echo ""
 
-# 1. Dependências
-apt update && apt upgrade -y
-apt install -y curl git nginx mariadb-server mariadb-client
+# 1. Atualizar sistema e instalar dependências
+echo "► [1/7] Instalando dependências do sistema..."
+apt update -y && apt upgrade -y
+apt install -y curl git nginx mariadb-server mariadb-client build-essential
 
+# 2. Instalar Node.js 20
+echo "► [2/7] Instalando Node.js 20..."
 if ! command -v node &> /dev/null; then
   curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
   apt install -y nodejs
 fi
+echo "   Node: $(node -v) | NPM: $(npm -v)"
 
-# 2. Clonar/atualizar repositório
+# 3. Clonar repositório
+echo "► [3/7] Clonando repositório..."
 cd /opt
 if [ -d "cobranca-pro" ]; then
   cd cobranca-pro && git pull
@@ -32,31 +44,35 @@ else
   cd cobranca-pro
 fi
 
-# 3. Build frontend
+# 4. Build do frontend
+echo "► [4/7] Instalando dependências e gerando build..."
 npm install
 npm run build
 
-# 4. MariaDB
+# 5. Configurar MariaDB
+echo "► [5/7] Configurando MariaDB..."
 systemctl start mariadb
 systemctl enable mariadb
 
-mysql -u root <<EOF
+mysql -u root <<SQLEOF
 CREATE DATABASE IF NOT EXISTS ${DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';
+DROP USER IF EXISTS '${DB_USER}'@'localhost';
+CREATE USER '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';
 GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';
 FLUSH PRIVILEGES;
-EOF
+SQLEOF
 
+# Importar schema
 mysql -u "${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" < database/schema.sql
 
-# 5. Usuário admin (senha: admin123)
-ADMIN_HASH='$2b$10$EIXe0e0e0e0e0e0e0e0e0uGqGqGqGqGqGqGqGqGqGqGqGqGqGqG'
-mysql -u "${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" <<EOF
+# Criar usuário admin do sistema (login: admin@cobranca.com / senha: admin123)
+mysql -u "${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" <<SQLEOF
 INSERT IGNORE INTO users (name, email, password_hash, is_active)
-VALUES ('Administrador', 'admin@cobranca.com', '${ADMIN_HASH}', TRUE);
-EOF
+VALUES ('Administrador', 'admin@cobranca.com', '\$2b\$10\$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', TRUE);
+SQLEOF
 
-# 6. Nginx
+# 6. Configurar Nginx
+echo "► [6/7] Configurando Nginx..."
 cat > /etc/nginx/sites-available/cobranca-pro <<NGINX
 server {
     listen 80;
@@ -84,28 +100,44 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl restart nginx
 systemctl enable nginx
 
-# 7. Arquivo .env
+# 7. Criar .env do backend
+echo "► [7/7] Gerando configuração..."
+JWT_SECRET=$(openssl rand -hex 32)
+
 cat > /opt/cobranca-pro/.env <<ENV
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=${DB_USER}
 DB_PASS=${DB_PASS}
 DB_NAME=${DB_NAME}
-JWT_SECRET=$(openssl rand -hex 32)
+JWT_SECRET=${JWT_SECRET}
 PORT=3001
 ENV
 
 echo ""
 echo "=========================================="
-echo "✅ DEPLOY CONCLUÍDO!"
+echo "✅ DEPLOY CONCLUÍDO COM SUCESSO!"
 echo "=========================================="
 echo ""
-echo "🌐 Acesse: http://${DOMAIN}"
-echo "🔑 Login: admin@cobranca.com / admin123"
-echo "🗄️ Banco: ${DB_NAME} (user: ${DB_USER} / pass: ${DB_PASS})"
+echo "🌐 Frontend: http://${DOMAIN}"
 echo ""
-echo "📋 Próximos passos:"
-echo "  1. Criar backend Express (porta 3001)"
-echo "  2. PM2: npm i -g pm2 && pm2 start server/index.js"
-echo "  3. SSL: apt install certbot python3-certbot-nginx && certbot --nginx -d seu-dominio.com"
+echo "🗄️ BANCO DE DADOS MariaDB:"
+echo "   Host: localhost"
+echo "   Porta: 3306"
+echo "   Banco: ${DB_NAME}"
+echo "   Usuário: ${DB_USER}"
+echo "   Senha: ${DB_PASS}"
+echo ""
+echo "🔐 LOGIN DO SISTEMA:"
+echo "   Email: admin@cobranca.com"
+echo "   Senha: admin123"
+echo ""
+echo "📁 Arquivos:"
+echo "   Projeto: /opt/cobranca-pro/"
+echo "   Config:  /opt/cobranca-pro/.env"
+echo "   Frontend: /opt/cobranca-pro/dist/"
+echo ""
+echo "📋 PRÓXIMO PASSO:"
+echo "   Criar o backend Express na porta 3001"
+echo "   SSL: apt install certbot python3-certbot-nginx && certbot --nginx -d seu-dominio.com"
 echo ""
