@@ -58,6 +58,9 @@ const FilaPage = () => {
           </Select>
         </div>
         <div className="flex gap-2">
+          <Button variant="destructive" onClick={() => { setQueue([]); toast.success('Fila limpa!'); }}>
+            <Trash2 className="mr-2 h-4 w-4" /> Limpar Fila
+          </Button>
           <Button variant="outline" onClick={handlePopulate}>
             <RefreshCw className="mr-2 h-4 w-4" /> Popular Fila
           </Button>
