@@ -129,6 +129,42 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
               </span>
             )}
           </div>
+          {!sidebarCollapsed && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                title={darkMode ? 'Modo claro' : 'Modo escuro'}
+                className="rounded p-1 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              >
+                {darkMode ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+              </button>
+              <button
+                onClick={() => setSidebarCollapsed(true)}
+                title="Recolher menu"
+                className="hidden lg:block rounded p-1 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              >
+                <PanelLeftClose className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+          {sidebarCollapsed && (
+            <div className="absolute top-1 right-1 flex flex-col gap-1">
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                title={darkMode ? 'Modo claro' : 'Modo escuro'}
+                className="rounded p-1 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              >
+                {darkMode ? <Sun className="h-3 w-3" /> : <Moon className="h-3 w-3" />}
+              </button>
+              <button
+                onClick={() => setSidebarCollapsed(false)}
+                title="Expandir menu"
+                className="hidden lg:block rounded p-1 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              >
+                <PanelLeft className="h-3 w-3" />
+              </button>
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-2">
@@ -155,23 +191,6 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           })}
         </nav>
 
-        {/* Dark mode + collapse toggles */}
-        <div className="border-t border-sidebar-border p-2 flex items-center justify-around">
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            title={darkMode ? 'Modo claro' : 'Modo escuro'}
-            className="rounded-md p-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-          >
-            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
-            className="hidden lg:block rounded-md p-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-          >
-            {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </button>
-        </div>
 
         {!sidebarCollapsed && (
           <div className="border-t border-sidebar-border p-4 space-y-3">
