@@ -207,6 +207,48 @@ const ConfiguracoesPage = () => {
               }}>
                 <Save className="mr-2 h-3 w-3" /> Salvar
               </Button>
+              <Button size="sm" variant="outline" disabled={qrLoading || !whatsapp.api_url || !whatsapp.api_key} onClick={async () => {
+                setQrLoading(true);
+                setQrCode(null);
+                try {
+                  const baseUrl = whatsapp.api_url.replace(/\/+$/, '');
+                  // Tenta criar instância (se já existe, a API retorna a existente)
+                  await fetch(`${baseUrl}/instance/create`, {
+                    method: 'POST',
+                    headers: { 'apikey': whatsapp.api_key, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ instanceName: whatsapp.instance_name, qrcode: true }),
+                  }).catch(() => {});
+                  // Buscar QR Code
+                  const res = await fetch(`${baseUrl}/instance/connect/${whatsapp.instance_name}`, {
+                    headers: { 'apikey': whatsapp.api_key },
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    const base64 = data?.base64 || data?.qrcode?.base64 || data?.qr || null;
+                    if (base64) {
+                      setQrCode(base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`);
+                      toast.success('QR Code gerado! Escaneie com seu WhatsApp.');
+                    } else {
+                      toast.warning('Instância já conectada ou QR Code não disponível.');
+                    }
+                  } else {
+                    toast.error('Erro ao gerar QR Code (HTTP ' + res.status + ')');
+                  }
+                } catch (err) {
+                  toast.error('Não foi possível conectar à Evolution API. Verifique a URL e se o CORS está habilitado.');
+                } finally {
+                  setQrLoading(false);
+                }
+              }}>
+                <QrCode className="mr-2 h-3 w-3" /> {qrLoading ? 'Gerando...' : 'Gerar QR Code'}
+              </Button>
+              {qrCode && (
+                <div className="mt-4 flex flex-col items-center gap-2 p-4 border rounded-lg bg-white">
+                  <p className="text-sm font-medium text-foreground">Escaneie o QR Code com seu WhatsApp:</p>
+                  <img src={qrCode} alt="QR Code WhatsApp" className="w-64 h-64 object-contain" />
+                  <Button size="sm" variant="ghost" onClick={() => setQrCode(null)}>Fechar</Button>
+                </div>
+              )}
             </CardContent>
           </CollapsibleContent>
         </Card>
