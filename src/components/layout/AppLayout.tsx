@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 
 interface LayoutProps {
   children: React.ReactNode;
+  onLogout?: () => void;
 }
 
 const navItems = [
