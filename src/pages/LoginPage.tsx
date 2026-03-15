@@ -219,7 +219,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Email <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                <Input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="seu@email.com" className="h-11" />
+                <Input type="text" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="seu@email.com" className="h-11" />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Senha</Label>
