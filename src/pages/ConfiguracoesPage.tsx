@@ -5,12 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Wifi, WifiOff, CreditCard, Save } from 'lucide-react';
+import { Wifi, WifiOff, CreditCard, Save, Server } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ConfiguracoesPage = () => {
   const [whatsapp, setWhatsapp] = useState<{ api_url: string; api_key: string; instance_name: string; status: 'connected' | 'disconnected' | 'connecting' }>({ api_url: '', api_key: '', instance_name: '', status: 'disconnected' });
   const [payment, setPayment] = useState({ gateway: 'mercadopago' as const, access_token: '' });
+  const [apiUrl, setApiUrl] = useState(localStorage.getItem('api_base_url') || '');
 
   return (
     <div className="space-y-6 max-w-2xl">
