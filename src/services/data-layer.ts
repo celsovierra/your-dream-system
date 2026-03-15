@@ -399,10 +399,9 @@ export async function fetchBills(): Promise<BillPayable[]> {
     if (error) throw error;
     return (data as unknown as BillPayable[]) || [];
   } else {
-    const res = await fetch('/api/bills');
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Erro ao buscar contas');
-    return json.data || [];
+    const res = await api.getBills();
+    if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar contas');
+    return res.data;
   }
 }
 
@@ -416,14 +415,9 @@ export async function createBill(bill: Partial<BillPayable>): Promise<BillPayabl
     if (error) throw error;
     return data as unknown as BillPayable;
   } else {
-    const res = await fetch('/api/bills', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bill),
-    });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Erro ao criar conta');
-    return json.data || null;
+    const res = await api.createBill(bill as any);
+    if (!res.success) throw new Error(res.error || 'Erro ao criar conta');
+    return (res.data as BillPayable) || null;
   }
 }
 
@@ -432,11 +426,8 @@ export async function createBillChildren(children: Partial<BillPayable>[]): Prom
     const { error } = await supabase.from('bills_payable').insert(children as any);
     if (error) throw error;
   } else {
-    await fetch('/api/bills/batch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bills: children }),
-    });
+    const res = await api.createBillsBatch(children as any);
+    if (!res.success) throw new Error(res.error || 'Erro ao criar parcelas');
   }
 }
 
@@ -448,13 +439,8 @@ export async function updateBill(id: number, bill: Partial<BillPayable>): Promis
       .eq('id', id);
     if (error) throw error;
   } else {
-    const res = await fetch(`/api/bills/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bill),
-    });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Erro ao atualizar conta');
+    const res = await api.updateBill(id, bill as any);
+    if (!res.success) throw new Error(res.error || 'Erro ao atualizar conta');
   }
 }
 
@@ -463,9 +449,8 @@ export async function deleteBill(id: number): Promise<void> {
     const { error } = await supabase.from('bills_payable').delete().eq('id', id);
     if (error) throw error;
   } else {
-    const res = await fetch(`/api/bills/${id}`, { method: 'DELETE' });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Erro ao excluir conta');
+    const res = await api.deleteBill(id);
+    if (!res.success) throw new Error(res.error || 'Erro ao excluir conta');
   }
 }
 
@@ -477,8 +462,7 @@ export async function markBillPaid(id: number): Promise<void> {
       .eq('id', id);
     if (error) throw error;
   } else {
-    const res = await fetch(`/api/bills/${id}/pay`, { method: 'PATCH' });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Erro ao marcar como paga');
+    const res = await api.markBillPaid(id);
+    if (!res.success) throw new Error(res.error || 'Erro ao marcar como paga');
   }
 }
