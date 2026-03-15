@@ -134,9 +134,6 @@ const MensagensPage = () => {
                   rows={4}
                 />
               </div>
-              <Button size="sm" onClick={() => handleSave(template.id, template.content)}>
-                <Save className="mr-2 h-3 w-3" /> Salvar
-              </Button>
             </CardContent>
           </Card>
         ))}
