@@ -56,7 +56,7 @@ export async function fetchClients(): Promise<Client[]> {
     if (error) throw error;
     return (data || []).map((c: any) => ({
       ...c,
-      due_date: c.due_date || undefined,
+      due_date: normalizeDateOnly(c.due_date),
       amount: c.amount ? Number(c.amount) : undefined,
     }));
   } else {
