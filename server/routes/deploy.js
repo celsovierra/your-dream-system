@@ -5,6 +5,23 @@ const router = express.Router();
 
 const DEPLOY_TOKEN = process.env.DEPLOY_TOKEN || 'cobranca-deploy-2024';
 
+// Verifica se há atualizações disponíveis (compara local vs remoto)
+router.get('/check-update', (_req, res) => {
+  exec('cd /opt/cobranca-pro && git fetch origin main 2>/dev/null && git rev-parse HEAD && git rev-parse origin/main', (error, stdout) => {
+    if (error) {
+      return res.json({ success: false, hasUpdate: false, error: error.message });
+    }
+
+    const [local, remote] = stdout.trim().split('\n');
+    return res.json({
+      success: true,
+      hasUpdate: local !== remote,
+      localCommit: local?.substring(0, 7),
+      remoteCommit: remote?.substring(0, 7),
+    });
+  });
+});
+
 router.post('/deploy', (req, res) => {
   const token = req.headers['x-deploy-token'];
 

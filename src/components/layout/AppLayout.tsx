@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,6 +38,28 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [deploying, setDeploying] = useState(false);
+  const [hasUpdate, setHasUpdate] = useState(false);
+
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        const savedUrl = localStorage.getItem('api_base_url');
+        const autoUrl = `${window.location.origin}/api`;
+        const apiUrl = savedUrl || autoUrl;
+        const res = await fetch(`${apiUrl}/check-update`);
+        const data = await res.json();
+        if (data.success) {
+          setHasUpdate(data.hasUpdate);
+        }
+      } catch {
+        // silently fail
+      }
+    };
+
+    checkForUpdates();
+    const interval = setInterval(checkForUpdates, 60000); // verifica a cada 1 minuto
+    return () => clearInterval(interval);
+  }, []);
 
   const handleDeploy = async () => {
     // Auto-detecta a URL da API baseado no endereço atual do navegador
@@ -114,23 +136,31 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         </nav>
 
         <div className="border-t border-sidebar-border p-4 space-y-3">
-          <button
-            onClick={handleDeploy}
-            disabled={deploying}
-            className={cn(
-              "w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold transition-all duration-200",
-              "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25",
-              "hover:from-emerald-600 hover:to-teal-600 hover:shadow-emerald-500/40 hover:scale-[1.02]",
-              "active:scale-[0.98]",
-              "disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+          <div className="relative">
+            {hasUpdate && (
+              <span className="absolute -top-1 -right-1 flex h-3 w-3 z-10">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
             )}
-          >
-            <RefreshCw className={cn("h-4 w-4 shrink-0", deploying && "animate-spin")} />
-            <span>{deploying ? 'Atualizando...' : 'Atualizar VPS'}</span>
-            <span className="ml-auto text-[10px] font-normal opacity-75">git pull</span>
-          </button>
+            <button
+              onClick={() => { handleDeploy(); setHasUpdate(false); }}
+              disabled={deploying}
+              className={cn(
+                "w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold transition-all duration-200",
+                hasUpdate
+                  ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-red-600"
+                  : "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25 hover:from-emerald-600 hover:to-teal-600",
+                "hover:scale-[1.02] active:scale-[0.98]",
+                "disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+              )}
+            >
+              <RefreshCw className={cn("h-4 w-4 shrink-0", deploying && "animate-spin")} />
+              <span>{deploying ? 'Atualizando...' : hasUpdate ? 'Atualização disponível!' : 'Atualizar VPS'}</span>
+            </button>
+          </div>
           <p className="text-[11px] text-sidebar-foreground/50 text-center">
-            VPS + MariaDB
+            {hasUpdate ? '🔴 Nova versão disponível' : '✅ VPS atualizada'}
           </p>
         </div>
       </aside>
