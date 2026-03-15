@@ -200,7 +200,13 @@ const ClientesPage = () => {
                       {client.is_active ? 'Ativo' : 'Inativo'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-1">
+                    <Button variant="ghost" size="icon" title="Enviar cobrança WhatsApp" onClick={() => handleSendBilling(client)}>
+                      <MessageCircle className="h-4 w-4 text-green-600" />
+                    </Button>
+                    <Button variant="ghost" size="icon" title="Baixa manual" onClick={() => handleManualPayment(client)}>
+                      <CheckCircle className="h-4 w-4 text-blue-600" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(client)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
