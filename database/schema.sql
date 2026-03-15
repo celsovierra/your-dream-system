@@ -42,6 +42,45 @@ ALTER TABLE clients ADD COLUMN IF NOT EXISTS phone2 VARCHAR(20) AFTER phone;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS amount DECIMAL(10,2) AFTER document;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS due_date DATE AFTER amount;
 
+-- Contas a pagar (Financeiro)
+CREATE TABLE IF NOT EXISTS bills_payable (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  description VARCHAR(255) NOT NULL,
+  supplier VARCHAR(255),
+  category VARCHAR(100),
+  payment_type ENUM('single','installment') NOT NULL DEFAULT 'single',
+  total_amount DECIMAL(10,2) NOT NULL,
+  installments_count INT DEFAULT 1,
+  current_installment INT DEFAULT 1,
+  parent_bill_id INT NULL,
+  amount DECIMAL(10,2) NOT NULL,
+  due_date DATE NOT NULL,
+  paid_date DATE NULL,
+  status ENUM('pending','paid','overdue','cancelled') NOT NULL DEFAULT 'pending',
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_bills_due_date (due_date),
+  INDEX idx_bills_status (status),
+  INDEX idx_bills_parent (parent_bill_id),
+  CONSTRAINT fk_bills_parent FOREIGN KEY (parent_bill_id) REFERENCES bills_payable(id) ON DELETE CASCADE
+);
+
+-- Migração idempotente para instalações antigas
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS supplier VARCHAR(255) AFTER description;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS category VARCHAR(100) AFTER supplier;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS payment_type ENUM('single','installment') NOT NULL DEFAULT 'single' AFTER category;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS total_amount DECIMAL(10,2) NOT NULL AFTER payment_type;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS installments_count INT DEFAULT 1 AFTER total_amount;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS current_installment INT DEFAULT 1 AFTER installments_count;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS parent_bill_id INT NULL AFTER current_installment;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS amount DECIMAL(10,2) NOT NULL AFTER parent_bill_id;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS due_date DATE NOT NULL AFTER amount;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS paid_date DATE NULL AFTER due_date;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS status ENUM('pending','paid','overdue','cancelled') NOT NULL DEFAULT 'pending' AFTER paid_date;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS notes TEXT AFTER status;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at;
+
 -- Configuração de cobrança por cliente
 CREATE TABLE IF NOT EXISTS client_billing_config (
   id INT AUTO_INCREMENT PRIMARY KEY,

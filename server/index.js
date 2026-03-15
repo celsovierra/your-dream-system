@@ -8,6 +8,7 @@ import templatesRouter from './routes/templates.js';
 import dashboardRouter from './routes/dashboard.js';
 import queueRouter from './routes/queue.js';
 import settingsRouter from './routes/settings.js';
+import billsRouter from './routes/bills.js';
 import { startScheduler } from './scheduler.js';
 
 const envPath = new URL('../.env', import.meta.url);
@@ -26,6 +27,7 @@ app.use('/api/dashboard/stats', dashboardRouter);
 app.use('/api/whatsapp', whatsappRouter);
 app.use('/api/queue', queueRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/bills', billsRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
