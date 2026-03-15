@@ -13,8 +13,10 @@ import {
   Menu,
   X,
   Receipt,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -35,6 +37,36 @@ const navItems = [
 const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [deploying, setDeploying] = useState(false);
+
+  const handleDeploy = async () => {
+    const apiUrl = localStorage.getItem('api_base_url');
+    if (!apiUrl) {
+      toast.error('Configure a URL da API nas Configurações primeiro');
+      return;
+    }
+
+    setDeploying(true);
+    try {
+      const res = await fetch(`${apiUrl}/deploy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-deploy-token': 'cobranca-deploy-2024',
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Deploy iniciado! O sistema será atualizado em instantes.');
+      } else {
+        toast.error(data.error || 'Erro ao iniciar deploy');
+      }
+    } catch {
+      toast.error('Não foi possível conectar ao servidor');
+    } finally {
+      setDeploying(false);
+    }
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -82,7 +114,17 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           })}
         </nav>
 
-        <div className="border-t border-sidebar-border p-4">
+        <div className="border-t border-sidebar-border p-4 space-y-3">
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full justify-start gap-2 text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent"
+            onClick={handleDeploy}
+            disabled={deploying}
+          >
+            <RefreshCw className={cn("h-4 w-4", deploying && "animate-spin")} />
+            {deploying ? 'Atualizando...' : 'Atualizar VPS'}
+          </Button>
           <p className="text-xs text-sidebar-foreground/60">
             Preparado para VPS + MariaDB
           </p>
