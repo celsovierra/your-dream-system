@@ -90,8 +90,6 @@ serve(async (req) => {
       // Try connect endpoints to get QR code
       const connectEndpoints = [
         `${baseUrl}/instance/connect/${instance_name}`,
-        `${baseUrl}/api/v1/instance/connect/${instance_name}`,
-        `${baseUrl}/api/v2/instance/connect/${instance_name}`,
       ];
 
       for (const url of connectEndpoints) {
