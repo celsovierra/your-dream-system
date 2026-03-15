@@ -40,11 +40,10 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [deploying, setDeploying] = useState(false);
 
   const handleDeploy = async () => {
-    const apiUrl = localStorage.getItem('api_base_url');
-    if (!apiUrl) {
-      toast.error('Configure a URL da API nas Configurações primeiro');
-      return;
-    }
+    // Auto-detecta a URL da API baseado no endereço atual do navegador
+    const savedUrl = localStorage.getItem('api_base_url');
+    const autoUrl = `${window.location.origin}/api`;
+    const apiUrl = savedUrl || autoUrl;
 
     setDeploying(true);
     try {
