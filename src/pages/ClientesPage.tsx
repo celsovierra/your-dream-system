@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,14 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { mockClients, mockTemplates } from '@/services/mock-data';
-import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle, Loader2 } from 'lucide-react';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 const ClientesPage = () => {
-  const [clients, setClients] = useState<Client[]>(mockClients);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
@@ -24,6 +24,29 @@ const ClientesPage = () => {
   const [baixaDialogOpen, setBaixaDialogOpen] = useState(false);
   const [baixaClient, setBaixaClient] = useState<Client | null>(null);
   const [baixaMonths, setBaixaMonths] = useState('1');
+
+  const fetchClients = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .order('name');
+    if (error) {
+      toast.error('Erro ao carregar clientes');
+      console.error(error);
+    } else {
+      setClients((data || []).map((c: any) => ({
+        ...c,
+        due_date: c.due_date || undefined,
+        amount: c.amount ? Number(c.amount) : undefined,
+      })));
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
 
   const normalizePhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -35,43 +58,45 @@ const ClientesPage = () => {
   const filtered = clients.filter(
     (c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.document.includes(search) ||
+      c.document?.includes(search) ||
       c.phone.includes(search)
   );
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name || form.phone.length <= 2) {
       toast.error('Nome e telefone são obrigatórios');
       return;
     }
 
     const parsedData = {
-      ...form,
+      name: form.name,
+      email: form.email || null,
       phone: normalizePhone(form.phone),
-      phone2: form.phone2.length > 2 ? normalizePhone(form.phone2) : undefined,
-      amount: form.amount ? parseFloat(form.amount) : undefined,
-      due_date: form.due_date || undefined,
+      phone2: form.phone2.length > 2 ? normalizePhone(form.phone2) : null,
+      document: form.document || null,
+      amount: form.amount ? parseFloat(form.amount) : null,
+      due_date: form.due_date || null,
     };
 
     if (editingClient) {
-      setClients((prev) =>
-        prev.map((c) => (c.id === editingClient.id ? { ...c, ...parsedData, updated_at: new Date().toISOString() } : c))
-      );
+      const { error } = await supabase
+        .from('clients')
+        .update({ ...parsedData, updated_at: new Date().toISOString() })
+        .eq('id', editingClient.id);
+      if (error) { toast.error('Erro ao atualizar'); return; }
       toast.success('Cliente atualizado!');
     } else {
-      const newClient: Client = {
-        id: Date.now(),
-        ...parsedData,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      setClients((prev) => [...prev, newClient]);
+      const { error } = await supabase
+        .from('clients')
+        .insert(parsedData);
+      if (error) { toast.error('Erro ao criar cliente'); return; }
       toast.success('Cliente adicionado!');
     }
+
     setDialogOpen(false);
     setEditingClient(null);
     setForm({ name: '', email: '', phone: '55', phone2: '55', document: '', amount: '', due_date: '' });
+    fetchClients();
   };
 
   const handleEdit = (client: Client) => {
@@ -88,9 +113,11 @@ const ClientesPage = () => {
     setDialogOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    setClients((prev) => prev.filter((c) => c.id !== id));
+  const handleDelete = async (id: number) => {
+    const { error } = await supabase.from('clients').delete().eq('id', id);
+    if (error) { toast.error('Erro ao remover'); return; }
     toast.success('Cliente removido');
+    fetchClients();
   };
 
   const getWhatsAppConfig = () => {
@@ -116,7 +143,7 @@ const ClientesPage = () => {
     try {
       toast.loading('Enviando cobrança...', { id: `billing-${client.id}` });
       const message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${client.due_date ? ` com vencimento em ${new Date(client.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}. Qualquer dúvida estamos à disposição!`;
-      const { data, error } = await supabase.functions.invoke('evolution-proxy', {
+      const { error } = await supabase.functions.invoke('evolution-proxy', {
         body: { action: 'send-text', to: client.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name },
       });
       if (error) throw error;
@@ -136,29 +163,34 @@ const ClientesPage = () => {
     if (!baixaClient) return;
     const months = parseInt(baixaMonths);
 
-    // Advance due_date by N months
-    let newDueDate = baixaClient.due_date;
+    let newDueDate = baixaClient.due_date || null;
     if (baixaClient.due_date) {
       const date = new Date(baixaClient.due_date + 'T00:00:00');
       date.setMonth(date.getMonth() + months);
       newDueDate = date.toISOString().split('T')[0];
     }
 
-    setClients((prev) =>
-      prev.map((c) =>
-        c.id === baixaClient.id
-          ? { ...c, due_date: newDueDate, updated_at: new Date().toISOString() }
-          : c
-      )
-    );
+    const { error } = await supabase
+      .from('clients')
+      .update({ due_date: newDueDate, updated_at: new Date().toISOString() })
+      .eq('id', baixaClient.id);
+
+    if (error) { toast.error('Erro ao dar baixa'); return; }
 
     const totalAmount = (baixaClient.amount || 0) * months;
     toast.success(`Baixa de ${months} mês(es) - R$ ${totalAmount.toFixed(2)} registrada para ${baixaClient.name}`);
 
-    // Send receipt via WhatsApp using the receipt template
+    // Send receipt via WhatsApp
     const waConfig = getWhatsAppConfig();
     if (baixaClient.phone && baixaClient.phone.length > 2 && waConfig?.api_url) {
-      const receiptTemplate = mockTemplates.find((t) => t.type === 'receipt' && t.is_active);
+      const { data: templates } = await supabase
+        .from('message_templates')
+        .select('*')
+        .eq('type', 'receipt')
+        .eq('is_active', true)
+        .limit(1);
+
+      const receiptTemplate = templates?.[0];
       if (receiptTemplate) {
         const message = receiptTemplate.content
           .replace('{nome}', baixaClient.name)
@@ -179,6 +211,7 @@ const ClientesPage = () => {
 
     setBaixaDialogOpen(false);
     setBaixaClient(null);
+    fetchClients();
   };
 
   return (
@@ -288,58 +321,64 @@ const ClientesPage = () => {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead className="hidden md:table-cell">Email</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead className="hidden sm:table-cell">CPF/CNPJ</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead>Vencimento</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((client) => (
-                <TableRow key={client.id}>
-                  <TableCell className="font-medium">{client.name}</TableCell>
-                  <TableCell className="hidden md:table-cell">{client.email || '-'}</TableCell>
-                  <TableCell>{client.phone}</TableCell>
-                  <TableCell className="hidden sm:table-cell">{client.document}</TableCell>
-                  <TableCell>{client.amount ? `R$ ${Number(client.amount).toFixed(2)}` : '-'}</TableCell>
-                  <TableCell>{client.due_date ? new Date(client.due_date + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</TableCell>
-                  <TableCell>
-                    <Badge variant={client.is_active ? 'default' : 'secondary'}>
-                      {client.is_active ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right space-x-1">
-                    <Button variant="ghost" size="icon" title="Enviar cobrança WhatsApp" onClick={() => handleSendBilling(client)}>
-                      <MessageCircle className="h-4 w-4 text-green-600" />
-                    </Button>
-                    <Button variant="ghost" size="icon" title="Baixa manual" onClick={() => openBaixaDialog(client)}>
-                      <CheckCircle className="h-4 w-4 text-blue-600" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(client)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(client.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filtered.length === 0 && (
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
-                    Nenhum cliente encontrado
-                  </TableCell>
+                  <TableHead>Nome</TableHead>
+                  <TableHead className="hidden md:table-cell">Email</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead className="hidden sm:table-cell">CPF/CNPJ</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Vencimento</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((client) => (
+                  <TableRow key={client.id}>
+                    <TableCell className="font-medium">{client.name}</TableCell>
+                    <TableCell className="hidden md:table-cell">{client.email || '-'}</TableCell>
+                    <TableCell>{client.phone}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{client.document || '-'}</TableCell>
+                    <TableCell>{client.amount ? `R$ ${Number(client.amount).toFixed(2)}` : '-'}</TableCell>
+                    <TableCell>{client.due_date ? new Date(client.due_date + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</TableCell>
+                    <TableCell>
+                      <Badge variant={client.is_active ? 'default' : 'secondary'}>
+                        {client.is_active ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right space-x-1">
+                      <Button variant="ghost" size="icon" title="Enviar cobrança WhatsApp" onClick={() => handleSendBilling(client)}>
+                        <MessageCircle className="h-4 w-4 text-green-600" />
+                      </Button>
+                      <Button variant="ghost" size="icon" title="Baixa manual" onClick={() => openBaixaDialog(client)}>
+                        <CheckCircle className="h-4 w-4 text-blue-600" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(client)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(client.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                      Nenhum cliente encontrado
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

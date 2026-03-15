@@ -1,27 +1,91 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { mockDashboardStats } from '@/services/mock-data';
-import { Users, DollarSign, AlertTriangle, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { Users, DollarSign, AlertTriangle, CheckCircle, Clock, TrendingUp, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { supabase } from '@/integrations/supabase/client';
+import type { DashboardStats } from '@/types/billing';
 
 const PIE_COLORS = ['hsl(142, 71%, 45%)', 'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)'];
 
 const DashboardPage = () => {
-  const [stats] = useState(mockDashboardStats);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const { data: clients, error } = await supabase
+        .from('clients')
+        .select('*');
+
+      if (error) {
+        console.error(error);
+        setLoading(false);
+        return;
+      }
+
+      const allClients = clients || [];
+      const activeClients = allClients.filter((c: any) => c.is_active);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let overdueCount = 0;
+      let totalOverdue = 0;
+      let pendingCount = 0;
+      let totalPending = 0;
+
+      allClients.forEach((c: any) => {
+        if (!c.due_date || !c.amount) return;
+        const due = new Date(c.due_date + 'T00:00:00');
+        if (due < today) {
+          overdueCount++;
+          totalOverdue += Number(c.amount);
+        } else {
+          pendingCount++;
+          totalPending += Number(c.amount);
+        }
+      });
+
+      const totalRevenue = allClients.reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0);
+
+      setStats({
+        total_clients: allClients.length,
+        active_clients: activeClients.length,
+        total_revenue_month: totalRevenue,
+        total_pending: totalPending,
+        total_overdue: totalOverdue,
+        overdue_count: overdueCount,
+        paid_count: 0,
+        pending_count: pendingCount,
+        revenue_by_month: [],
+        status_distribution: [
+          { status: 'Pendente', count: pendingCount },
+          { status: 'Atrasado', count: overdueCount },
+        ],
+      });
+      setLoading(false);
+    };
+    fetchStats();
+  }, []);
+
+  if (loading || !stats) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   const statCards = [
     { label: 'Total Clientes', value: stats.total_clients, icon: Users, color: 'text-primary' },
-    { label: 'Receita do Mês', value: `R$ ${stats.total_revenue_month.toLocaleString('pt-BR')}`, icon: DollarSign, color: 'text-success' },
+    { label: 'Receita Total', value: `R$ ${stats.total_revenue_month.toLocaleString('pt-BR')}`, icon: DollarSign, color: 'text-success' },
     { label: 'Pendentes', value: `R$ ${stats.total_pending.toLocaleString('pt-BR')}`, icon: Clock, color: 'text-warning' },
     { label: 'Em Atraso', value: stats.overdue_count, icon: AlertTriangle, color: 'text-destructive' },
-    { label: 'Pagos', value: stats.paid_count, icon: CheckCircle, color: 'text-success' },
     { label: 'Clientes Ativos', value: stats.active_clients, icon: TrendingUp, color: 'text-primary' },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
         {statCards.map((stat) => (
           <Card key={stat.label}>
             <CardContent className="flex flex-col items-center p-4 text-center">
@@ -33,25 +97,7 @@ const DashboardPage = () => {
         ))}
       </div>
 
-      {/* Charts */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Receita por Mês</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={stats.revenue_by_month}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 88%)" />
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(v: number) => `R$ ${v.toLocaleString('pt-BR')}`} />
-                <Bar dataKey="amount" fill="hsl(220, 70%, 50%)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
+      {stats.status_distribution.some(s => s.count > 0) && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Status das Cobranças</CardTitle>
@@ -60,7 +106,7 @@ const DashboardPage = () => {
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie
-                  data={stats.status_distribution}
+                  data={stats.status_distribution.filter(s => s.count > 0)}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -69,7 +115,7 @@ const DashboardPage = () => {
                   nameKey="status"
                   label={({ status, count }) => `${status}: ${count}`}
                 >
-                  {stats.status_distribution.map((_, i) => (
+                  {stats.status_distribution.filter(s => s.count > 0).map((_, i) => (
                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
                 </Pie>
@@ -78,7 +124,7 @@ const DashboardPage = () => {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
+      )}
     </div>
   );
 };
