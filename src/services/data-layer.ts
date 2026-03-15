@@ -193,3 +193,35 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
     return res.data;
   }
 }
+
+// ===== WHATSAPP (Evolution API) =====
+
+interface EvolutionPayload {
+  action: 'create' | 'status' | 'send-text';
+  api_url: string;
+  api_key: string;
+  instance_name: string;
+  to?: string;
+  message?: string;
+}
+
+export async function invokeEvolutionProxy(payload: EvolutionPayload): Promise<{ data?: any; error?: string }> {
+  if (isLovableEnv()) {
+    const { data, error } = await supabase.functions.invoke('evolution-proxy', { body: payload });
+    if (error) return { error: error.message || 'Erro na Edge Function' };
+    return { data };
+  } else {
+    try {
+      const res = await fetch('/api/whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data?.error || `Erro ${res.status}` };
+      return { data };
+    } catch (err: any) {
+      return { error: err?.message || 'Erro de conexão com o servidor' };
+    }
+  }
+}
