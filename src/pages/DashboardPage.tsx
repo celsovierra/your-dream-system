@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, DollarSign, AlertTriangle, Clock, TrendingUp, Loader2 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { fetchDashboardStats } from '@/services/data-layer';
 import type { DashboardStats } from '@/types/billing';
 
@@ -11,7 +11,7 @@ function getLast12Months() {
   for (let i = 11; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const label = d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
-    months.push({ month: label, receita: 0, pendente: 0 });
+    months.push({ month: label, recebido: 0, a_receber: 0, atraso: 0 });
   }
   return months;
 }
@@ -45,15 +45,16 @@ const DashboardPage = () => {
     stats.revenue_by_month.forEach((item: any) => {
       const found = monthlyData.find(m => m.month === item.month);
       if (found) {
-        found.receita = item.receita || item.revenue || 0;
-        found.pendente = item.pendente || item.pending || 0;
+        found.recebido = item.recebido || item.revenue || 0;
+        found.a_receber = item.a_receber || item.pending || 0;
+        found.atraso = item.atraso || item.overdue || 0;
       }
     });
   } else {
-    // Put current totals in current month
     const current = monthlyData[monthlyData.length - 1];
-    current.receita = stats.total_revenue_month || 0;
-    current.pendente = stats.total_pending || 0;
+    current.recebido = Math.max(0, (stats.total_revenue_month || 0) - (stats.total_pending || 0) - (stats.total_overdue || 0));
+    current.a_receber = stats.total_pending || 0;
+    current.atraso = stats.total_overdue || 0;
   }
 
   return (
@@ -79,8 +80,10 @@ const DashboardPage = () => {
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tickFormatter={(v) => `R$${v}`} tick={{ fontSize: 12 }} />
               <Tooltip formatter={(value: number) => `R$ ${value.toLocaleString('pt-BR')}`} />
-              <Bar dataKey="receita" name="Receita" fill="hsl(142, 71%, 45%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="pendente" name="Pendente" fill="hsl(38, 92%, 50%)" radius={[4, 4, 0, 0]} />
+              <Legend />
+              <Bar dataKey="recebido" name="Recebido" stackId="a" fill="hsl(142, 71%, 45%)" />
+              <Bar dataKey="a_receber" name="A Receber" stackId="a" fill="hsl(38, 92%, 50%)" />
+              <Bar dataKey="atraso" name="Em Atraso" stackId="a" fill="hsl(0, 72%, 51%)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
