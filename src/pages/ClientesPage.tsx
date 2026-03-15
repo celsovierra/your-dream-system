@@ -152,7 +152,8 @@ const ClientesPage = () => {
       )
     );
 
-    toast.success(`Baixa de ${months} mês(es) registrada para ${baixaClient.name}`);
+    const totalAmount = (baixaClient.amount || 0) * months;
+    toast.success(`Baixa de ${months} mês(es) - R$ ${totalAmount.toFixed(2)} registrada para ${baixaClient.name}`);
 
     // Send receipt via WhatsApp using the receipt template
     const waConfig = getWhatsAppConfig();
@@ -161,7 +162,7 @@ const ClientesPage = () => {
       if (receiptTemplate) {
         const message = receiptTemplate.content
           .replace('{nome}', baixaClient.name)
-          .replace('{valor}', `R$ ${Number(baixaClient.amount || 0).toFixed(2)}`);
+          .replace('{valor}', `R$ ${totalAmount.toFixed(2)}`);
 
         try {
           toast.loading('Enviando recibo...', { id: `receipt-${baixaClient.id}` });
@@ -271,6 +272,9 @@ const ClientesPage = () => {
                 </strong>
               </p>
             )}
+            <p className="text-sm font-medium">
+              Valor total da baixa: <strong className="text-primary">R$ {((baixaClient?.amount || 0) * parseInt(baixaMonths)).toFixed(2)}</strong>
+            </p>
             <p className="text-sm text-muted-foreground">
               Após confirmar, um recibo será enviado via WhatsApp.
             </p>
