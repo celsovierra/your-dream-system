@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CreditCard, ExternalLink, Plus, Copy, QrCode } from 'lucide-react';
@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface PixPayment {
-  id: number;
+  id: number | string;
   client_name: string;
   amount: number;
   status: string;
@@ -20,15 +20,25 @@ interface PixPayment {
   qr_code?: string;
   qr_code_base64?: string;
   ticket_url?: string;
-  payment_id?: number;
+  payment_id?: number | string;
+  gateway: string;
 }
 
 const statusMap: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   paid: { label: 'Pago', variant: 'default' },
   pending: { label: 'Pendente', variant: 'outline' },
+  PENDING: { label: 'Pendente', variant: 'outline' },
   approved: { label: 'Pago', variant: 'default' },
+  RECEIVED: { label: 'Pago', variant: 'default' },
+  CONFIRMED: { label: 'Pago', variant: 'default' },
   expired: { label: 'Expirado', variant: 'secondary' },
+  OVERDUE: { label: 'Vencido', variant: 'destructive' },
   cancelled: { label: 'Cancelado', variant: 'destructive' },
+};
+
+const gatewayLabels: Record<string, string> = {
+  mercadopago: 'Mercado Pago',
+  asaas: 'Asaas',
 };
 
 const PagamentosPage = () => {
@@ -45,14 +55,13 @@ const PagamentosPage = () => {
     payer_cpf: '',
   });
 
-  const getAccessToken = () => {
-    return localStorage.getItem('mp_access_token') || '';
-  };
+  const getGateway = () => localStorage.getItem('payment_gateway') || 'mercadopago';
 
   const handleGeneratePix = async () => {
-    const access_token = getAccessToken();
-    if (!access_token) {
-      toast.error('Configure o Access Token do Mercado Pago em Configurações');
+    const gateway = getGateway();
+
+    if (gateway === 'pix_manual') {
+      toast.error('PIX Manual não suporta geração automática');
       return;
     }
 
@@ -62,18 +71,55 @@ const PagamentosPage = () => {
       return;
     }
 
+    if (gateway === 'asaas' && !form.payer_cpf) {
+      toast.error('CPF do pagador é obrigatório para o Asaas');
+      return;
+    }
+
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('mercado-pago-pix', {
-        body: {
-          access_token,
-          amount,
-          description: form.description || `Cobrança - ${form.client_name}`,
-          payer_email: form.payer_email,
-          payer_name: form.client_name,
-          payer_cpf: form.payer_cpf,
-        },
-      });
+      let data: any;
+      let error: any;
+
+      if (gateway === 'mercadopago') {
+        const access_token = localStorage.getItem('mp_access_token') || '';
+        if (!access_token) {
+          toast.error('Configure o Access Token do Mercado Pago em Configurações');
+          setLoading(false);
+          return;
+        }
+        const res = await supabase.functions.invoke('mercado-pago-pix', {
+          body: {
+            access_token,
+            amount,
+            description: form.description || `Cobrança - ${form.client_name}`,
+            payer_email: form.payer_email,
+            payer_name: form.client_name,
+            payer_cpf: form.payer_cpf,
+          },
+        });
+        data = res.data;
+        error = res.error;
+      } else if (gateway === 'asaas') {
+        const access_token = localStorage.getItem('asaas_access_token') || '';
+        if (!access_token) {
+          toast.error('Configure a API Key do Asaas em Configurações');
+          setLoading(false);
+          return;
+        }
+        const res = await supabase.functions.invoke('asaas-pix', {
+          body: {
+            access_token,
+            amount,
+            description: form.description || `Cobrança - ${form.client_name}`,
+            payer_email: form.payer_email,
+            payer_name: form.client_name,
+            payer_cpf: form.payer_cpf,
+          },
+        });
+        data = res.data;
+        error = res.error;
+      }
 
       if (error) throw error;
 
@@ -96,6 +142,7 @@ const PagamentosPage = () => {
           qr_code_base64: result.qr_code_base64,
           ticket_url: result.ticket_url,
           payment_id: result.payment_id,
+          gateway,
         }, ...prev]);
 
         toast.success('PIX gerado com sucesso!');
@@ -103,7 +150,7 @@ const PagamentosPage = () => {
         toast.error(data?.error || 'Erro ao gerar PIX');
       }
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao conectar com Mercado Pago');
+      toast.error(err.message || 'Erro ao gerar cobrança');
     } finally {
       setLoading(false);
     }
@@ -114,19 +161,25 @@ const PagamentosPage = () => {
     toast.success('Código PIX copiado!');
   };
 
+  const activeGateway = getGateway();
+  const gatewayLabel = gatewayLabels[activeGateway] || activeGateway;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Cobranças PIX via Mercado Pago</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-muted-foreground">Cobranças PIX via</p>
+          <Badge variant="outline">{gatewayLabel}</Badge>
+        </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setPixResult(null); }}>
           <DialogTrigger asChild>
-            <Button size="sm">
+            <Button size="sm" disabled={activeGateway === 'pix_manual'}>
               <Plus className="mr-2 h-3 w-3" /> Gerar PIX
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Gerar Cobrança PIX</DialogTitle>
+              <DialogTitle>Gerar Cobrança PIX ({gatewayLabel})</DialogTitle>
             </DialogHeader>
 
             {!pixResult ? (
@@ -148,7 +201,7 @@ const PagamentosPage = () => {
                   <Input type="email" value={form.payer_email} onChange={e => setForm({ ...form, payer_email: e.target.value })} placeholder="cliente@email.com" />
                 </div>
                 <div>
-                  <Label>CPF do Pagador</Label>
+                  <Label>CPF do Pagador {activeGateway === 'asaas' && <span className="text-destructive">*</span>}</Label>
                   <Input value={form.payer_cpf} onChange={e => setForm({ ...form, payer_cpf: e.target.value })} placeholder="00000000000" />
                 </div>
                 <Button className="w-full" onClick={handleGeneratePix} disabled={loading}>
@@ -194,8 +247,8 @@ const PagamentosPage = () => {
               <TableRow>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Valor</TableHead>
+                <TableHead>Gateway</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden sm:table-cell">ID Pagamento</TableHead>
                 <TableHead className="hidden md:table-cell">Criado em</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -219,11 +272,15 @@ const PagamentosPage = () => {
                       </div>
                     </TableCell>
                     <TableCell>
+                      <Badge variant="secondary" className="text-xs">
+                        {gatewayLabels[p.gateway] || p.gateway}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={statusMap[p.status]?.variant || 'outline'}>
                         {statusMap[p.status]?.label || p.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">{p.payment_id || '-'}</TableCell>
                     <TableCell className="hidden md:table-cell">{p.created_at}</TableCell>
                     <TableCell className="text-right">
                       {p.qr_code && (

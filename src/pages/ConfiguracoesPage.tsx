@@ -20,7 +20,14 @@ interface AppUser {
 const ConfiguracoesPage = () => {
   const autoInstanceName = window.location.hostname.replace(/\./g, '_') + '_cobrancapro';
   const [whatsapp, setWhatsapp] = useState<{ api_url: string; api_key: string; instance_name: string; status: 'connected' | 'disconnected' | 'connecting' }>({ api_url: '', api_key: '', instance_name: autoInstanceName, status: 'disconnected' });
-  const [payment, setPayment] = useState({ gateway: 'mercadopago' as const, access_token: '' });
+  const [payment, setPayment] = useState({ gateway: 'mercadopago' as 'mercadopago' | 'asaas' | 'pix_manual', access_token: '', asaas_token: '' });
+
+  useEffect(() => {
+    const savedGateway = localStorage.getItem('payment_gateway') || 'mercadopago';
+    const savedMpToken = localStorage.getItem('mp_access_token') || '';
+    const savedAsaasToken = localStorage.getItem('asaas_access_token') || '';
+    setPayment({ gateway: savedGateway as any, access_token: savedMpToken, asaas_token: savedAsaasToken });
+  }, []);
 
   const [users, setUsers] = useState<AppUser[]>([]);
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '' });
@@ -194,22 +201,39 @@ const ConfiguracoesPage = () => {
           <CollapsibleContent>
             <CardContent className="space-y-4 pt-0">
               <div>
-                <Label>Gateway</Label>
-                <Select value={payment.gateway} onValueChange={(v) => setPayment({ ...payment, gateway: v as 'mercadopago' })}>
+                <Label>Gateway Ativo</Label>
+                <Select value={payment.gateway} onValueChange={(v) => setPayment({ ...payment, gateway: v as any })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="mercadopago">Mercado Pago</SelectItem>
+                    <SelectItem value="asaas">Asaas</SelectItem>
                     <SelectItem value="pix_manual">PIX Manual</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Access Token</Label>
-                <Input type="password" value={payment.access_token} onChange={(e) => setPayment({ ...payment, access_token: e.target.value })} />
-              </div>
-              <Button size="sm" onClick={() => { localStorage.setItem('mp_access_token', payment.access_token); toast.success('Access Token do Mercado Pago salvo!'); }}>
+
+              {payment.gateway === 'mercadopago' && (
+                <div>
+                  <Label>Access Token (Mercado Pago)</Label>
+                  <Input type="password" value={payment.access_token} onChange={(e) => setPayment({ ...payment, access_token: e.target.value })} placeholder="APP_USR-..." />
+                </div>
+              )}
+
+              {payment.gateway === 'asaas' && (
+                <div>
+                  <Label>API Key (Asaas)</Label>
+                  <Input type="password" value={payment.asaas_token} onChange={(e) => setPayment({ ...payment, asaas_token: e.target.value })} placeholder="$aas_..." />
+                </div>
+              )}
+
+              <Button size="sm" onClick={() => {
+                localStorage.setItem('payment_gateway', payment.gateway);
+                localStorage.setItem('mp_access_token', payment.access_token);
+                localStorage.setItem('asaas_access_token', payment.asaas_token);
+                toast.success('Configuração de pagamento salva!');
+              }}>
                 <Save className="mr-2 h-3 w-3" /> Salvar
               </Button>
             </CardContent>
