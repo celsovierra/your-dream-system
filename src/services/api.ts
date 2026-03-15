@@ -79,7 +79,8 @@ class ApiService {
       const data = await response.json();
       return { success: true, data };
     } catch (err) {
-      return { success: false, error: 'Erro de conexão com o servidor' };
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      return { success: false, error: `Erro de conexão com o servidor: ${message}` };
     }
   }
 
