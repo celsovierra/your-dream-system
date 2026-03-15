@@ -41,6 +41,7 @@ const ClientesPage = () => {
     const parsedData = {
       ...form,
       phone: normalizePhone(form.phone),
+      phone2: form.phone2.length > 2 ? normalizePhone(form.phone2) : undefined,
       amount: form.amount ? parseFloat(form.amount) : undefined,
       due_date: form.due_date || undefined,
     };
