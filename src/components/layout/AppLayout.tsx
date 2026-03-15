@@ -106,7 +106,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
                     : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                 )}
               >
-                <item.icon className="h-4 w-4" />
+                <item.icon className={cn("h-4 w-4", isActive ? "text-sidebar-primary-foreground" : item.color)} />
                 {item.label}
               </Link>
             );
