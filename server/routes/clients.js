@@ -3,6 +3,45 @@ import { query } from '../db.js';
 
 const router = express.Router();
 
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+function formatDateOnly(value) {
+  if (!value) return null;
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  if (typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (DATE_ONLY_REGEX.test(trimmed)) return trimmed;
+
+  const datePart = trimmed.split('T')[0]?.split(' ')[0];
+  if (datePart && DATE_ONLY_REGEX.test(datePart)) return datePart;
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeClientRow(row) {
+  if (!row || typeof row !== 'object' || !('id' in row)) return row;
+  return {
+    ...row,
+    due_date: formatDateOnly(row.due_date),
+  };
+}
+
 // Listar clientes
 router.get('/', async (req, res) => {
   try {
