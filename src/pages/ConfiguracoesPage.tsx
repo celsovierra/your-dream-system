@@ -29,6 +29,15 @@ const ConfiguracoesPage = () => {
     const savedMpToken = localStorage.getItem('mp_access_token') || '';
     const savedAsaasToken = localStorage.getItem('asaas_access_token') || '';
     setPayment({ gateway: savedGateway as any, access_token: savedMpToken, asaas_token: savedAsaasToken });
+
+    // Carregar config WhatsApp salva
+    const savedWa = localStorage.getItem('whatsapp_config');
+    if (savedWa) {
+      try {
+        const parsed = JSON.parse(savedWa);
+        setWhatsapp(prev => ({ ...prev, ...parsed }));
+      } catch {}
+    }
   }, []);
 
   const [users, setUsers] = useState<AppUser[]>([]);
@@ -159,8 +168,8 @@ const ConfiguracoesPage = () => {
                   <WifiOff className="h-5 w-5 text-destructive" />
                 )}
                 WhatsApp (Evolution API)
-                <Badge variant={whatsapp.status === 'connected' ? 'default' : 'secondary'}>
-                  {whatsapp.status === 'connected' ? 'Conectado' : 'Desconectado'}
+                <Badge variant={whatsapp.status === 'connected' ? 'default' : whatsapp.status === 'connecting' ? 'outline' : 'secondary'}>
+                  {whatsapp.status === 'connected' ? 'Conectado' : whatsapp.status === 'connecting' ? 'Conectando...' : 'Desconectado'}
                 </Badge>
               </div>
               <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'whatsapp' ? 'rotate-180' : ''}`} />
@@ -180,7 +189,43 @@ const ConfiguracoesPage = () => {
                 <Label>Nome da Instância</Label>
                 <Input value={whatsapp.instance_name} readOnly className="bg-muted cursor-not-allowed" />
               </div>
-              <Button size="sm" onClick={() => toast.success('Configuração WhatsApp salva!')}>
+              <Button size="sm" onClick={async () => {
+                if (!whatsapp.api_url || !whatsapp.api_key) {
+                  toast.error('Preencha a URL e a API Key');
+                  return;
+                }
+                // Salvar no localStorage
+                localStorage.setItem('whatsapp_config', JSON.stringify({
+                  api_url: whatsapp.api_url,
+                  api_key: whatsapp.api_key,
+                  instance_name: whatsapp.instance_name,
+                }));
+                // Tentar conectar na Evolution API
+                setWhatsapp(prev => ({ ...prev, status: 'connecting' }));
+                try {
+                  const baseUrl = whatsapp.api_url.replace(/\/+$/, '');
+                  const res = await fetch(`${baseUrl}/instance/connectionState/${whatsapp.instance_name}`, {
+                    headers: { 'apikey': whatsapp.api_key },
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    const state = data?.instance?.state || data?.state || '';
+                    if (state === 'open' || state === 'connected') {
+                      setWhatsapp(prev => ({ ...prev, status: 'connected' }));
+                      toast.success('WhatsApp conectado com sucesso!');
+                    } else {
+                      setWhatsapp(prev => ({ ...prev, status: 'disconnected' }));
+                      toast.warning(`WhatsApp salvo, mas a instância está: ${state || 'desconectada'}. Verifique o QR Code na Evolution API.`);
+                    }
+                  } else {
+                    setWhatsapp(prev => ({ ...prev, status: 'disconnected' }));
+                    toast.success('Configuração salva! Não foi possível verificar a conexão (erro HTTP ' + res.status + ').');
+                  }
+                } catch (err) {
+                  setWhatsapp(prev => ({ ...prev, status: 'disconnected' }));
+                  toast.success('Configuração salva! Não foi possível verificar a conexão (verifique a URL).');
+                }
+              }}>
                 <Save className="mr-2 h-3 w-3" /> Salvar
               </Button>
             </CardContent>
