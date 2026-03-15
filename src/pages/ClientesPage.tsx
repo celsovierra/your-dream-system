@@ -259,7 +259,7 @@ const ClientesPage = () => {
         <DialogContent>
           <DialogHeader><DialogTitle>Baixa Manual - {baixaClient?.name}</DialogTitle></DialogHeader>
           <div className="space-y-4 pt-2">
-            <p className="text-sm text-muted-foreground">Vencimento atual: <strong>{baixaClient?.due_date ? new Date(baixaClient.due_date + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não definido'}</strong></p>
+            <p className="text-sm text-muted-foreground">Vencimento atual: <strong>{formatDatePtBr(baixaClient?.due_date) === '-' ? 'Não definido' : formatDatePtBr(baixaClient?.due_date)}</strong></p>
             <div>
               <Label>Quantos meses dar baixa?</Label>
               <Select value={baixaMonths} onValueChange={setBaixaMonths}>
