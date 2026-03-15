@@ -80,8 +80,10 @@ const DashboardPage = () => {
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tickFormatter={(v) => `R$${v}`} tick={{ fontSize: 12 }} />
               <Tooltip formatter={(value: number) => `R$ ${value.toLocaleString('pt-BR')}`} />
-              <Bar dataKey="receita" name="Receita" fill="hsl(142, 71%, 45%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="pendente" name="Pendente" fill="hsl(38, 92%, 50%)" radius={[4, 4, 0, 0]} />
+              <Legend />
+              <Bar dataKey="recebido" name="Recebido" stackId="a" fill="hsl(142, 71%, 45%)" />
+              <Bar dataKey="a_receber" name="A Receber" stackId="a" fill="hsl(38, 92%, 50%)" />
+              <Bar dataKey="atraso" name="Em Atraso" stackId="a" fill="hsl(0, 72%, 51%)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
