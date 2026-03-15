@@ -16,7 +16,6 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,7 +75,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
     const newUser = {
       id: Date.now().toString(),
-      email: regEmail || regName.toLowerCase().replace(/\s+/g, '.'),
+      email: regName.toLowerCase().trim().replace(/\s+/g, '.'),
       password: regPassword,
       name: regName,
       createdAt: new Date().toISOString(),
@@ -85,7 +84,6 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     localStorage.setItem('app_users', JSON.stringify(users));
     toast.success('Conta criada! Faça login com seu nome e senha.');
     setRegName('');
-    setRegEmail('');
     setRegPassword('');
     setMode('login');
   };
@@ -169,7 +167,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               {mode === 'login' ? 'Bem-vindo de volta' : 'Criar nova conta'}
             </h2>
              <p className="text-muted-foreground">
-              {mode === 'login' ? 'Entre com seu nome ou email e senha' : 'Preencha os dados para criar sua conta'}
+              {mode === 'login' ? 'Entre com seu usuário e senha' : 'Crie sua conta com nome e senha'}
             </p>
           </div>
 
@@ -216,10 +214,6 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Nome de Usuário</Label>
                 <Input value={regName} onChange={(e) => setRegName(e.target.value)} placeholder="Seu nome" className="h-11" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Email <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                <Input type="text" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="seu@email.com" className="h-11" />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Senha</Label>
