@@ -188,13 +188,17 @@ const ClientesPage = () => {
     if (!waConfig?.api_url || !waConfig?.api_key || !waConfig?.instance_name) { toast.error('Configure o WhatsApp em Configurações primeiro'); return; }
     try {
       toast.loading('Enviando cobrança...', { id: `billing-${client.id}` });
+      await ensureWhatsAppConnected(waConfig);
+
       const formattedDueDate = formatDatePtBr(client.due_date);
       const dueDateText = formattedDueDate !== '-' ? ` com vencimento em ${formattedDueDate}` : '';
       const message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${dueDateText}. Qualquer dúvida estamos à disposição!`;
       const { error } = await invokeEvolutionProxy({ action: 'send-text', to: client.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name });
       if (error) throw new Error(error);
       toast.success('Cobrança enviada via WhatsApp!', { id: `billing-${client.id}` });
-    } catch { toast.error('Erro ao enviar cobrança', { id: `billing-${client.id}` }); }
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao enviar cobrança', { id: `billing-${client.id}` });
+    }
   };
 
   const openBaixaDialog = (client: Client) => {
