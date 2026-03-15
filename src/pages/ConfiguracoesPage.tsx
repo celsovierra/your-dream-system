@@ -286,7 +286,14 @@ const ConfiguracoesPage = () => {
                 <div className="mt-4 flex flex-col items-center gap-2 p-4 border rounded-lg bg-white">
                   <p className="text-sm font-medium text-foreground">Escaneie o QR Code com seu WhatsApp:</p>
                   <img src={qrCode} alt="QR Code WhatsApp" className="w-64 h-64 object-contain" />
-                  <Button size="sm" variant="ghost" onClick={() => setQrCode(null)}>Fechar</Button>
+                  {pollingStatus && <p className="text-xs text-muted-foreground animate-pulse">Aguardando conexão...</p>}
+                  <Button size="sm" variant="ghost" onClick={() => { setQrCode(null); setPollingStatus(false); }}>Fechar</Button>
+                </div>
+              )}
+              {whatsapp.status === 'connected' && !qrCode && (
+                <div className="mt-4 flex items-center gap-2 p-3 border rounded-lg bg-green-50 text-green-700">
+                  <Wifi className="h-4 w-4" />
+                  <span className="text-sm font-medium">WhatsApp conectado!</span>
                 </div>
               )}
             </CardContent>
