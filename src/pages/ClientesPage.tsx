@@ -7,9 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { mockClients } from '@/services/mock-data';
-import { Plus, Search, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle } from 'lucide-react';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const ClientesPage = () => {
   const [clients, setClients] = useState<Client[]>(mockClients);
