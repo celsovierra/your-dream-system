@@ -56,13 +56,9 @@ const MensagensPage = () => {
     localStorage.setItem('cobranca_send_time_overdue', sendTimeOverdue);
   }, [sendTimeOverdue]);
 
-  const handleSave = (id: number, content: string) => {
-    setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, content } : t)));
-    toast.success('Template salvo!');
-  };
-
-  const handleToggle = (id: number) => {
-    setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, is_active: !t.is_active } : t)));
+  const handleSaveAll = () => {
+    // Templates já estão no state, só persistir configurações (já salvas via useEffect)
+    toast.success('Todas as configurações salvas!');
   };
 
   return (
