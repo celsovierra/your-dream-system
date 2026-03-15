@@ -55,35 +55,35 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regName || !regEmail || !regPassword) {
-      toast.error('Preencha todos os campos');
+    if (!regName || !regPassword) {
+      toast.error('Preencha nome e senha');
       return;
     }
-    if (regPassword.length < 6) {
-      toast.error('A senha deve ter pelo menos 6 caracteres');
+    if (regPassword.length < 4) {
+      toast.error('A senha deve ter pelo menos 4 caracteres');
       return;
     }
 
     const storedUsers = localStorage.getItem('app_users');
     const users = storedUsers ? JSON.parse(storedUsers) : [
-      { id: '1', email: 'admin@cobranca.com', password: 'admin123', name: 'Administrador' }
+      { id: '1', email: 'admin', password: 'admin123', name: 'Administrador' }
     ];
 
-    if (users.find((u: { email: string }) => u.email === regEmail)) {
-      toast.error('Este email já está cadastrado');
+    if (users.find((u: { name: string }) => u.name.toLowerCase() === regName.toLowerCase().trim())) {
+      toast.error('Este nome já está cadastrado');
       return;
     }
 
     const newUser = {
       id: Date.now().toString(),
-      email: regEmail,
+      email: regEmail || regName.toLowerCase().replace(/\s+/g, '.'),
       password: regPassword,
       name: regName,
       createdAt: new Date().toISOString(),
     };
     users.push(newUser);
     localStorage.setItem('app_users', JSON.stringify(users));
-    toast.success('Conta criada! Faça login com suas credenciais.');
+    toast.success('Conta criada! Faça login com seu nome e senha.');
     setRegName('');
     setRegEmail('');
     setRegPassword('');
