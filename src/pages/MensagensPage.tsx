@@ -59,7 +59,19 @@ const MensagensPage = () => {
               <Switch checked={template.is_active} onCheckedChange={() => handleToggle(template.id)} />
             </CardHeader>
             <CardContent className="space-y-3">
-              <div>
+              {template.type === 'reminder' && (
+                <div>
+                  <Label>Cobrar quantos dias antes do vencimento</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={reminderDays}
+                    onChange={(e) => setReminderDays(Math.max(1, Math.min(30, Number(e.target.value) || 1)))}
+                    className="w-32 mt-1"
+                  />
+                </div>
+              )}
                 <Label>Conteúdo da mensagem</Label>
                 <Textarea
                   value={template.content}
