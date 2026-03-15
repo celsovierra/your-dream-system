@@ -100,7 +100,7 @@ export async function getReceiptTemplate(): Promise<MessageTemplate | null> {
       .eq('type', 'receipt')
       .eq('is_active', true)
       .limit(1);
-    return data?.[0] || null;
+    return (data?.[0] as MessageTemplate) || null;
   } else {
     const res = await api.getMessageTemplates();
     if (!res.success || !res.data) return null;
