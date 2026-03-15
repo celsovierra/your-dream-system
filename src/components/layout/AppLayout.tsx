@@ -7,13 +7,15 @@ import {
   Users,
   MessageSquare,
   ListTodo,
-  CreditCard,
   FileText,
   Settings,
   Menu,
-  X,
   Receipt,
   RefreshCw,
+  Sun,
+  Moon,
+  PanelLeftClose,
+  PanelLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -37,8 +39,19 @@ const navItems = [
 const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
   const [deploying, setDeploying] = useState(false);
   const [hasUpdate, setHasUpdate] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebar_collapsed', String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     const checkForUpdates = async () => {
@@ -102,18 +115,23 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-sidebar text-sidebar-foreground transition-transform lg:static lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-40 flex flex-col bg-sidebar text-sidebar-foreground transition-all lg:static lg:translate-x-0',
+          sidebarCollapsed ? 'w-16' : 'w-64',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="flex h-16 items-center gap-2 border-b border-sidebar-border px-6">
-          <Receipt className="h-7 w-7 text-sidebar-primary" />
-          <span className="text-lg font-bold tracking-tight text-sidebar-primary-foreground">
-            CobrançaPro
-          </span>
+        <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-3">
+          <div className={cn("flex items-center gap-2", sidebarCollapsed && "justify-center w-full")}>
+            <Receipt className="h-7 w-7 shrink-0 text-sidebar-primary" />
+            {!sidebarCollapsed && (
+              <span className="text-lg font-bold tracking-tight text-sidebar-primary-foreground">
+                CobrançaPro
+              </span>
+            )}
+          </div>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        <nav className="flex-1 space-y-1 overflow-y-auto p-2">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -121,47 +139,69 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
                 key={item.path}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
+                title={sidebarCollapsed ? item.label : undefined}
                 className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors',
+                  'flex items-center rounded-md py-2.5 text-sm font-medium transition-colors',
+                  sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3',
                   isActive
                     ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                     : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                 )}
               >
-                <item.icon className={cn("h-4 w-4", isActive ? "text-sidebar-primary-foreground" : item.color)} />
-                {item.label}
+                <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-sidebar-primary-foreground" : item.color)} />
+                {!sidebarCollapsed && item.label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="border-t border-sidebar-border p-4 space-y-3">
-          <div className="relative">
-            {hasUpdate && (
-              <span className="absolute -top-1 -right-1 flex h-3 w-3 z-10">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-              </span>
-            )}
-            <button
-              onClick={() => { handleDeploy(); setHasUpdate(false); }}
-              disabled={deploying || !hasUpdate}
-              className={cn(
-                "w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold transition-all duration-200",
-                hasUpdate
-                  ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-red-600 hover:scale-[1.02] active:scale-[0.98]"
-                  : "bg-muted text-muted-foreground cursor-not-allowed",
-                "disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
-              )}
-            >
-              <RefreshCw className={cn("h-4 w-4 shrink-0", deploying && "animate-spin")} />
-              <span>{deploying ? 'Atualizando...' : hasUpdate ? 'Atualização disponível!' : 'VPS atualizada'}</span>
-            </button>
-          </div>
-          <p className="text-[11px] text-sidebar-foreground/50 text-center">
-            {hasUpdate ? '🔴 Nova versão disponível' : '✅ Nenhuma atualização disponível'}
-          </p>
+        {/* Dark mode + collapse toggles */}
+        <div className="border-t border-sidebar-border p-2 flex items-center justify-around">
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            title={darkMode ? 'Modo claro' : 'Modo escuro'}
+            className="rounded-md p-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          >
+            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+            className="hidden lg:block rounded-md p-2 text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+          >
+            {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
         </div>
+
+        {!sidebarCollapsed && (
+          <div className="border-t border-sidebar-border p-4 space-y-3">
+            <div className="relative">
+              {hasUpdate && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3 z-10">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                </span>
+              )}
+              <button
+                onClick={() => { handleDeploy(); setHasUpdate(false); }}
+                disabled={deploying || !hasUpdate}
+                className={cn(
+                  "w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold transition-all duration-200",
+                  hasUpdate
+                    ? "bg-gradient-to-r from-warning to-destructive text-destructive-foreground shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                    : "bg-muted text-muted-foreground cursor-not-allowed",
+                  "disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+                )}
+              >
+                <RefreshCw className={cn("h-4 w-4 shrink-0", deploying && "animate-spin")} />
+                <span>{deploying ? 'Atualizando...' : hasUpdate ? 'Atualização disponível!' : 'VPS atualizada'}</span>
+              </button>
+            </div>
+            <p className="text-[11px] text-sidebar-foreground/50 text-center">
+              {hasUpdate ? '🔴 Nova versão disponível' : '✅ Nenhuma atualização disponível'}
+            </p>
+          </div>
+        )}
       </aside>
 
       {/* Main content */}
