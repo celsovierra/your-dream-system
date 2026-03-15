@@ -37,13 +37,11 @@ const ConfiguracoesPage = () => {
     
     const checkStatus = async () => {
       try {
-        const { data } = await supabase.functions.invoke('evolution-proxy', {
-          body: {
-            api_url: whatsapp.api_url,
-            api_key: whatsapp.api_key,
-            instance_name: whatsapp.instance_name,
-            action: 'status',
-          },
+        const { data } = await invokeEvolutionProxy({
+          api_url: whatsapp.api_url,
+          api_key: whatsapp.api_key,
+          instance_name: whatsapp.instance_name,
+          action: 'status',
         });
         if (data?.state === 'open' || data?.state === 'connected') {
           setQrCode(null);
