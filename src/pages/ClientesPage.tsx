@@ -72,6 +72,7 @@ const ClientesPage = () => {
       name: client.name,
       email: client.email,
       phone: normalizePhone(client.phone || '55'),
+      phone2: normalizePhone(client.phone2 || '55'),
       document: client.document,
       amount: client.amount?.toString() || '',
       due_date: client.due_date || '',
