@@ -221,15 +221,26 @@ const ConfiguracoesPage = () => {
                     },
                   });
                   if (error) throw error;
+                  console.log('Evolution proxy response:', data);
                   const base64 = data?.qrcode;
                   if (base64) {
                     setQrCode(base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`);
                     toast.success('QR Code gerado! Escaneie com seu WhatsApp.');
-                  } else if (data?.state === 'open' || data?.state === 'connected') {
+                  } else if (data?.state === 'connected') {
                     toast.success('Instância já está conectada!');
                     setWhatsapp(prev => ({ ...prev, status: 'connected' }));
                   } else {
-                    toast.warning('QR Code não disponível. Verifique a instância na Evolution API.');
+                    console.log('Evolution API debug:', JSON.stringify(data?.debug, null, 2));
+                    const debugInfo = data?.debug;
+                    const createStatus = debugInfo?.create?.status;
+                    const connectStatus = debugInfo?.connect?.status;
+                    if (createStatus === 401 || connectStatus === 401) {
+                      toast.error('API Key inválida. Verifique a chave na Evolution API.');
+                    } else if (createStatus === 404 || connectStatus === 404) {
+                      toast.error('Endpoint não encontrado. Verifique a URL da Evolution API (ex: https://seudominio.com).');
+                    } else {
+                      toast.warning('QR Code não disponível. Verifique se a instância existe na Evolution API. Resposta: ' + JSON.stringify(debugInfo?.create?.data || debugInfo?.connect?.data || {}).substring(0, 200));
+                    }
                   }
                 } catch (err: any) {
                   toast.error('Erro ao gerar QR Code: ' + (err?.message || 'verifique a URL e API Key'));
