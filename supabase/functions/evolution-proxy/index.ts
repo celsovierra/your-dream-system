@@ -40,13 +40,15 @@ serve(async (req) => {
 
     if (action === "create") {
       // Try multiple endpoint patterns for different Evolution API versions
-      const createBody = JSON.stringify({ instanceName: instance_name, qrcode: true });
+      const createBody = JSON.stringify({ 
+        instanceName: instance_name, 
+        qrcode: true,
+        integration: "WHATSAPP-BAILEYS"
+      });
       
-      // Try these create endpoints in order
+      // The correct endpoint is /instance/create (confirmed by logs)
       const createEndpoints = [
         `${baseUrl}/instance/create`,
-        `${baseUrl}/api/v1/instance/create`,
-        `${baseUrl}/api/v2/instance/create`,
       ];
 
       let createResult: any = null;
@@ -88,8 +90,6 @@ serve(async (req) => {
       // Try connect endpoints to get QR code
       const connectEndpoints = [
         `${baseUrl}/instance/connect/${instance_name}`,
-        `${baseUrl}/api/v1/instance/connect/${instance_name}`,
-        `${baseUrl}/api/v2/instance/connect/${instance_name}`,
       ];
 
       for (const url of connectEndpoints) {
@@ -133,8 +133,6 @@ serve(async (req) => {
     if (action === "status") {
       const statusEndpoints = [
         `${baseUrl}/instance/connectionState/${instance_name}`,
-        `${baseUrl}/api/v1/instance/connectionState/${instance_name}`,
-        `${baseUrl}/api/v2/instance/connectionState/${instance_name}`,
       ];
       
       for (const url of statusEndpoints) {
