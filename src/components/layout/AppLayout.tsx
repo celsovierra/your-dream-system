@@ -31,7 +31,7 @@ const navItems = [
   { path: '/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
-const AppLayout = ({ children }: LayoutProps) => {
+const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
