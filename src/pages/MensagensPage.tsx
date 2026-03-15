@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { mockTemplates } from '@/services/mock-data';
-import { Save, MessageSquare } from 'lucide-react';
+import { Save, MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { fetchSettings, saveSettings } from '@/services/data-layer';
 
 const typeLabels: Record<string, string> = {
   reminder: 'Lembrete',
@@ -20,49 +21,55 @@ const typeLabels: Record<string, string> = {
 
 const MensagensPage = () => {
   const [templates, setTemplates] = useState(mockTemplates);
-  const [reminderDays, setReminderDays] = useState(() => {
-    return Number(localStorage.getItem('cobranca_reminder_days') || '3');
-  });
-  const [sendTimeReminder, setSendTimeReminder] = useState(() => {
-    return localStorage.getItem('cobranca_send_time_reminder') || '08:00';
-  });
-  const [sendTimeDue, setSendTimeDue] = useState(() => {
-    return localStorage.getItem('cobranca_send_time_due') || '08:00';
-  });
-  const [sendTimeOverdue, setSendTimeOverdue] = useState(() => {
-    return localStorage.getItem('cobranca_send_time_overdue') || '09:00';
-  });
-  const [overdueFrequency, setOverdueFrequency] = useState(() => {
-    return Number(localStorage.getItem('cobranca_overdue_frequency') || '3');
-  });
+  const [reminderDays, setReminderDays] = useState(3);
+  const [sendTimeReminder, setSendTimeReminder] = useState('08:00');
+  const [sendTimeDue, setSendTimeDue] = useState('08:00');
+  const [sendTimeOverdue, setSendTimeOverdue] = useState('09:00');
+  const [overdueFrequency, setOverdueFrequency] = useState(3);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('cobranca_overdue_frequency', String(overdueFrequency));
-  }, [overdueFrequency]);
-  useEffect(() => {
-    localStorage.setItem('cobranca_send_time_overdue', sendTimeOverdue);
-  }, [sendTimeOverdue]);
-
-  useEffect(() => {
-    localStorage.setItem('cobranca_reminder_days', String(reminderDays));
-  }, [reminderDays]);
-  useEffect(() => {
-    localStorage.setItem('cobranca_send_time_reminder', sendTimeReminder);
-  }, [sendTimeReminder]);
-  useEffect(() => {
-    localStorage.setItem('cobranca_send_time_due', sendTimeDue);
-  }, [sendTimeDue]);
-  useEffect(() => {
-    localStorage.setItem('cobranca_send_time_overdue', sendTimeOverdue);
-  }, [sendTimeOverdue]);
+    fetchSettings().then((s) => {
+      setReminderDays(Number(s.reminder_days) || 3);
+      setSendTimeReminder(s.send_time_reminder || '08:00');
+      setSendTimeDue(s.send_time_due || '08:00');
+      setSendTimeOverdue(s.send_time_overdue || '09:00');
+      setOverdueFrequency(Number(s.overdue_frequency) || 3);
+    }).finally(() => setLoading(false));
+  }, []);
 
   const handleToggle = (id: number) => {
     setTemplates((prev) => prev.map((t) => (t.id === id ? { ...t, is_active: !t.is_active } : t)));
   };
 
-  const handleSaveAll = () => {
-    toast.success('Todas as configurações salvas!');
+  const handleSaveAll = async () => {
+    setSaving(true);
+    try {
+      await saveSettings({
+        reminder_days: String(reminderDays),
+        send_time_reminder: sendTimeReminder,
+        send_time_due: sendTimeDue,
+        send_time_overdue: sendTimeOverdue,
+        overdue_frequency: String(overdueFrequency),
+      });
+      // Also save to localStorage for backward compat
+      localStorage.setItem('cobranca_reminder_days', String(reminderDays));
+      localStorage.setItem('cobranca_send_time_reminder', sendTimeReminder);
+      localStorage.setItem('cobranca_send_time_due', sendTimeDue);
+      localStorage.setItem('cobranca_send_time_overdue', sendTimeOverdue);
+      localStorage.setItem('cobranca_overdue_frequency', String(overdueFrequency));
+      toast.success('Todas as configurações salvas!');
+    } catch (err: any) {
+      toast.error('Erro ao salvar: ' + (err.message || ''));
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+  }
 
   return (
     <div className="space-y-4">
@@ -140,8 +147,9 @@ const MensagensPage = () => {
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={handleSaveAll}>
-          <Save className="mr-2 h-4 w-4" /> Salvar Tudo
+        <Button onClick={handleSaveAll} disabled={saving}>
+          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Salvar Tudo
         </Button>
       </div>
     </div>

@@ -1,18 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockQueue } from '@/services/mock-data';
-import { Send, Filter, Trash2 } from 'lucide-react';
+import { Send, Filter, Trash2, RefreshCw, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { fetchQueue, clearQueue, updateQueueItemStatus, type QueueItem } from '@/services/data-layer';
 
 const statusColors: Record<string, string> = {
   pending: 'bg-warning text-warning-foreground',
   sent: 'bg-success text-success-foreground',
   failed: 'bg-destructive text-destructive-foreground',
-  cancelled: 'bg-muted text-muted-foreground',
 };
 
 const typeLabels: Record<string, string> = {
@@ -20,30 +19,52 @@ const typeLabels: Record<string, string> = {
   due: 'Vencimento',
   overdue: 'Atraso',
   receipt: 'Recibo',
-  blocked: 'Bloqueio',
 };
 
-const QUEUE_STORAGE_KEY = 'cobranca_queue';
-
 const FilaPage = () => {
-  const [queue, setQueue] = useState(() => {
-    const saved = localStorage.getItem(QUEUE_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : mockQueue;
-  });
+  const [queue, setQueue] = useState<QueueItem[]>([]);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(queue));
-  }, [queue]);
+  const loadQueue = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchQueue();
+      setQueue(data);
+    } catch (err: any) {
+      toast.error('Erro ao carregar fila: ' + (err.message || ''));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadQueue(); }, []);
 
   const filtered = filterStatus === 'all' ? queue : queue.filter((q) => q.status === filterStatus);
 
+  const handleClear = async () => {
+    try {
+      await clearQueue();
+      setQueue([]);
+      toast.success('Fila limpa!');
+    } catch (err: any) {
+      toast.error('Erro ao limpar fila: ' + (err.message || ''));
+    }
+  };
 
-  const handleProcess = () => {
-    setQueue((prev) =>
-      prev.map((q) => (q.status === 'pending' ? { ...q, status: 'sent' as const, sent_at: new Date().toISOString() } : q))
-    );
-    toast.success('Fila processada! Mensagens enviadas.');
+  const handleProcess = async () => {
+    const pending = queue.filter(q => q.status === 'pending');
+    if (pending.length === 0) {
+      toast.info('Nenhum item pendente na fila');
+      return;
+    }
+    for (const item of pending) {
+      try {
+        await updateQueueItemStatus(item.id, 'sent');
+      } catch {}
+    }
+    toast.success(`${pending.length} itens processados!`);
+    loadQueue();
   };
 
   return (
@@ -64,7 +85,10 @@ const FilaPage = () => {
           </Select>
         </div>
         <div className="flex gap-2">
-          <Button variant="destructive" onClick={() => { setQueue([]); toast.success('Fila limpa!'); }}>
+          <Button variant="outline" size="sm" onClick={loadQueue}>
+            <RefreshCw className="mr-2 h-4 w-4" /> Atualizar
+          </Button>
+          <Button variant="destructive" onClick={handleClear}>
             <Trash2 className="mr-2 h-4 w-4" /> Limpar Fila
           </Button>
           <Button onClick={handleProcess}>
@@ -75,43 +99,56 @@ const FilaPage = () => {
 
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead className="hidden sm:table-cell">Vencimento</TableHead>
-                <TableHead className="hidden md:table-cell">Dias Atraso</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{item.client_name}</p>
-                      <p className="text-xs text-muted-foreground">{item.client_phone}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{typeLabels[item.message_type]}</Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    R$ {item.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">{item.due_date}</TableCell>
-                  <TableCell className="hidden md:table-cell">{item.days_overdue > 0 ? item.days_overdue : '-'}</TableCell>
-                  <TableCell>
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[item.status]}`}>
-                      {item.status === 'pending' ? 'Pendente' : item.status === 'sent' ? 'Enviado' : item.status === 'failed' ? 'Falhou' : 'Cancelado'}
-                    </span>
-                  </TableCell>
+          {loading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="py-10 text-center text-muted-foreground">
+              <p>Nenhum item na fila</p>
+              <p className="text-xs mt-1">A fila é populada automaticamente às 7h</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead className="hidden sm:table-cell">Vencimento</TableHead>
+                  <TableHead className="hidden md:table-cell">Dias Atraso</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{item.client_name}</p>
+                        <p className="text-xs text-muted-foreground">{item.client_phone}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{typeLabels[item.type] || item.type}</Badge>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      R$ {Number(item.amount || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {item.due_date ? new Date(item.due_date + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{item.days_overdue > 0 ? item.days_overdue : '-'}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusColors[item.status] || ''}`}>
+                        {item.status === 'pending' ? 'Pendente' : item.status === 'sent' ? 'Enviado' : 'Falhou'}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
