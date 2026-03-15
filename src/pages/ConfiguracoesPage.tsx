@@ -252,11 +252,10 @@ const ConfiguracoesPage = () => {
                 localStorage.setItem('whatsapp_config', JSON.stringify({
                   api_url: whatsapp.api_url,
                   api_key: whatsapp.api_key,
-                  instance_name: whatsapp.instance_name,
-                  status: 'connected',
+                  instance_name: autoInstanceName,
+                  status: whatsapp.status,
                 }));
-                setWhatsapp(prev => ({ ...prev, status: 'connected' }));
-                toast.success('WhatsApp configurado e conectado!');
+                toast.success('Configuração salva! Agora gere o QR Code para conectar.');
               }}>
                 <Save className="mr-2 h-3 w-3" /> Salvar
               </Button>
