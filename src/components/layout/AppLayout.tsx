@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import {
+  LogOut,
   LayoutDashboard,
   Users,
   MessageSquare,
@@ -16,6 +18,7 @@ import { cn } from '@/lib/utils';
 
 interface LayoutProps {
   children: React.ReactNode;
+  onLogout?: () => void;
 }
 
 const navItems = [
@@ -29,7 +32,7 @@ const navItems = [
   { path: '/configuracoes', label: 'Configurações', icon: Settings },
 ];
 
-const AppLayout = ({ children }: LayoutProps) => {
+const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -88,16 +91,23 @@ const AppLayout = ({ children }: LayoutProps) => {
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 items-center gap-4 border-b border-border bg-card px-4 lg:px-6">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="rounded-md p-2 text-muted-foreground hover:bg-secondary lg:hidden"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <h2 className="text-lg font-semibold text-card-foreground">
-            {navItems.find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
-          </h2>
+        <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="rounded-md p-2 text-muted-foreground hover:bg-secondary lg:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <h2 className="text-lg font-semibold text-card-foreground">
+              {navItems.find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
+            </h2>
+          </div>
+          {onLogout && (
+            <Button variant="ghost" size="sm" onClick={onLogout} className="text-muted-foreground">
+              <LogOut className="mr-2 h-4 w-4" /> Sair
+            </Button>
+          )}
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
