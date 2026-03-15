@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 const ConfiguracoesPage = () => {
   const [whatsapp, setWhatsapp] = useState<{ api_url: string; api_key: string; instance_name: string; status: 'connected' | 'disconnected' | 'connecting' }>({ api_url: '', api_key: '', instance_name: '', status: 'disconnected' });
   const [payment, setPayment] = useState({ gateway: 'mercadopago' as const, access_token: '' });
-  const [apiUrl, setApiUrl] = useState('');
 
   return (
     <div className="space-y-6 max-w-2xl">
