@@ -81,8 +81,9 @@ const ClientesPage = () => {
       setEditingClient(null);
       setForm({ name: '', email: '', phone: '55', phone2: '55', document: '', amount: '', due_date: '' });
       loadClients();
-    } catch (err) {
-      toast.error('Erro ao salvar cliente');
+    } catch (err: any) {
+      console.error('Erro ao salvar cliente:', err);
+      toast.error(err?.message || 'Erro ao salvar cliente');
     }
   };
 
