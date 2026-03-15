@@ -196,6 +196,11 @@ const ClientesPage = () => {
       ? addMonthsToDateOnly(baixaClient.due_date, months)
       : undefined;
 
+    if (baixaClient.due_date && !newDueDate) {
+      toast.error('Data de vencimento inválida para baixa manual');
+      return;
+    }
+
     try {
       await updateClient(baixaClient.id, { due_date: newDueDate });
     } catch { toast.error('Erro ao dar baixa'); return; }
