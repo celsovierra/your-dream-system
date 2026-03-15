@@ -133,8 +133,6 @@ serve(async (req) => {
     if (action === "status") {
       const statusEndpoints = [
         `${baseUrl}/instance/connectionState/${instance_name}`,
-        `${baseUrl}/api/v1/instance/connectionState/${instance_name}`,
-        `${baseUrl}/api/v2/instance/connectionState/${instance_name}`,
       ];
       
       for (const url of statusEndpoints) {
