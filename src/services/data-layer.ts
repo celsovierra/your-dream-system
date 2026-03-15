@@ -218,7 +218,11 @@ export async function invokeEvolutionProxy(payload: EvolutionPayload): Promise<{
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) return { error: data?.error || `Erro ${res.status}` };
+      if (!res.ok) {
+        const debugMessage = data?.debug?.response?.message?.[0] || data?.debug?.error || data?.debug?.message;
+        const errorMessage = [data?.error, debugMessage].filter(Boolean).join(' - ');
+        return { error: errorMessage || `Erro ${res.status}` };
+      }
       return { data };
     } catch (err: any) {
       return { error: err?.message || 'Erro de conexão com o servidor' };
