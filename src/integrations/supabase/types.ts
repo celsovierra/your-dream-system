@@ -85,6 +85,71 @@ export type Database = {
         }
         Relationships: []
       }
+      bills_payable: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string | null
+          current_installment: number | null
+          description: string
+          due_date: string
+          id: number
+          installments_count: number | null
+          notes: string | null
+          paid_date: string | null
+          parent_bill_id: number | null
+          payment_type: string
+          status: string
+          supplier: string | null
+          total_amount: number
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string | null
+          current_installment?: number | null
+          description: string
+          due_date: string
+          id?: number
+          installments_count?: number | null
+          notes?: string | null
+          paid_date?: string | null
+          parent_bill_id?: number | null
+          payment_type?: string
+          status?: string
+          supplier?: string | null
+          total_amount: number
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string | null
+          current_installment?: number | null
+          description?: string
+          due_date?: string
+          id?: number
+          installments_count?: number | null
+          notes?: string | null
+          paid_date?: string | null
+          parent_bill_id?: number | null
+          payment_type?: string
+          status?: string
+          supplier?: string | null
+          total_amount?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bills_payable_parent_bill_id_fkey"
+            columns: ["parent_bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills_payable"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
