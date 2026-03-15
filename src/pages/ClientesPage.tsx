@@ -171,7 +171,9 @@ const ClientesPage = () => {
     if (!waConfig?.api_url || !waConfig?.api_key || !waConfig?.instance_name) { toast.error('Configure o WhatsApp em Configurações primeiro'); return; }
     try {
       toast.loading('Enviando cobrança...', { id: `billing-${client.id}` });
-      const message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${client.due_date ? ` com vencimento em ${new Date(client.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}. Qualquer dúvida estamos à disposição!`;
+      const formattedDueDate = formatDatePtBr(client.due_date);
+      const dueDateText = formattedDueDate !== '-' ? ` com vencimento em ${formattedDueDate}` : '';
+      const message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${dueDateText}. Qualquer dúvida estamos à disposição!`;
       const { error } = await supabase.functions.invoke('evolution-proxy', {
         body: { action: 'send-text', to: client.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name },
       });
