@@ -226,7 +226,7 @@ const ConfiguracoesPage = () => {
                 <Download className="h-5 w-5 text-primary" />
                 Backup do Sistema
               </div>
-              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSections.backup ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'backup' ? 'rotate-180' : ''}`} />
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
