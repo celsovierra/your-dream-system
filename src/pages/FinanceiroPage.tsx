@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  fetchBills, createBill, createBillChildren, updateBill, deleteBill, markBillPaid,
+  type BillPayable,
+} from '@/services/data-layer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,24 +24,6 @@ import {
   Clock, CheckCircle, XCircle, AlertTriangle, Search, Filter
 } from 'lucide-react';
 
-interface Bill {
-  id: number;
-  description: string;
-  supplier: string | null;
-  category: string | null;
-  payment_type: string;
-  total_amount: number;
-  installments_count: number;
-  current_installment: number;
-  parent_bill_id: number | null;
-  amount: number;
-  due_date: string;
-  paid_date: string | null;
-  status: string;
-  notes: string | null;
-  created_at: string;
-}
-
 const emptyForm = {
   description: '',
   supplier: '',
@@ -56,39 +41,34 @@ const categories = [
 ];
 
 const FinanceiroPage = () => {
-  const [bills, setBills] = useState<Bill[]>([]);
+  const [bills, setBills] = useState<BillPayable[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingBill, setEditingBill] = useState<Bill | null>(null);
+  const [editingBill, setEditingBill] = useState<BillPayable | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [saving, setSaving] = useState(false);
 
-  const fetchBills = async () => {
+  const loadBills = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('bills_payable')
-      .select('*')
-      .is('parent_bill_id', null)
-      .order('due_date', { ascending: true });
-
-    if (error) {
+    try {
+      const data = await fetchBills();
+      setBills(data);
+    } catch {
       toast.error('Erro ao carregar contas');
-    } else {
-      setBills((data as unknown as Bill[]) || []);
     }
     setLoading(false);
   };
 
-  useEffect(() => { fetchBills(); }, []);
+  useEffect(() => { loadBills(); }, []);
 
   const resetForm = () => {
     setForm(emptyForm);
     setEditingBill(null);
   };
 
-  const openEdit = (bill: Bill) => {
+  const openEdit = (bill: BillPayable) => {
     setEditingBill(bill);
     setForm({
       description: bill.description,
@@ -113,11 +93,9 @@ const FinanceiroPage = () => {
     const installments = form.payment_type === 'installment' ? Math.max(2, Number(form.installments_count) || 2) : 1;
     const installmentAmount = Math.round((totalAmount / installments) * 100) / 100;
 
-    if (editingBill) {
-      // Update
-      const { error } = await supabase
-        .from('bills_payable')
-        .update({
+    try {
+      if (editingBill) {
+        await updateBill(editingBill.id, {
           description: form.description.trim(),
           supplier: form.supplier.trim() || null,
           category: form.category || null,
@@ -125,104 +103,89 @@ const FinanceiroPage = () => {
           amount: editingBill.payment_type === 'single' ? totalAmount : editingBill.amount,
           due_date: format(form.due_date, 'yyyy-MM-dd'),
           notes: form.notes.trim() || null,
-          updated_at: new Date().toISOString(),
-        } as any)
-        .eq('id', editingBill.id);
+        });
+        toast.success('Conta atualizada!');
+      } else if (form.payment_type === 'installment') {
+        const parent = await createBill({
+          description: form.description.trim(),
+          supplier: form.supplier.trim() || null,
+          category: form.category || null,
+          payment_type: 'installment',
+          total_amount: totalAmount,
+          installments_count: installments,
+          current_installment: 1,
+          amount: installmentAmount,
+          due_date: format(form.due_date, 'yyyy-MM-dd'),
+          notes: form.notes.trim() || null,
+        });
 
-      if (error) { toast.error('Erro ao atualizar'); setSaving(false); return; }
-      toast.success('Conta atualizada!');
-    } else {
-      // Create
-      if (form.payment_type === 'installment') {
-        // Create parent bill
-        const { data: parent, error: parentErr } = await supabase
-          .from('bills_payable')
-          .insert({
-            description: form.description.trim(),
-            supplier: form.supplier.trim() || null,
-            category: form.category || null,
-            payment_type: 'installment',
-            total_amount: totalAmount,
-            installments_count: installments,
-            current_installment: 1,
-            amount: installmentAmount,
-            due_date: format(form.due_date, 'yyyy-MM-dd'),
-            notes: form.notes.trim() || null,
-          } as any)
-          .select()
-          .single();
-
-        if (parentErr || !parent) { toast.error('Erro ao criar conta'); setSaving(false); return; }
-
-        // Create installment children
-        const children = [];
-        for (let i = 1; i < installments; i++) {
-          const dueDate = new Date(form.due_date);
-          dueDate.setMonth(dueDate.getMonth() + i);
-          children.push({
-            description: form.description.trim(),
-            supplier: form.supplier.trim() || null,
-            category: form.category || null,
-            payment_type: 'installment',
-            total_amount: totalAmount,
-            installments_count: installments,
-            current_installment: i + 1,
-            parent_bill_id: (parent as any).id,
-            amount: i === installments - 1
-              ? Math.round((totalAmount - installmentAmount * (installments - 1)) * 100) / 100
-              : installmentAmount,
-            due_date: format(dueDate, 'yyyy-MM-dd'),
-            notes: form.notes.trim() || null,
-          });
+        if (parent) {
+          const children = [];
+          for (let i = 1; i < installments; i++) {
+            const dueDate = new Date(form.due_date);
+            dueDate.setMonth(dueDate.getMonth() + i);
+            children.push({
+              description: form.description.trim(),
+              supplier: form.supplier.trim() || null,
+              category: form.category || null,
+              payment_type: 'installment',
+              total_amount: totalAmount,
+              installments_count: installments,
+              current_installment: i + 1,
+              parent_bill_id: parent.id,
+              amount: i === installments - 1
+                ? Math.round((totalAmount - installmentAmount * (installments - 1)) * 100) / 100
+                : installmentAmount,
+              due_date: format(dueDate, 'yyyy-MM-dd'),
+              notes: form.notes.trim() || null,
+            });
+          }
+          if (children.length > 0) await createBillChildren(children);
         }
-
-        if (children.length > 0) {
-          await supabase.from('bills_payable').insert(children as any);
-        }
-
         toast.success(`Conta parcelada criada em ${installments}x!`);
       } else {
-        const { error } = await supabase
-          .from('bills_payable')
-          .insert({
-            description: form.description.trim(),
-            supplier: form.supplier.trim() || null,
-            category: form.category || null,
-            payment_type: 'single',
-            total_amount: totalAmount,
-            installments_count: 1,
-            current_installment: 1,
-            amount: totalAmount,
-            due_date: format(form.due_date, 'yyyy-MM-dd'),
-            notes: form.notes.trim() || null,
-          } as any);
-
-        if (error) { toast.error('Erro ao criar conta'); setSaving(false); return; }
+        await createBill({
+          description: form.description.trim(),
+          supplier: form.supplier.trim() || null,
+          category: form.category || null,
+          payment_type: 'single',
+          total_amount: totalAmount,
+          installments_count: 1,
+          current_installment: 1,
+          amount: totalAmount,
+          due_date: format(form.due_date, 'yyyy-MM-dd'),
+          notes: form.notes.trim() || null,
+        });
         toast.success('Conta criada!');
       }
-    }
 
+      setDialogOpen(false);
+      resetForm();
+      loadBills();
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao salvar');
+    }
     setSaving(false);
-    setDialogOpen(false);
-    resetForm();
-    fetchBills();
   };
 
   const handleDelete = async (id: number) => {
-    const { error } = await supabase.from('bills_payable').delete().eq('id', id);
-    if (error) { toast.error('Erro ao excluir'); return; }
-    toast.success('Conta excluída');
-    fetchBills();
+    try {
+      await deleteBill(id);
+      toast.success('Conta excluída');
+      loadBills();
+    } catch {
+      toast.error('Erro ao excluir');
+    }
   };
 
-  const handleMarkPaid = async (bill: Bill) => {
-    const { error } = await supabase
-      .from('bills_payable')
-      .update({ status: 'paid', paid_date: format(new Date(), 'yyyy-MM-dd') } as any)
-      .eq('id', bill.id);
-    if (error) { toast.error('Erro ao marcar como paga'); return; }
-    toast.success('Marcada como paga!');
-    fetchBills();
+  const handleMarkPaid = async (bill: BillPayable) => {
+    try {
+      await markBillPaid(bill.id);
+      toast.success('Marcada como paga!');
+      loadBills();
+    } catch {
+      toast.error('Erro ao marcar como paga');
+    }
   };
 
   const statusBadge = (status: string) => {

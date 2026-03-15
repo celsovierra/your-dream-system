@@ -343,3 +343,118 @@ export async function invokeEvolutionProxy(payload: EvolutionPayload): Promise<{
     }
   }
 }
+
+// ===== CONTAS A PAGAR =====
+
+export interface BillPayable {
+  id: number;
+  description: string;
+  supplier: string | null;
+  category: string | null;
+  payment_type: string;
+  total_amount: number;
+  installments_count: number;
+  current_installment: number;
+  parent_bill_id: number | null;
+  amount: number;
+  due_date: string;
+  paid_date: string | null;
+  status: string;
+  notes: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
+export async function fetchBills(): Promise<BillPayable[]> {
+  if (isLovableEnv()) {
+    const { data, error } = await supabase
+      .from('bills_payable')
+      .select('*')
+      .is('parent_bill_id', null)
+      .order('due_date', { ascending: true });
+    if (error) throw error;
+    return (data as unknown as BillPayable[]) || [];
+  } else {
+    const res = await fetch('/api/bills');
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao buscar contas');
+    return json.data || [];
+  }
+}
+
+export async function createBill(bill: Partial<BillPayable>): Promise<BillPayable | null> {
+  if (isLovableEnv()) {
+    const { data, error } = await supabase
+      .from('bills_payable')
+      .insert(bill as any)
+      .select()
+      .single();
+    if (error) throw error;
+    return data as unknown as BillPayable;
+  } else {
+    const res = await fetch('/api/bills', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bill),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao criar conta');
+    return json.data || null;
+  }
+}
+
+export async function createBillChildren(children: Partial<BillPayable>[]): Promise<void> {
+  if (isLovableEnv()) {
+    const { error } = await supabase.from('bills_payable').insert(children as any);
+    if (error) throw error;
+  } else {
+    await fetch('/api/bills/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bills: children }),
+    });
+  }
+}
+
+export async function updateBill(id: number, bill: Partial<BillPayable>): Promise<void> {
+  if (isLovableEnv()) {
+    const { error } = await supabase
+      .from('bills_payable')
+      .update({ ...bill, updated_at: new Date().toISOString() } as any)
+      .eq('id', id);
+    if (error) throw error;
+  } else {
+    const res = await fetch(`/api/bills/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bill),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao atualizar conta');
+  }
+}
+
+export async function deleteBill(id: number): Promise<void> {
+  if (isLovableEnv()) {
+    const { error } = await supabase.from('bills_payable').delete().eq('id', id);
+    if (error) throw error;
+  } else {
+    const res = await fetch(`/api/bills/${id}`, { method: 'DELETE' });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao excluir conta');
+  }
+}
+
+export async function markBillPaid(id: number): Promise<void> {
+  if (isLovableEnv()) {
+    const { error } = await supabase
+      .from('bills_payable')
+      .update({ status: 'paid', paid_date: formatLocalDate(new Date()) } as any)
+      .eq('id', id);
+    if (error) throw error;
+  } else {
+    const res = await fetch(`/api/bills/${id}/pay`, { method: 'PATCH' });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Erro ao marcar como paga');
+  }
+}
