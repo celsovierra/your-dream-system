@@ -38,10 +38,6 @@ const FilaPage = () => {
 
   const filtered = filterStatus === 'all' ? queue : queue.filter((q) => q.status === filterStatus);
 
-  const handlePopulate = () => {
-    setQueue(mockQueue);
-    toast.success('Fila populada com cobranças do dia');
-  };
 
   const handleProcess = () => {
     setQueue((prev) =>
