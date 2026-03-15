@@ -180,7 +180,7 @@ const ConfiguracoesPage = () => {
       </Collapsible>
 
       {/* Pagamento */}
-      <Collapsible open={openSections.payment} onOpenChange={() => toggleSection('payment')}>
+      <Collapsible open={openSection === 'payment'} onOpenChange={() => toggleSection('payment')}>
         <Card>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
