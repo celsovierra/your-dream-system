@@ -21,7 +21,10 @@ CREATE TABLE IF NOT EXISTS clients (
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255),
   phone VARCHAR(20) NOT NULL,
+  phone2 VARCHAR(20),
   document VARCHAR(20),
+  amount DECIMAL(10,2),
+  due_date DATE,
   address TEXT,
   city VARCHAR(100),
   state VARCHAR(2),
@@ -33,6 +36,11 @@ CREATE TABLE IF NOT EXISTS clients (
   INDEX idx_phone (phone),
   INDEX idx_document (document)
 );
+
+-- Adicionar colunas novas caso a tabela já exista (idempotente)
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS phone2 VARCHAR(20) AFTER phone;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS amount DECIMAL(10,2) AFTER document;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS due_date DATE AFTER amount;
 
 -- Configuração de cobrança por cliente
 CREATE TABLE IF NOT EXISTS client_billing_config (
