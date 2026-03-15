@@ -139,7 +139,7 @@ const ConfiguracoesPage = () => {
       </Collapsible>
 
       {/* WhatsApp */}
-      <Collapsible open={openSections.whatsapp} onOpenChange={() => toggleSection('whatsapp')}>
+      <Collapsible open={openSection === 'whatsapp'} onOpenChange={() => toggleSection('whatsapp')}>
         <Card>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
