@@ -2,11 +2,11 @@
 import type { Client, BillingQueue, DashboardStats, MessageTemplate, ContractTemplate } from '@/types/billing';
 
 export const mockClients: Client[] = [
-  { id: 1, name: 'João Silva', email: 'joao@email.com', phone: '11999990001', document: '123.456.789-00', is_active: true, created_at: '2024-01-15', updated_at: '2024-01-15' },
-  { id: 2, name: 'Maria Santos', email: 'maria@email.com', phone: '11999990002', document: '987.654.321-00', is_active: true, created_at: '2024-02-01', updated_at: '2024-02-01' },
-  { id: 3, name: 'Carlos Oliveira', email: 'carlos@email.com', phone: '11999990003', document: '456.789.123-00', is_active: true, created_at: '2024-02-10', updated_at: '2024-02-10' },
-  { id: 4, name: 'Ana Costa', email: 'ana@email.com', phone: '11999990004', document: '321.654.987-00', is_active: false, created_at: '2024-03-01', updated_at: '2024-03-01' },
-  { id: 5, name: 'Pedro Lima', email: 'pedro@email.com', phone: '11999990005', document: '789.123.456-00', is_active: true, created_at: '2024-03-15', updated_at: '2024-03-15' },
+  { id: 1, name: 'João Silva', email: 'joao@email.com', phone: '11999990001', document: '123.456.789-00', amount: 150, due_date: '2024-03-20', is_active: true, created_at: '2024-01-15', updated_at: '2024-01-15' },
+  { id: 2, name: 'Maria Santos', email: 'maria@email.com', phone: '11999990002', document: '987.654.321-00', amount: 200, due_date: '2024-03-10', is_active: true, created_at: '2024-02-01', updated_at: '2024-02-01' },
+  { id: 3, name: 'Carlos Oliveira', email: 'carlos@email.com', phone: '11999990003', document: '456.789.123-00', amount: 180, due_date: '2024-03-25', is_active: true, created_at: '2024-02-10', updated_at: '2024-02-10' },
+  { id: 4, name: 'Ana Costa', email: 'ana@email.com', phone: '11999990004', document: '321.654.987-00', amount: 150, due_date: '2024-02-15', is_active: false, created_at: '2024-03-01', updated_at: '2024-03-01' },
+  { id: 5, name: 'Pedro Lima', email: 'pedro@email.com', phone: '11999990005', document: '789.123.456-00', amount: 250, due_date: '2024-04-10', is_active: true, created_at: '2024-03-15', updated_at: '2024-03-15' },
 ];
 
 export const mockQueue: BillingQueue[] = [

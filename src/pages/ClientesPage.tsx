@@ -31,15 +31,17 @@ const ClientesPage = () => {
       return;
     }
 
+    const parsedData = { ...form, amount: form.amount ? parseFloat(form.amount) : undefined, due_date: form.due_date || undefined };
+
     if (editingClient) {
       setClients((prev) =>
-        prev.map((c) => (c.id === editingClient.id ? { ...c, ...form, updated_at: new Date().toISOString() } : c))
+        prev.map((c) => (c.id === editingClient.id ? { ...c, ...parsedData, updated_at: new Date().toISOString() } : c))
       );
       toast.success('Cliente atualizado!');
     } else {
       const newClient: Client = {
         id: Date.now(),
-        ...form,
+        ...parsedData,
         is_active: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -54,7 +56,7 @@ const ClientesPage = () => {
 
   const handleEdit = (client: Client) => {
     setEditingClient(client);
-    setForm({ name: client.name, email: client.email, phone: client.phone, document: client.document, amount: '', due_date: '' });
+    setForm({ name: client.name, email: client.email, phone: client.phone, document: client.document, amount: client.amount?.toString() || '', due_date: client.due_date || '' });
     setDialogOpen(true);
   };
 
@@ -120,9 +122,10 @@ const ClientesPage = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
-                <TableHead className="hidden md:table-cell">Email</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead className="hidden sm:table-cell">CPF/CNPJ</TableHead>
+                <TableHead>Valor</TableHead>
+                <TableHead>Vencimento</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -131,9 +134,10 @@ const ClientesPage = () => {
               {filtered.map((client) => (
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">{client.name}</TableCell>
-                  <TableCell className="hidden md:table-cell">{client.email}</TableCell>
                   <TableCell>{client.phone}</TableCell>
                   <TableCell className="hidden sm:table-cell">{client.document}</TableCell>
+                  <TableCell>{client.amount ? `R$ ${Number(client.amount).toFixed(2)}` : '-'}</TableCell>
+                  <TableCell>{client.due_date ? new Date(client.due_date + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</TableCell>
                   <TableCell>
                     <Badge variant={client.is_active ? 'default' : 'secondary'}>
                       {client.is_active ? 'Ativo' : 'Inativo'}
@@ -151,7 +155,7 @@ const ClientesPage = () => {
               ))}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                     Nenhum cliente encontrado
                   </TableCell>
                 </TableRow>
