@@ -93,6 +93,12 @@ const ClientesPage = () => {
     toast.success('Cliente removido');
   };
 
+  const getWhatsAppConfig = () => {
+    const saved = localStorage.getItem('whatsapp_config');
+    if (!saved) return null;
+    try { return JSON.parse(saved); } catch { return null; }
+  };
+
   const handleSendBilling = async (client: Client) => {
     if (!client.phone || client.phone.length <= 2) {
       toast.error('Cliente sem telefone cadastrado');
@@ -102,11 +108,16 @@ const ClientesPage = () => {
       toast.error('Cliente sem valor de cobrança definido');
       return;
     }
+    const waConfig = getWhatsAppConfig();
+    if (!waConfig?.api_url || !waConfig?.api_key || !waConfig?.instance_name) {
+      toast.error('Configure o WhatsApp em Configurações primeiro');
+      return;
+    }
     try {
       toast.loading('Enviando cobrança...', { id: `billing-${client.id}` });
       const message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${client.due_date ? ` com vencimento em ${new Date(client.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}` : ''}. Qualquer dúvida estamos à disposição!`;
       const { data, error } = await supabase.functions.invoke('evolution-proxy', {
-        body: { action: 'send-text', to: client.phone, message },
+        body: { action: 'send-text', to: client.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name },
       });
       if (error) throw error;
       toast.success('Cobrança enviada via WhatsApp!', { id: `billing-${client.id}` });
