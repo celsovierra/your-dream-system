@@ -12,7 +12,7 @@ import ClientesPage from "./pages/ClientesPage";
 import FilaPage from "./pages/FilaPage";
 import MensagensPage from "./pages/MensagensPage";
 import ContratosPage from "./pages/ContratosPage";
-import PagamentosPage from "./pages/PagamentosPage";
+
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import NotFound from "./pages/NotFound";
 
@@ -61,7 +61,7 @@ const App = () => {
               <Route path="/fila" element={<FilaPage />} />
               <Route path="/mensagens" element={<MensagensPage />} />
               <Route path="/contratos" element={<ContratosPage />} />
-              <Route path="/pagamentos" element={<PagamentosPage />} />
+              
               <Route path="/configuracoes" element={<ConfiguracoesPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
