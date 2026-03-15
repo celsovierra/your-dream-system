@@ -101,7 +101,7 @@ const ConfiguracoesPage = () => {
             <Label>Access Token</Label>
             <Input type="password" value={payment.access_token} onChange={(e) => setPayment({ ...payment, access_token: e.target.value })} />
           </div>
-          <Button size="sm" onClick={() => toast.success('Configuração de pagamento salva!')}>
+          <Button size="sm" onClick={() => { localStorage.setItem('mp_access_token', payment.access_token); toast.success('Access Token do Mercado Pago salvo!'); }}>
             <Save className="mr-2 h-3 w-3" /> Salvar
           </Button>
         </CardContent>
