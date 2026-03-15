@@ -243,15 +243,13 @@ const ConfiguracoesPage = () => {
                 setQrLoading(true);
                 setQrCode(null);
                 try {
-                  const { data, error } = await supabase.functions.invoke('evolution-proxy', {
-                    body: {
-                      api_url: whatsapp.api_url,
-                      api_key: whatsapp.api_key,
-                      instance_name: whatsapp.instance_name,
-                      action: 'create',
-                    },
+                  const { data, error } = await invokeEvolutionProxy({
+                    api_url: whatsapp.api_url,
+                    api_key: whatsapp.api_key,
+                    instance_name: whatsapp.instance_name,
+                    action: 'create',
                   });
-                  if (error) throw error;
+                  if (error) throw new Error(error);
                   console.log('Evolution proxy response:', data);
                   const base64 = data?.qrcode;
                   if (base64) {
