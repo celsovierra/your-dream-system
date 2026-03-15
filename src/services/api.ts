@@ -8,6 +8,7 @@ import type {
   Client,
   BillingConfig,
   BillingQueue,
+  BillPayable,
   PaymentLink,
   MessageTemplate,
   ContractTemplate,
