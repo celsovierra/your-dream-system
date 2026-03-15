@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEvolutionProxy } from '@/services/data-layer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,13 +37,11 @@ const ConfiguracoesPage = () => {
     
     const checkStatus = async () => {
       try {
-        const { data } = await supabase.functions.invoke('evolution-proxy', {
-          body: {
-            api_url: whatsapp.api_url,
-            api_key: whatsapp.api_key,
-            instance_name: whatsapp.instance_name,
-            action: 'status',
-          },
+        const { data } = await invokeEvolutionProxy({
+          api_url: whatsapp.api_url,
+          api_key: whatsapp.api_key,
+          instance_name: whatsapp.instance_name,
+          action: 'status',
         });
         if (data?.state === 'open' || data?.state === 'connected') {
           setQrCode(null);
@@ -245,15 +243,13 @@ const ConfiguracoesPage = () => {
                 setQrLoading(true);
                 setQrCode(null);
                 try {
-                  const { data, error } = await supabase.functions.invoke('evolution-proxy', {
-                    body: {
-                      api_url: whatsapp.api_url,
-                      api_key: whatsapp.api_key,
-                      instance_name: whatsapp.instance_name,
-                      action: 'create',
-                    },
+                  const { data, error } = await invokeEvolutionProxy({
+                    api_url: whatsapp.api_url,
+                    api_key: whatsapp.api_key,
+                    instance_name: whatsapp.instance_name,
+                    action: 'create',
                   });
-                  if (error) throw error;
+                  if (error) throw new Error(error);
                   console.log('Evolution proxy response:', data);
                   const base64 = data?.qrcode;
                   if (base64) {

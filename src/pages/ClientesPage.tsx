@@ -10,8 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle, Loader2 } from 'lucide-react';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate } from '@/services/data-layer';
+import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, invokeEvolutionProxy } from '@/services/data-layer';
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -174,10 +173,8 @@ const ClientesPage = () => {
       const formattedDueDate = formatDatePtBr(client.due_date);
       const dueDateText = formattedDueDate !== '-' ? ` com vencimento em ${formattedDueDate}` : '';
       const message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${dueDateText}. Qualquer dúvida estamos à disposição!`;
-      const { error } = await supabase.functions.invoke('evolution-proxy', {
-        body: { action: 'send-text', to: client.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name },
-      });
-      if (error) throw error;
+      const { error } = await invokeEvolutionProxy({ action: 'send-text', to: client.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name });
+      if (error) throw new Error(error);
       toast.success('Cobrança enviada via WhatsApp!', { id: `billing-${client.id}` });
     } catch { toast.error('Erro ao enviar cobrança', { id: `billing-${client.id}` }); }
   };
@@ -217,10 +214,8 @@ const ClientesPage = () => {
           .replace('{valor}', `R$ ${totalAmount.toFixed(2)}`);
         try {
           toast.loading('Enviando recibo...', { id: `receipt-${baixaClient.id}` });
-          const { error } = await supabase.functions.invoke('evolution-proxy', {
-            body: { action: 'send-text', to: baixaClient.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name },
-          });
-          if (error) throw error;
+          const { error } = await invokeEvolutionProxy({ action: 'send-text', to: baixaClient.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name });
+          if (error) throw new Error(error);
           toast.success('Recibo enviado via WhatsApp!', { id: `receipt-${baixaClient.id}` });
         } catch { toast.error('Erro ao enviar recibo', { id: `receipt-${baixaClient.id}` }); }
       }
