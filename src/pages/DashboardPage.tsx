@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, DollarSign, AlertTriangle, CheckCircle, Clock, TrendingUp, Loader2 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { supabase } from '@/integrations/supabase/client';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { fetchDashboardStats } from '@/services/data-layer';
 import type { DashboardStats } from '@/types/billing';
 
 const PIE_COLORS = ['hsl(142, 71%, 45%)', 'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)'];
@@ -12,67 +12,14 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      const { data: clients, error } = await supabase
-        .from('clients')
-        .select('*');
-
-      if (error) {
-        console.error(error);
-        setLoading(false);
-        return;
-      }
-
-      const allClients = clients || [];
-      const activeClients = allClients.filter((c: any) => c.is_active);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      let overdueCount = 0;
-      let totalOverdue = 0;
-      let pendingCount = 0;
-      let totalPending = 0;
-
-      allClients.forEach((c: any) => {
-        if (!c.due_date || !c.amount) return;
-        const due = new Date(c.due_date + 'T00:00:00');
-        if (due < today) {
-          overdueCount++;
-          totalOverdue += Number(c.amount);
-        } else {
-          pendingCount++;
-          totalPending += Number(c.amount);
-        }
-      });
-
-      const totalRevenue = allClients.reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0);
-
-      setStats({
-        total_clients: allClients.length,
-        active_clients: activeClients.length,
-        total_revenue_month: totalRevenue,
-        total_pending: totalPending,
-        total_overdue: totalOverdue,
-        overdue_count: overdueCount,
-        paid_count: 0,
-        pending_count: pendingCount,
-        revenue_by_month: [],
-        status_distribution: [
-          { status: 'Pendente', count: pendingCount },
-          { status: 'Atrasado', count: overdueCount },
-        ],
-      });
-      setLoading(false);
-    };
-    fetchStats();
+    fetchDashboardStats()
+      .then(setStats)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading || !stats) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   }
 
   const statCards = [
@@ -96,28 +43,14 @@ const DashboardPage = () => {
           </Card>
         ))}
       </div>
-
       {stats.status_distribution.some(s => s.count > 0) && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Status das Cobranças</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-base">Status das Cobranças</CardTitle></CardHeader>
           <CardContent className="flex items-center justify-center">
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
-                <Pie
-                  data={stats.status_distribution.filter(s => s.count > 0)}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  dataKey="count"
-                  nameKey="status"
-                  label={({ status, count }) => `${status}: ${count}`}
-                >
-                  {stats.status_distribution.filter(s => s.count > 0).map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
+                <Pie data={stats.status_distribution.filter(s => s.count > 0)} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="count" nameKey="status" label={({ status, count }) => `${status}: ${count}`}>
+                  {stats.status_distribution.filter(s => s.count > 0).map((_, i) => (<Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />))}
                 </Pie>
                 <Tooltip />
               </PieChart>
