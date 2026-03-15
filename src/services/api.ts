@@ -59,14 +59,28 @@ class ApiService {
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
-        return { success: false, error: error.message || `Erro ${response.status}` };
+        const contentType = response.headers.get('content-type') || '';
+        let errorMessage = `Erro ${response.status}`;
+
+        if (contentType.includes('application/json')) {
+          const error = await response.json().catch(() => null);
+          errorMessage = error?.message || error?.error || errorMessage;
+        } else {
+          const raw = await response.text().catch(() => '');
+          const clean = raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+          errorMessage = clean
+            ? `${errorMessage}: ${clean.slice(0, 140)}`
+            : `${errorMessage} ${response.statusText}`.trim();
+        }
+
+        return { success: false, error: errorMessage };
       }
 
       const data = await response.json();
       return { success: true, data };
     } catch (err) {
-      return { success: false, error: 'Erro de conexão com o servidor' };
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      return { success: false, error: `Erro de conexão com o servidor: ${message}` };
     }
   }
 
