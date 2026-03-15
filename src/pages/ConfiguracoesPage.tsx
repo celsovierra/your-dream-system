@@ -209,8 +209,18 @@ const ConfiguracoesPage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="mercadopago">Mercado Pago</SelectItem>
-                    <SelectItem value="asaas">Asaas</SelectItem>
+                    <SelectItem value="mercadopago">
+                      <div className="flex items-center gap-2">
+                        <img src={mercadoPagoLogo} alt="Mercado Pago" className="h-5 w-auto" />
+                        Mercado Pago
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="asaas">
+                      <div className="flex items-center gap-2">
+                        <img src={asaasLogo} alt="Asaas" className="h-5 w-auto" />
+                        Asaas
+                      </div>
+                    </SelectItem>
                     <SelectItem value="pix_manual">PIX Manual</SelectItem>
                   </SelectContent>
                 </Select>
