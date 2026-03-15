@@ -25,10 +25,10 @@ const ConfiguracoesPage = () => {
   const [users, setUsers] = useState<AppUser[]>([]);
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '' });
 
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [openSection, setOpenSection] = useState<string | null>(null);
 
   const toggleSection = (key: string) => {
-    setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+    setOpenSection(prev => prev === key ? null : key);
   };
 
   useEffect(() => {
