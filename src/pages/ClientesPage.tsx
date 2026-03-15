@@ -30,9 +30,9 @@ const ClientesPage = () => {
     try {
       const data = await fetchClients();
       setClients(data);
-    } catch (err) {
-      toast.error('Erro ao carregar clientes');
-      console.error(err);
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao carregar clientes');
+      console.error('Erro ao carregar clientes:', err);
     }
     setLoading(false);
   };
