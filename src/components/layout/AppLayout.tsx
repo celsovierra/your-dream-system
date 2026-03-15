@@ -7,13 +7,15 @@ import {
   Users,
   MessageSquare,
   ListTodo,
-  CreditCard,
   FileText,
   Settings,
   Menu,
-  X,
   Receipt,
   RefreshCw,
+  Sun,
+  Moon,
+  PanelLeftClose,
+  PanelLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
