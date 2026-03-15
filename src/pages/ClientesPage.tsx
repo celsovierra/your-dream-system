@@ -155,7 +155,8 @@ const ClientesPage = () => {
     toast.success(`Baixa de ${months} mês(es) registrada para ${baixaClient.name}`);
 
     // Send receipt via WhatsApp using the receipt template
-    if (baixaClient.phone && baixaClient.phone.length > 2) {
+    const waConfig = getWhatsAppConfig();
+    if (baixaClient.phone && baixaClient.phone.length > 2 && waConfig?.api_url) {
       const receiptTemplate = mockTemplates.find((t) => t.type === 'receipt' && t.is_active);
       if (receiptTemplate) {
         const message = receiptTemplate.content
@@ -165,7 +166,7 @@ const ClientesPage = () => {
         try {
           toast.loading('Enviando recibo...', { id: `receipt-${baixaClient.id}` });
           const { error } = await supabase.functions.invoke('evolution-proxy', {
-            body: { action: 'send-text', to: baixaClient.phone, message },
+            body: { action: 'send-text', to: baixaClient.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name },
           });
           if (error) throw error;
           toast.success('Recibo enviado via WhatsApp!', { id: `receipt-${baixaClient.id}` });
