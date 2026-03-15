@@ -29,9 +29,13 @@ const MensagensPage = () => {
   const [sendTimeDue, setSendTimeDue] = useState(() => {
     return localStorage.getItem('cobranca_send_time_due') || '08:00';
   });
-  const [sendTimeOverdue, setSendTimeOverdue] = useState(() => {
-    return localStorage.getItem('cobranca_send_time_overdue') || '09:00';
+  const [overdueFrequency, setOverdueFrequency] = useState(() => {
+    return Number(localStorage.getItem('cobranca_overdue_frequency') || '3');
   });
+
+  useEffect(() => {
+    localStorage.setItem('cobranca_overdue_frequency', String(overdueFrequency));
+  }, [overdueFrequency]);
 
   useEffect(() => {
     localStorage.setItem('cobranca_reminder_days', String(reminderDays));
