@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, DollarSign, AlertTriangle, Clock, TrendingUp, Loader2 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { fetchDashboardStats } from '@/services/data-layer';
 import type { DashboardStats } from '@/types/billing';
 
