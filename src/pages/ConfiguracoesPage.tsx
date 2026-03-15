@@ -1,21 +1,129 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Wifi, WifiOff, CreditCard, Save, Download, Upload } from 'lucide-react';
+import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Users } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface AppUser {
+  id: string;
+  email: string;
+  password: string;
+  name: string;
+  createdAt: string;
+}
 
 const ConfiguracoesPage = () => {
   const autoInstanceName = window.location.hostname.replace(/\./g, '_') + '_cobrancapro';
   const [whatsapp, setWhatsapp] = useState<{ api_url: string; api_key: string; instance_name: string; status: 'connected' | 'disconnected' | 'connecting' }>({ api_url: '', api_key: '', instance_name: autoInstanceName, status: 'disconnected' });
   const [payment, setPayment] = useState({ gateway: 'mercadopago' as const, access_token: '' });
 
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [newUser, setNewUser] = useState({ email: '', password: '', name: '' });
+
+  useEffect(() => {
+    const stored = localStorage.getItem('app_users');
+    if (stored) {
+      setUsers(JSON.parse(stored));
+    } else {
+      // Cria usuário padrão
+      const defaultUser: AppUser = {
+        id: '1',
+        email: 'admin@cobranca.com',
+        password: 'admin123',
+        name: 'Administrador',
+        createdAt: new Date().toISOString(),
+      };
+      setUsers([defaultUser]);
+      localStorage.setItem('app_users', JSON.stringify([defaultUser]));
+    }
+  }, []);
+
+  const handleAddUser = () => {
+    if (!newUser.email || !newUser.password || !newUser.name) {
+      toast.error('Preencha todos os campos');
+      return;
+    }
+    if (users.find(u => u.email === newUser.email)) {
+      toast.error('Este email já está cadastrado');
+      return;
+    }
+    const user: AppUser = {
+      id: Date.now().toString(),
+      email: newUser.email,
+      password: newUser.password,
+      name: newUser.name,
+      createdAt: new Date().toISOString(),
+    };
+    const updated = [...users, user];
+    setUsers(updated);
+    localStorage.setItem('app_users', JSON.stringify(updated));
+    setNewUser({ email: '', password: '', name: '' });
+    toast.success('Usuário criado com sucesso!');
+  };
+
+  const handleDeleteUser = (id: string) => {
+    if (users.length <= 1) {
+      toast.error('Deve existir pelo menos 1 usuário');
+      return;
+    }
+    const updated = users.filter(u => u.id !== id);
+    setUsers(updated);
+    localStorage.setItem('app_users', JSON.stringify(updated));
+    toast.success('Usuário removido');
+  };
+
   return (
     <div className="space-y-6 max-w-2xl">
 
+      {/* Gerenciar Usuários */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Users className="h-5 w-5 text-primary" />
+            Gerenciar Usuários
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3">
+            <div>
+              <Label>Nome</Label>
+              <Input value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} placeholder="Nome do usuário" />
+            </div>
+            <div>
+              <Label>Email</Label>
+              <Input type="email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} placeholder="email@exemplo.com" />
+            </div>
+            <div>
+              <Label>Senha</Label>
+              <Input type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} placeholder="Mínimo 6 caracteres" />
+            </div>
+            <Button size="sm" onClick={handleAddUser}>
+              <UserPlus className="mr-2 h-3 w-3" /> Criar Usuário
+            </Button>
+          </div>
+
+          {users.length > 0 && (
+            <div className="border-t pt-4 space-y-2">
+              <Label className="text-muted-foreground text-xs">Usuários cadastrados</Label>
+              {users.map(user => (
+                <div key={user.id} className="flex items-center justify-between rounded-md border p-3">
+                  <div>
+                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                  <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteUser(user.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
       {/* WhatsApp */}
       <Card>
         <CardHeader>
