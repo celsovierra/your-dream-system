@@ -119,7 +119,7 @@ const ConfiguracoesPage = () => {
                 </div>
                 <div>
                   <Label>Senha</Label>
-                  <Input type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} placeholder="Mínimo 6 caracteres" />
+                  <Input type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} placeholder="Mínimo 4 caracteres" />
                 </div>
                 <Button size="sm" onClick={handleAddUser}>
                   <UserPlus className="mr-2 h-3 w-3" /> Criar Usuário

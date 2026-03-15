@@ -22,7 +22,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      toast.error('Preencha email e senha');
+      toast.error('Preencha usuário e senha');
       return;
     }
 
@@ -30,18 +30,21 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     try {
       const storedUsers = localStorage.getItem('app_users');
       const users = storedUsers ? JSON.parse(storedUsers) : [
-        { id: '1', email: 'admin@cobranca.com', password: 'admin123', name: 'Administrador' }
+        { id: '1', email: 'admin', password: 'admin123', name: 'Administrador' }
       ];
       if (!storedUsers) localStorage.setItem('app_users', JSON.stringify(users));
 
-      const user = users.find((u: { email: string; password: string }) => u.email === email && u.password === password);
+      const loginValue = email.toLowerCase().trim();
+      const user = users.find((u: { email: string; name: string; password: string }) => 
+        (u.email.toLowerCase() === loginValue || u.name.toLowerCase() === loginValue) && u.password === password
+      );
       if (user) {
         const token = 'token-' + Date.now();
         localStorage.setItem('auth_token', token);
         onLogin(token);
         toast.success('Login realizado com sucesso!');
       } else {
-        toast.error('Email ou senha incorretos');
+        toast.error('Usuário ou senha incorretos');
       }
     } catch {
       toast.error('Erro ao realizar login');
@@ -52,35 +55,35 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regName || !regEmail || !regPassword) {
-      toast.error('Preencha todos os campos');
+    if (!regName || !regPassword) {
+      toast.error('Preencha nome e senha');
       return;
     }
-    if (regPassword.length < 6) {
-      toast.error('A senha deve ter pelo menos 6 caracteres');
+    if (regPassword.length < 4) {
+      toast.error('A senha deve ter pelo menos 4 caracteres');
       return;
     }
 
     const storedUsers = localStorage.getItem('app_users');
     const users = storedUsers ? JSON.parse(storedUsers) : [
-      { id: '1', email: 'admin@cobranca.com', password: 'admin123', name: 'Administrador' }
+      { id: '1', email: 'admin', password: 'admin123', name: 'Administrador' }
     ];
 
-    if (users.find((u: { email: string }) => u.email === regEmail)) {
-      toast.error('Este email já está cadastrado');
+    if (users.find((u: { name: string }) => u.name.toLowerCase() === regName.toLowerCase().trim())) {
+      toast.error('Este nome já está cadastrado');
       return;
     }
 
     const newUser = {
       id: Date.now().toString(),
-      email: regEmail,
+      email: regEmail || regName.toLowerCase().replace(/\s+/g, '.'),
       password: regPassword,
       name: regName,
       createdAt: new Date().toISOString(),
     };
     users.push(newUser);
     localStorage.setItem('app_users', JSON.stringify(users));
-    toast.success('Conta criada! Faça login com suas credenciais.');
+    toast.success('Conta criada! Faça login com seu nome e senha.');
     setRegName('');
     setRegEmail('');
     setRegPassword('');
@@ -165,21 +168,21 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
             <h2 className="text-2xl font-bold tracking-tight">
               {mode === 'login' ? 'Bem-vindo de volta' : 'Criar nova conta'}
             </h2>
-            <p className="text-muted-foreground">
-              {mode === 'login' ? 'Entre com suas credenciais para acessar o painel' : 'Preencha os dados para criar sua conta'}
+             <p className="text-muted-foreground">
+              {mode === 'login' ? 'Entre com seu nome ou email e senha' : 'Preencha os dados para criar sua conta'}
             </p>
           </div>
 
           {mode === 'login' ? (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                <Label htmlFor="email" className="text-sm font-medium">Usuário</Label>
                 <Input 
                   id="email" 
-                  type="email" 
+                  type="text" 
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)} 
-                  placeholder="seu@email.com" 
+                  placeholder="Nome ou email" 
                   className="h-11"
                 />
               </div>
@@ -211,16 +214,16 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
           ) : (
             <form onSubmit={handleRegister} className="space-y-5">
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Nome</Label>
+                <Label className="text-sm font-medium">Nome de Usuário</Label>
                 <Input value={regName} onChange={(e) => setRegName(e.target.value)} placeholder="Seu nome" className="h-11" />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Email</Label>
+                <Label className="text-sm font-medium">Email <span className="text-muted-foreground font-normal">(opcional)</span></Label>
                 <Input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="seu@email.com" className="h-11" />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Senha</Label>
-                <Input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="Mínimo 6 caracteres" className="h-11" />
+                <Input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="Mínimo 4 caracteres" className="h-11" />
               </div>
               <Button type="submit" className="w-full h-11 text-sm font-semibold">
                 <UserPlus className="mr-2 h-4 w-4" />
