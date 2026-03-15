@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { mockQueue } from '@/services/mock-data';
-import { Send, RefreshCw, Filter } from 'lucide-react';
+import { Send, RefreshCw, Filter, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const statusColors: Record<string, string> = {
@@ -58,6 +58,9 @@ const FilaPage = () => {
           </Select>
         </div>
         <div className="flex gap-2">
+          <Button variant="destructive" onClick={() => { setQueue([]); toast.success('Fila limpa!'); }}>
+            <Trash2 className="mr-2 h-4 w-4" /> Limpar Fila
+          </Button>
           <Button variant="outline" onClick={handlePopulate}>
             <RefreshCw className="mr-2 h-4 w-4" /> Popular Fila
           </Button>
