@@ -24,14 +24,14 @@ interface LayoutProps {
 }
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/clientes', label: 'Clientes', icon: Users },
-  { path: '/cobrancas', label: 'Cobranças', icon: Receipt },
-  { path: '/fila', label: 'Fila de Envio', icon: ListTodo },
-  { path: '/mensagens', label: 'Mensagens', icon: MessageSquare },
-  { path: '/contratos', label: 'Contratos', icon: FileText },
-  { path: '/pagamentos', label: 'Pagamentos', icon: CreditCard },
-  { path: '/configuracoes', label: 'Configurações', icon: Settings },
+  { path: '/', label: 'Dashboard', icon: LayoutDashboard, color: 'text-blue-400' },
+  { path: '/clientes', label: 'Clientes', icon: Users, color: 'text-emerald-400' },
+  { path: '/cobrancas', label: 'Cobranças', icon: Receipt, color: 'text-amber-400' },
+  { path: '/fila', label: 'Fila de Envio', icon: ListTodo, color: 'text-purple-400' },
+  { path: '/mensagens', label: 'Mensagens', icon: MessageSquare, color: 'text-green-400' },
+  { path: '/contratos', label: 'Contratos', icon: FileText, color: 'text-orange-400' },
+  { path: '/pagamentos', label: 'Pagamentos', icon: CreditCard, color: 'text-cyan-400' },
+  { path: '/configuracoes', label: 'Configurações', icon: Settings, color: 'text-rose-400' },
 ];
 
 const AppLayout = ({ children, onLogout }: LayoutProps) => {
