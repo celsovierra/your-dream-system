@@ -16,7 +16,7 @@ const ClientesPage = () => {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', document: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', document: '', amount: '', due_date: '' });
 
   const filtered = clients.filter(
     (c) =>
@@ -49,12 +49,12 @@ const ClientesPage = () => {
     }
     setDialogOpen(false);
     setEditingClient(null);
-    setForm({ name: '', email: '', phone: '', document: '' });
+    setForm({ name: '', email: '', phone: '', document: '', amount: '', due_date: '' });
   };
 
   const handleEdit = (client: Client) => {
     setEditingClient(client);
-    setForm({ name: client.name, email: client.email, phone: client.phone, document: client.document });
+    setForm({ name: client.name, email: client.email, phone: client.phone, document: client.document, amount: '', due_date: '' });
     setDialogOpen(true);
   };
 
@@ -75,7 +75,7 @@ const ClientesPage = () => {
             className="pl-9"
           />
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingClient(null); setForm({ name: '', email: '', phone: '', document: '' }); } }}>
+        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingClient(null); setForm({ name: '', email: '', phone: '', document: '', amount: '', due_date: '' }); } }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" /> Novo Cliente</Button>
           </DialogTrigger>
@@ -99,6 +99,14 @@ const ClientesPage = () => {
               <div>
                 <Label>CPF/CNPJ</Label>
                 <Input value={form.document} onChange={(e) => setForm({ ...form, document: e.target.value })} />
+              </div>
+              <div>
+                <Label>Valor (R$) *</Label>
+                <Input type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="150.00" />
+              </div>
+              <div>
+                <Label>Data de Vencimento *</Label>
+                <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
               </div>
               <Button onClick={handleSave} className="w-full">Salvar</Button>
             </div>
