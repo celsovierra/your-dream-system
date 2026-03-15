@@ -47,6 +47,7 @@ const ConfiguracoesPage = () => {
           setQrCode(null);
           setPollingStatus(false);
           setWhatsapp(prev => ({ ...prev, status: 'connected' }));
+          localStorage.setItem('whatsapp_status', 'connected');
           toast.success('WhatsApp conectado com sucesso!');
           return;
         }
@@ -73,11 +74,14 @@ const ConfiguracoesPage = () => {
       const api_url = parsed?.api_url || '';
       const api_key = parsed?.api_key || '';
 
+      const cachedStatus = localStorage.getItem('whatsapp_status');
+      const initialStatus = (cachedStatus === 'connected') ? 'connected' : 'disconnected';
+
       setWhatsapp({
         api_url,
         api_key,
         instance_name: autoInstanceName,
-        status: 'disconnected',
+        status: initialStatus as any,
       });
 
       if (api_url && api_key) {
@@ -89,6 +93,9 @@ const ConfiguracoesPage = () => {
         }).then(({ data }) => {
           if (data?.state === 'open' || data?.state === 'connected') {
             setWhatsapp(prev => ({ ...prev, status: 'connected' }));
+            localStorage.setItem('whatsapp_status', 'connected');
+          } else {
+            localStorage.setItem('whatsapp_status', 'disconnected');
           }
         }).catch(() => undefined);
       }
