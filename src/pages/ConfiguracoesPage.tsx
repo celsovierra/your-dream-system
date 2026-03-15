@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Users, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import asaasLogo from '@/assets/asaas.png';
+import mercadoPagoLogo from '@/assets/mercado-pago.png';
 
 interface AppUser {
   id: string;
