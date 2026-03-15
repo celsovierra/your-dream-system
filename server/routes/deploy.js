@@ -7,15 +7,29 @@ const DEPLOY_TOKEN = process.env.DEPLOY_TOKEN || 'cobranca-deploy-2024';
 
 // Verifica se há atualizações disponíveis (compara local vs remoto)
 router.get('/check-update', (_req, res) => {
-  exec('cd /opt/cobranca-pro && git fetch origin main 2>/dev/null && git rev-parse HEAD && git rev-parse origin/main', (error, stdout) => {
+  // Detecta o branch automaticamente (main ou master)
+  const script = `
+    cd /opt/cobranca-pro &&
+    BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "main") &&
+    git fetch origin "$BRANCH" 2>/dev/null &&
+    echo "$BRANCH" &&
+    git rev-parse HEAD &&
+    git rev-parse "origin/$BRANCH"
+  `;
+  exec(script, (error, stdout) => {
     if (error) {
+      console.error('check-update error:', error.message);
       return res.json({ success: false, hasUpdate: false, error: error.message });
     }
 
-    const [local, remote] = stdout.trim().split('\n');
+    const lines = stdout.trim().split('\n');
+    const branch = lines[0];
+    const local = lines[1];
+    const remote = lines[2];
     return res.json({
       success: true,
       hasUpdate: local !== remote,
+      branch,
       localCommit: local?.substring(0, 7),
       remoteCommit: remote?.substring(0, 7),
     });
