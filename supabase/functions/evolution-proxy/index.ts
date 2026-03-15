@@ -26,7 +26,8 @@ serve(async (req) => {
   }
 
   try {
-    const { api_url, api_key, instance_name, action } = await req.json();
+    const body = await req.json();
+    const { api_url, api_key, instance_name, action, to, message } = body;
 
     if (!api_url || !api_key || !instance_name) {
       return new Response(JSON.stringify({ error: "Parâmetros obrigatórios: api_url, api_key, instance_name" }), {
