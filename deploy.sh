@@ -47,6 +47,7 @@ fi
 # 4. Build do frontend
 echo "► [4/7] Instalando dependências e gerando build..."
 npm install
+npm install mariadb express cors dotenv
 npm run build
 
 # 5. Configurar MariaDB
