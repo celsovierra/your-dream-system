@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import asaasLogo from '@/assets/asaas.png';
+import mercadoPagoLogo from '@/assets/mercado-pago.png';
 
 interface PixPayment {
   id: number | string;
@@ -39,6 +41,11 @@ const statusMap: Record<string, { label: string; variant: 'default' | 'secondary
 const gatewayLabels: Record<string, string> = {
   mercadopago: 'Mercado Pago',
   asaas: 'Asaas',
+};
+
+const gatewayLogos: Record<string, string> = {
+  mercadopago: mercadoPagoLogo,
+  asaas: asaasLogo,
 };
 
 const PagamentosPage = () => {
@@ -169,6 +176,9 @@ const PagamentosPage = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <p className="text-sm text-muted-foreground">Cobranças PIX via</p>
+          {gatewayLogos[activeGateway] && (
+            <img src={gatewayLogos[activeGateway]} alt={gatewayLabel} className="h-6 w-auto" />
+          )}
           <Badge variant="outline">{gatewayLabel}</Badge>
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setPixResult(null); }}>
@@ -272,9 +282,12 @@ const PagamentosPage = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="text-xs">
-                        {gatewayLabels[p.gateway] || p.gateway}
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        {gatewayLogos[p.gateway] && (
+                          <img src={gatewayLogos[p.gateway]} alt={gatewayLabels[p.gateway]} className="h-4 w-auto" />
+                        )}
+                        <span className="text-xs text-muted-foreground">{gatewayLabels[p.gateway] || p.gateway}</span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={statusMap[p.status]?.variant || 'outline'}>

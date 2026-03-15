@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Users, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import asaasLogo from '@/assets/asaas.png';
+import mercadoPagoLogo from '@/assets/mercado-pago.png';
 
 interface AppUser {
   id: string;
@@ -207,8 +209,18 @@ const ConfiguracoesPage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="mercadopago">Mercado Pago</SelectItem>
-                    <SelectItem value="asaas">Asaas</SelectItem>
+                    <SelectItem value="mercadopago">
+                      <div className="flex items-center gap-2">
+                        <img src={mercadoPagoLogo} alt="Mercado Pago" className="h-5 w-auto" />
+                        Mercado Pago
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="asaas">
+                      <div className="flex items-center gap-2">
+                        <img src={asaasLogo} alt="Asaas" className="h-5 w-auto" />
+                        Asaas
+                      </div>
+                    </SelectItem>
                     <SelectItem value="pix_manual">PIX Manual</SelectItem>
                   </SelectContent>
                 </Select>
