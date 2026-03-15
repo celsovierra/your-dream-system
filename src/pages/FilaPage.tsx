@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,13 +23,23 @@ const typeLabels: Record<string, string> = {
   blocked: 'Bloqueio',
 };
 
+const QUEUE_STORAGE_KEY = 'cobranca_queue';
+
 const FilaPage = () => {
-  const [queue, setQueue] = useState(mockQueue);
+  const [queue, setQueue] = useState(() => {
+    const saved = localStorage.getItem(QUEUE_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : mockQueue;
+  });
   const [filterStatus, setFilterStatus] = useState('all');
+
+  useEffect(() => {
+    localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(queue));
+  }, [queue]);
 
   const filtered = filterStatus === 'all' ? queue : queue.filter((q) => q.status === filterStatus);
 
   const handlePopulate = () => {
+    setQueue(mockQueue);
     toast.success('Fila populada com cobranças do dia');
   };
 
