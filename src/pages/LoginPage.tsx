@@ -216,10 +216,6 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                 <Input value={regName} onChange={(e) => setRegName(e.target.value)} placeholder="Seu nome" className="h-11" />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Email <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                <Input type="text" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} placeholder="seu@email.com" className="h-11" />
-              </div>
-              <div className="space-y-2">
                 <Label className="text-sm font-medium">Senha</Label>
                 <Input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="Mínimo 4 caracteres" className="h-11" />
               </div>
