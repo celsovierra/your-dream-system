@@ -1,7 +1,7 @@
 import { createPool } from 'mariadb';
 
 const pool = createPool({
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST || '127.0.0.1',
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER || 'cobranca_admin',
   password: process.env.DB_PASS || 'Xk9mL2vR7pQ4nW',
