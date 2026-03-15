@@ -38,6 +38,28 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [deploying, setDeploying] = useState(false);
+  const [hasUpdate, setHasUpdate] = useState(false);
+
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        const savedUrl = localStorage.getItem('api_base_url');
+        const autoUrl = `${window.location.origin}/api`;
+        const apiUrl = savedUrl || autoUrl;
+        const res = await fetch(`${apiUrl}/check-update`);
+        const data = await res.json();
+        if (data.success) {
+          setHasUpdate(data.hasUpdate);
+        }
+      } catch {
+        // silently fail
+      }
+    };
+
+    checkForUpdates();
+    const interval = setInterval(checkForUpdates, 60000); // verifica a cada 1 minuto
+    return () => clearInterval(interval);
+  }, []);
 
   const handleDeploy = async () => {
     // Auto-detecta a URL da API baseado no endereço atual do navegador
