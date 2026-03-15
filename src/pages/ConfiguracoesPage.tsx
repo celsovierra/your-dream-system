@@ -266,7 +266,7 @@ const ConfiguracoesPage = () => {
                   const { data, error } = await invokeEvolutionProxy({
                     api_url: whatsapp.api_url,
                     api_key: whatsapp.api_key,
-                    instance_name: whatsapp.instance_name,
+                    instance_name: autoInstanceName,
                     action: 'create',
                   });
                   if (error) throw new Error(error);
