@@ -42,7 +42,7 @@ const ConfiguracoesPage = () => {
           </div>
           <div>
             <Label>Nome da Instância</Label>
-            <Input value={whatsapp.instance_name} onChange={(e) => setWhatsapp({ ...whatsapp, instance_name: e.target.value })} />
+            <Input value={whatsapp.instance_name} readOnly className="bg-muted cursor-not-allowed" />
           </div>
           <Button size="sm" onClick={() => toast.success('Configuração WhatsApp salva!')}>
             <Save className="mr-2 h-3 w-3" /> Salvar
