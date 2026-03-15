@@ -15,6 +15,25 @@ const ConfiguracoesPage = () => {
 
   return (
     <div className="space-y-6 max-w-2xl">
+      {/* URL da API (VPS) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Server className="h-5 w-5 text-primary" />
+            Servidor (VPS)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">URL da API para o botão "Atualizar VPS" funcionar.</p>
+          <div>
+            <Label>URL da API</Label>
+            <Input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="https://api.seudominio.com.br" />
+          </div>
+          <Button size="sm" onClick={() => { localStorage.setItem('api_base_url', apiUrl); toast.success('URL da API salva!'); }}>
+            <Save className="mr-2 h-3 w-3" /> Salvar
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* WhatsApp */}
       <Card>
