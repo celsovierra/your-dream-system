@@ -219,11 +219,20 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
               {navItems.find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
             </h2>
           </div>
-          {onLogout && (
-            <Button variant="ghost" size="sm" onClick={onLogout} className="text-muted-foreground">
-              <LogOut className="mr-2 h-4 w-4" /> Sair
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              title={darkMode ? 'Modo claro' : 'Modo escuro'}
+              className="rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
+            >
+              {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+            {onLogout && (
+              <Button variant="ghost" size="sm" onClick={onLogout} className="text-muted-foreground">
+                <LogOut className="mr-2 h-4 w-4" /> Sair
+              </Button>
+            )}
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
