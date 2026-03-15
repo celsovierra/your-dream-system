@@ -25,10 +25,10 @@ const ConfiguracoesPage = () => {
   const [users, setUsers] = useState<AppUser[]>([]);
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '' });
 
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [openSection, setOpenSection] = useState<string | null>(null);
 
   const toggleSection = (key: string) => {
-    setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+    setOpenSection(prev => prev === key ? null : key);
   };
 
   useEffect(() => {
@@ -86,7 +86,7 @@ const ConfiguracoesPage = () => {
     <div className="space-y-4 max-w-2xl">
 
       {/* Gerenciar Usuários */}
-      <Collapsible open={openSections.users} onOpenChange={() => toggleSection('users')}>
+      <Collapsible open={openSection === 'users'} onOpenChange={() => toggleSection('users')}>
         <Card>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
@@ -94,7 +94,7 @@ const ConfiguracoesPage = () => {
                 <Users className="h-5 w-5 text-primary" />
                 Gerenciar Usuários
               </div>
-              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSections.users ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'users' ? 'rotate-180' : ''}`} />
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
@@ -139,7 +139,7 @@ const ConfiguracoesPage = () => {
       </Collapsible>
 
       {/* WhatsApp */}
-      <Collapsible open={openSections.whatsapp} onOpenChange={() => toggleSection('whatsapp')}>
+      <Collapsible open={openSection === 'whatsapp'} onOpenChange={() => toggleSection('whatsapp')}>
         <Card>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
@@ -154,7 +154,7 @@ const ConfiguracoesPage = () => {
                   {whatsapp.status === 'connected' ? 'Conectado' : 'Desconectado'}
                 </Badge>
               </div>
-              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSections.whatsapp ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'whatsapp' ? 'rotate-180' : ''}`} />
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
@@ -180,7 +180,7 @@ const ConfiguracoesPage = () => {
       </Collapsible>
 
       {/* Pagamento */}
-      <Collapsible open={openSections.payment} onOpenChange={() => toggleSection('payment')}>
+      <Collapsible open={openSection === 'payment'} onOpenChange={() => toggleSection('payment')}>
         <Card>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
@@ -188,7 +188,7 @@ const ConfiguracoesPage = () => {
                 <CreditCard className="h-5 w-5 text-primary" />
                 Gateway de Pagamento
               </div>
-              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSections.payment ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'payment' ? 'rotate-180' : ''}`} />
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
@@ -218,7 +218,7 @@ const ConfiguracoesPage = () => {
       </Collapsible>
 
       {/* Backup */}
-      <Collapsible open={openSections.backup} onOpenChange={() => toggleSection('backup')}>
+      <Collapsible open={openSection === 'backup'} onOpenChange={() => toggleSection('backup')}>
         <Card>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
@@ -226,7 +226,7 @@ const ConfiguracoesPage = () => {
                 <Download className="h-5 w-5 text-primary" />
                 Backup do Sistema
               </div>
-              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSections.backup ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'backup' ? 'rotate-180' : ''}`} />
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
