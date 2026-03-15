@@ -170,11 +170,11 @@ const ConfiguracoesPage = () => {
             <CardContent className="space-y-4 pt-0">
               <div>
                 <Label>URL da API</Label>
-                <Input value={whatsapp.api_url} onChange={(e) => setWhatsapp({ ...whatsapp, api_url: e.target.value })} placeholder="https://evolution.seudominio.com.br" />
+                <Input value={whatsapp.api_url} onChange={(e) => setWhatsapp({ ...whatsapp, api_url: e.target.value })} placeholder="https://evolution.seudominio.com.br" onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()} className="select-none" />
               </div>
               <div>
                 <Label>API Key</Label>
-                <Input type="password" value={whatsapp.api_key} onChange={(e) => setWhatsapp({ ...whatsapp, api_key: e.target.value })} />
+                <Input type="password" value={whatsapp.api_key} onChange={(e) => setWhatsapp({ ...whatsapp, api_key: e.target.value })} onCopy={(e) => e.preventDefault()} onCut={(e) => e.preventDefault()} className="select-none" />
               </div>
               <div>
                 <Label>Nome da Instância</Label>
