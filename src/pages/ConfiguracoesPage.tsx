@@ -29,6 +29,15 @@ const ConfiguracoesPage = () => {
     const savedMpToken = localStorage.getItem('mp_access_token') || '';
     const savedAsaasToken = localStorage.getItem('asaas_access_token') || '';
     setPayment({ gateway: savedGateway as any, access_token: savedMpToken, asaas_token: savedAsaasToken });
+
+    // Carregar config WhatsApp salva
+    const savedWa = localStorage.getItem('whatsapp_config');
+    if (savedWa) {
+      try {
+        const parsed = JSON.parse(savedWa);
+        setWhatsapp(prev => ({ ...prev, ...parsed }));
+      } catch {}
+    }
   }, []);
 
   const [users, setUsers] = useState<AppUser[]>([]);
