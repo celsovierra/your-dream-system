@@ -43,7 +43,7 @@ router.get('/', async (req, res) => {
     });
   } catch (err) {
     console.error('GET /clients error:', err);
-    res.status(500).json({ message: 'Erro ao buscar clientes' });
+    res.status(500).json({ message: `Erro ao buscar clientes: ${err.message || err}` });
   }
 });
 
