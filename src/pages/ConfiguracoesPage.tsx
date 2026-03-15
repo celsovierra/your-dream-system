@@ -226,31 +226,34 @@ const ConfiguracoesPage = () => {
                 </Select>
               </div>
 
-              {/* Mercado Pago Config */}
-              <div className={`rounded-lg border p-4 space-y-3 ${payment.gateway === 'mercadopago' ? 'border-primary bg-primary/5' : 'opacity-70'}`}>
-                <div className="flex items-center gap-2">
-                  <img src={mercadoPagoLogo} alt="Mercado Pago" className="h-6 w-auto" />
-                  <span className="font-medium text-sm">Mercado Pago</span>
-                  {payment.gateway === 'mercadopago' && <Badge variant="default" className="text-xs">Ativo</Badge>}
+              {/* Mostrar apenas o gateway selecionado */}
+              {payment.gateway === 'mercadopago' && (
+                <div className="rounded-lg border border-primary p-4 space-y-3 bg-primary/5">
+                  <div className="flex items-center gap-2">
+                    <img src={mercadoPagoLogo} alt="Mercado Pago" className="h-6 w-auto" />
+                    <span className="font-medium text-sm">Mercado Pago</span>
+                    <Badge variant="default" className="text-xs">Ativo</Badge>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Access Token</Label>
+                    <Input type="password" value={payment.access_token} onChange={(e) => setPayment({ ...payment, access_token: e.target.value })} placeholder="APP_USR-..." />
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs">Access Token</Label>
-                  <Input type="password" value={payment.access_token} onChange={(e) => setPayment({ ...payment, access_token: e.target.value })} placeholder="APP_USR-..." />
-                </div>
-              </div>
+              )}
 
-              {/* Asaas Config */}
-              <div className={`rounded-lg border p-4 space-y-3 ${payment.gateway === 'asaas' ? 'border-primary bg-primary/5' : 'opacity-70'}`}>
-                <div className="flex items-center gap-2">
-                  <img src={asaasLogo} alt="Asaas" className="h-6 w-auto" />
-                  <span className="font-medium text-sm">Asaas</span>
-                  {payment.gateway === 'asaas' && <Badge variant="default" className="text-xs">Ativo</Badge>}
+              {payment.gateway === 'asaas' && (
+                <div className="rounded-lg border border-primary p-4 space-y-3 bg-primary/5">
+                  <div className="flex items-center gap-2">
+                    <img src={asaasLogo} alt="Asaas" className="h-6 w-auto" />
+                    <span className="font-medium text-sm">Asaas</span>
+                    <Badge variant="default" className="text-xs">Ativo</Badge>
+                  </div>
+                  <div>
+                    <Label className="text-xs">API Key</Label>
+                    <Input type="password" value={payment.asaas_token} onChange={(e) => setPayment({ ...payment, asaas_token: e.target.value })} placeholder="$aas_..." />
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs">API Key</Label>
-                  <Input type="password" value={payment.asaas_token} onChange={(e) => setPayment({ ...payment, asaas_token: e.target.value })} placeholder="$aas_..." />
-                </div>
-              </div>
+              )}
 
               <Button size="sm" onClick={() => {
                 localStorage.setItem('payment_gateway', payment.gateway);
