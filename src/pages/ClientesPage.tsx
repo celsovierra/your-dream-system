@@ -310,7 +310,7 @@ const ClientesPage = () => {
                     <TableCell>{client.phone}</TableCell>
                     <TableCell className="hidden sm:table-cell">{client.document || '-'}</TableCell>
                     <TableCell>{client.amount ? `R$ ${Number(client.amount).toFixed(2)}` : '-'}</TableCell>
-                    <TableCell>{client.due_date ? new Date(client.due_date + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</TableCell>
+                    <TableCell>{formatDatePtBr(client.due_date)}</TableCell>
                     <TableCell><Badge variant={client.is_active ? 'default' : 'secondary'}>{client.is_active ? 'Ativo' : 'Inativo'}</Badge></TableCell>
                     <TableCell className="text-right space-x-1">
                       <Button variant="ghost" size="icon" title="Enviar cobrança WhatsApp" onClick={() => handleSendBilling(client)}><MessageCircle className="h-4 w-4 text-green-600" /></Button>
