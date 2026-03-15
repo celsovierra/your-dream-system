@@ -73,7 +73,7 @@ router.post('/', async (req, res) => {
     res.status(201).json(newClient[0]);
   } catch (err) {
     console.error('POST /clients error:', err);
-    res.status(500).json({ message: 'Erro ao criar cliente' });
+    res.status(500).json({ message: `Erro ao criar cliente: ${err.message || err}` });
   }
 });
 
