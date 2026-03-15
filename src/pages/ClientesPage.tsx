@@ -192,12 +192,9 @@ const ClientesPage = () => {
     if (!baixaClient) return;
     const months = parseInt(baixaMonths);
 
-    let newDueDate = baixaClient.due_date || undefined;
-    if (baixaClient.due_date) {
-      const date = new Date(baixaClient.due_date + 'T00:00:00');
-      date.setMonth(date.getMonth() + months);
-      newDueDate = date.toISOString().split('T')[0];
-    }
+    const newDueDate = baixaClient.due_date
+      ? addMonthsToDateOnly(baixaClient.due_date, months)
+      : undefined;
 
     try {
       await updateClient(baixaClient.id, { due_date: newDueDate });
