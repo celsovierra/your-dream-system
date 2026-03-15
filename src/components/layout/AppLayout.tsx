@@ -115,18 +115,23 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         </nav>
 
         <div className="border-t border-sidebar-border p-4 space-y-3">
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full justify-start gap-2 text-sidebar-foreground border-sidebar-border hover:bg-sidebar-accent"
+          <button
             onClick={handleDeploy}
             disabled={deploying}
+            className={cn(
+              "w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold transition-all duration-200",
+              "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/25",
+              "hover:from-emerald-600 hover:to-teal-600 hover:shadow-emerald-500/40 hover:scale-[1.02]",
+              "active:scale-[0.98]",
+              "disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+            )}
           >
-            <RefreshCw className={cn("h-4 w-4", deploying && "animate-spin")} />
-            {deploying ? 'Atualizando...' : 'Atualizar VPS'}
-          </Button>
-          <p className="text-xs text-sidebar-foreground/60">
-            Preparado para VPS + MariaDB
+            <RefreshCw className={cn("h-4 w-4 shrink-0", deploying && "animate-spin")} />
+            <span>{deploying ? 'Atualizando...' : 'Atualizar VPS'}</span>
+            <span className="ml-auto text-[10px] font-normal opacity-75">git pull</span>
+          </button>
+          <p className="text-[11px] text-sidebar-foreground/50 text-center">
+            VPS + MariaDB
           </p>
         </div>
       </aside>
