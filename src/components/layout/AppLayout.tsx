@@ -129,25 +129,16 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
               </span>
             )}
           </div>
-          {!sidebarCollapsed && (
-            <button
-              onClick={() => setSidebarCollapsed(true)}
-              title="Recolher menu"
-              className="hidden lg:block rounded-lg p-2 text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all duration-200"
-            >
-              <PanelLeftClose className="h-5 w-5" />
-            </button>
-          )}
-          {sidebarCollapsed && (
-            <button
-              onClick={() => setSidebarCollapsed(false)}
-              title="Expandir menu"
-              className="absolute top-4 right-1.5 hidden lg:block rounded-lg p-1.5 text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all duration-200"
-            >
-              <PanelLeft className="h-4 w-4" />
-            </button>
-          )}
         </div>
+
+        {/* Collapse/expand toggle - outside sidebar edge */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+          className="absolute top-5 -right-3.5 z-50 hidden lg:flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-md hover:bg-accent hover:text-accent-foreground transition-all duration-200"
+        >
+          {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+        </button>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-2">
           {navItems.map((item) => {
