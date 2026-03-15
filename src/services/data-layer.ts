@@ -62,7 +62,11 @@ export async function fetchClients(): Promise<Client[]> {
   } else {
     const res = await api.getClients();
     if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar clientes');
-    return res.data.data;
+    return (res.data.data || []).map((c: any) => ({
+      ...c,
+      due_date: normalizeDateOnly(c.due_date),
+      amount: c.amount ? Number(c.amount) : undefined,
+    }));
   }
 }
 
