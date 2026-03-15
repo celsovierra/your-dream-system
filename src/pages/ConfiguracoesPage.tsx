@@ -218,7 +218,7 @@ const ConfiguracoesPage = () => {
       </Collapsible>
 
       {/* Backup */}
-      <Collapsible open={openSections.backup} onOpenChange={() => toggleSection('backup')}>
+      <Collapsible open={openSection === 'backup'} onOpenChange={() => toggleSection('backup')}>
         <Card>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
