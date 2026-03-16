@@ -137,9 +137,10 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       const remoteChanged = Boolean(previousRemoteCommit && remoteCommit && remoteCommit !== previousRemoteCommit);
 
       if (updated || remoteChanged) {
-        const completedAt = new Date().toISOString();
-        localStorage.setItem('last_deploy_at', completedAt);
-        setLastDeployAt(completedAt);
+        // Salva flag pendente — o timestamp real será registrado após o reload confirmar
+        localStorage.setItem('deploy_pending', 'true');
+        localStorage.removeItem('last_deploy_at');
+        setLastDeployAt(null);
         setHasUpdate(false);
         setDeployCheckError(null);
         toast.success('Atualização concluída com sucesso. Recarregando...');
@@ -162,11 +163,31 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   }, [sidebarCollapsed]);
 
   useEffect(() => {
+    const confirmPendingDeploy = async () => {
+      const pending = localStorage.getItem('deploy_pending');
+      if (pending) {
+        // Tenta confirmar que a API está respondendo com o código atualizado
+        const data = await checkForUpdates();
+        if (data && !data.hasUpdate) {
+          // API respondeu e está atualizada — agora sim registra o horário real
+          const confirmedAt = new Date().toISOString();
+          localStorage.setItem('last_deploy_at', confirmedAt);
+          localStorage.removeItem('deploy_pending');
+          setLastDeployAt(confirmedAt);
+          return;
+        }
+        // Se ainda não confirmou, remove o flag para não ficar preso
+        localStorage.removeItem('deploy_pending');
+      }
+    };
+
     const syncDeployApi = () => {
       void checkForUpdates();
     };
 
-    syncDeployApi();
+    confirmPendingDeploy().then(() => {
+      syncDeployApi();
+    });
     const interval = setInterval(syncDeployApi, 60000);
 
     return () => {
