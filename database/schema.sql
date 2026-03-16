@@ -233,18 +233,27 @@ ALTER TABLE billing_settings MODIFY COLUMN owner_id VARCHAR(100) NOT NULL DEFAUL
 INSERT IGNORE INTO users (name, email, password_hash) VALUES
 ('Administrador', 'admin@cobranca.com', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9');
 
--- Dados iniciais de templates (ignora se já existirem)
-INSERT IGNORE INTO message_templates (id, name, type, content) VALUES
-(1, 'Lembrete', 'reminder', '🚨 Olá *{nome}*, tudo bem?\nBom dia, aqui é um lembrete que sua fatura já está disponível.\n\n🗓 *Vencimento:* {vencimento}\n💰 *Valor:* R$ {valor}\n💸 *Desconto:* {desconto}\n\nPIX Copia e Cola:\n{pix_copia_cola}\n\nApós vencimento será cobrado juros pela operadora.\n\n_O pagamento é confirmado automaticamente. Você receberá o recibo em seguida, sem precisar enviar comprovante._'),
-(2, 'Vencimento', 'due', 'Olá *{nome}*!\n\nSua mensalidade está disponível para pagamento.\n\n📅 *Vencimento:* {vencimento}\n💰 *Valor:* R$ {valor}\n💸 *Desconto:* {desconto}\n\nPague agora pelo PIX:\n{pix_copia_cola}\n\n_Após o pagamento, você receberá seu recibo automaticamente._'),
-(3, 'Atraso', 'overdue', 'Olá *{nome}*!\n\nIdentificamos que sua mensalidade está em atraso.\n\n📅 *Vencimento original:* {vencimento}\n💵 *Valor mensal:* R$ {valor}\n📊 *Multa:* {multa}\n📈 *Juros:* {juros}\n💰 *Total a pagar: {valor_atualizado}*\n\nRegularize agora pelo PIX:\n{pix_copia_cola}\n\n_Evite o bloqueio dos serviços._'),
-(4, 'Recibo', 'receipt', '✅ *Pagamento Confirmado!* ✅\n\n```RECIBO DE PAGAMENTO\n=======================\nCliente : {nome}\nServiço : Rastreamento\nPeríodo : {vencimento}\nValor   : R$ {valor}\nMulta   : {multa}\nJuros   : {juros}\nDesconto: {desconto}\n\nValor Total : {valor_atualizado}\n=======================\nPago em : {data_hoje}\nStatus  : ✅PAGO✅\nPróx Venc: {prox_vencimento}\n=======================```');
+-- ===== LIMPAR TEMPLATES DUPLICADOS (manter apenas 1 por tipo) =====
+-- Remove duplicatas antigas, mantendo apenas o menor ID de cada tipo
+DELETE t1 FROM message_templates t1
+INNER JOIN message_templates t2
+WHERE t1.type = t2.type
+  AND t1.owner_id IS NULL AND t2.owner_id IS NULL
+  AND t1.id > t2.id;
 
--- ===== ATUALIZAR TEMPLATES EXISTENTES (para VPS que já tinham dados antigos) =====
-UPDATE message_templates SET content = '🚨 Olá *{nome}*, tudo bem?\nBom dia, aqui é um lembrete que sua fatura já está disponível.\n\n🗓 *Vencimento:* {vencimento}\n💰 *Valor:* R$ {valor}\n💸 *Desconto:* {desconto}\n\nPIX Copia e Cola:\n{pix_copia_cola}\n\nApós vencimento será cobrado juros pela operadora.\n\n_O pagamento é confirmado automaticamente. Você receberá o recibo em seguida, sem precisar enviar comprovante._' WHERE id = 1;
+-- Dados iniciais de templates (ignora se já existirem pelo tipo)
+INSERT INTO message_templates (id, name, type, content)
+SELECT 1, 'Lembrete', 'reminder', '🚨 Olá *{nome}*, tudo bem?\nBom dia, aqui é um lembrete que sua fatura já está disponível.\n\n🗓 *Vencimento:* {vencimento}\n💰 *Valor:* R$ {valor}\n💸 *Desconto:* {desconto}\n\nPIX Copia e Cola:\n{pix_copia_cola}\n\nApós vencimento será cobrado juros pela operadora.\n\n_O pagamento é confirmado automaticamente. Você receberá o recibo em seguida, sem precisar enviar comprovante._'
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM message_templates WHERE type = 'reminder' AND owner_id IS NULL);
 
-UPDATE message_templates SET content = 'Olá *{nome}*!\n\nSua mensalidade está disponível para pagamento.\n\n📅 *Vencimento:* {vencimento}\n💰 *Valor:* R$ {valor}\n💸 *Desconto:* {desconto}\n\nPague agora pelo PIX:\n{pix_copia_cola}\n\n_Após o pagamento, você receberá seu recibo automaticamente._' WHERE id = 2;
+INSERT INTO message_templates (id, name, type, content)
+SELECT 2, 'Vencimento', 'due', 'Olá *{nome}*!\n\nSua mensalidade está disponível para pagamento.\n\n📅 *Vencimento:* {vencimento}\n💰 *Valor:* R$ {valor}\n💸 *Desconto:* {desconto}\n\nPague agora pelo PIX:\n{pix_copia_cola}\n\n_Após o pagamento, você receberá seu recibo automaticamente._'
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM message_templates WHERE type = 'due' AND owner_id IS NULL);
 
-UPDATE message_templates SET content = 'Olá *{nome}*!\n\nIdentificamos que sua mensalidade está em atraso.\n\n📅 *Vencimento original:* {vencimento}\n💵 *Valor mensal:* R$ {valor}\n📊 *Multa:* {multa}\n📈 *Juros:* {juros}\n💰 *Total a pagar: {valor_atualizado}*\n\nRegularize agora pelo PIX:\n{pix_copia_cola}\n\n_Evite o bloqueio dos serviços._' WHERE id = 3;
+INSERT INTO message_templates (id, name, type, content)
+SELECT 3, 'Atraso', 'overdue', 'Olá *{nome}*!\n\nIdentificamos que sua mensalidade está em atraso.\n\n📅 *Vencimento original:* {vencimento}\n💵 *Valor mensal:* R$ {valor}\n📊 *Multa:* {multa}\n📈 *Juros:* {juros}\n💰 *Total a pagar: {valor_atualizado}*\n\nRegularize agora pelo PIX:\n{pix_copia_cola}\n\n_Evite o bloqueio dos serviços._'
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM message_templates WHERE type = 'overdue' AND owner_id IS NULL);
 
-UPDATE message_templates SET content = '✅ *Pagamento Confirmado!* ✅\n\n```RECIBO DE PAGAMENTO\n=======================\nCliente : {nome}\nServiço : Rastreamento\nPeríodo : {vencimento}\nValor   : R$ {valor}\nMulta   : {multa}\nJuros   : {juros}\nDesconto: {desconto}\n\nValor Total : {valor_atualizado}\n=======================\nPago em : {data_hoje}\nStatus  : ✅PAGO✅\nPróx Venc: {prox_vencimento}\n=======================```' WHERE id = 4;
+INSERT INTO message_templates (id, name, type, content)
+SELECT 4, 'Recibo', 'receipt', '✅ *Pagamento Confirmado!* ✅\n\n```RECIBO DE PAGAMENTO\n=======================\nCliente : {nome}\nServiço : Rastreamento\nPeríodo : {vencimento}\nValor   : R$ {valor}\nMulta   : {multa}\nJuros   : {juros}\nDesconto: {desconto}\n\nValor Total : {valor_atualizado}\n=======================\nPago em : {data_hoje}\nStatus  : ✅PAGO✅\nPróx Venc: {prox_vencimento}\n=======================```'
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM message_templates WHERE type = 'receipt' AND owner_id IS NULL);
