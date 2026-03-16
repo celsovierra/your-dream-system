@@ -487,7 +487,7 @@ export async function saveSettings(settings: Partial<BillingSettings>): Promise<
         userStorageSet(`billing_setting_${key}`, String(value));
       }
     } else {
-      await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
+      await apiFetch('/settings', { method: 'PUT', body: JSON.stringify(settings) });
     }
     addOperationLog(backend, 'Config', 'UPDATE', `Salvou ${Object.keys(settings).length} configurações`);
   } catch (err: any) {
