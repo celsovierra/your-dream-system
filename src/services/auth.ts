@@ -178,7 +178,6 @@ export async function deleteUserVps(id: string): Promise<void> {
   if (!res.success) throw new Error(res.error || 'Erro ao remover usuário');
 }
 
-export { isVpsMode };
 
 // ===== User-scoped localStorage =====
 // Prefixes keys with user ID for isolated config per user
