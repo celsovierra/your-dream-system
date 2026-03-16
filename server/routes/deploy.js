@@ -7,6 +7,14 @@ const DEPLOY_TOKEN = process.env.DEPLOY_TOKEN || 'cobranca-deploy-2024';
 const PROJECT_DIR = process.env.PROJECT_DIR || '/opt/cobranca-pro';
 const DEPLOY_TIMEOUT_MS = 10 * 60 * 1000;
 
+const deployState = {
+  status: 'idle',
+  startedAt: null,
+  finishedAt: null,
+  output: '',
+  error: null,
+};
+
 function shellQuote(value = '') {
   return `'${String(value).replace(/'/g, `'\\''`)}'`;
 }
@@ -29,6 +37,10 @@ function buildDeployCommand() {
     (pm2 restart cobranca-api || pm2 start server/index.js --name cobranca-api) &&
     sudo systemctl restart nginx
   `;
+}
+
+function setDeployState(nextState) {
+  Object.assign(deployState, nextState);
 }
 
 // Verifica se há atualizações disponíveis (compara local vs remoto)
@@ -63,12 +75,31 @@ router.get('/check-update', (_req, res) => {
   });
 });
 
+router.get('/deploy-status', (_req, res) => {
+  return res.json({
+    success: true,
+    ...deployState,
+  });
+});
+
 router.post('/deploy', (req, res) => {
   const token = req.headers['x-deploy-token'];
 
   if (token !== DEPLOY_TOKEN) {
     return res.status(403).json({ success: false, error: 'Token inválido' });
   }
+
+  if (deployState.status === 'running') {
+    return res.status(409).json({ success: false, error: 'Já existe uma atualização em andamento.' });
+  }
+
+  setDeployState({
+    status: 'running',
+    startedAt: new Date().toISOString(),
+    finishedAt: null,
+    output: '',
+    error: null,
+  });
 
   const command = buildDeployCommand();
 
@@ -81,25 +112,33 @@ router.post('/deploy', (req, res) => {
     },
     (error, stdout, stderr) => {
       const output = [stdout, stderr].filter(Boolean).join('\n').trim();
+      const finishedAt = new Date().toISOString();
 
       if (error) {
         console.error('Deploy error:', error.message, output);
-        return res.status(500).json({
-          success: false,
+        setDeployState({
+          status: 'error',
+          finishedAt,
+          output,
           error: output || error.message || 'Falha ao atualizar a VPS',
         });
+        return;
       }
 
       console.log('Deploy concluído:', output || 'sem saída');
-      return res.json({
-        success: true,
-        message: 'Atualização concluída com sucesso.',
+      setDeployState({
+        status: 'success',
+        finishedAt,
         output,
+        error: null,
       });
     }
   );
 
-  return undefined;
+  return res.status(202).json({
+    success: true,
+    message: 'Atualização iniciada com sucesso.',
+  });
 });
 
 export default router;

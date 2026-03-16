@@ -97,6 +97,50 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
     }
   };
 
+  const waitForDeployCompletion = async (apiUrl: string) => {
+    for (let attempt = 0; attempt < 90; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 1500 : 2000));
+
+      try {
+        const res = await fetch(`${apiUrl}/deploy-status?t=${Date.now()}`, {
+          cache: 'no-store',
+        });
+        const data = await parseApiResponse(res);
+
+        if (!res.ok || !data.success) {
+          continue;
+        }
+
+        if (data.status === 'running' || data.status === 'idle') {
+          continue;
+        }
+
+        if (data.status === 'error') {
+          const errorMessage = data.error || 'Falha ao atualizar a VPS';
+          setDeployCheckError(errorMessage);
+          toast.error(errorMessage);
+          return false;
+        }
+
+        if (data.status === 'success') {
+          const completedAt = data.finishedAt || new Date().toISOString();
+          localStorage.setItem('last_deploy_at', completedAt);
+          setLastDeployAt(completedAt);
+          setHasUpdate(false);
+          setDeployCheckError(null);
+          toast.success('Atualização concluída com sucesso. Recarregando...');
+          setTimeout(() => window.location.reload(), 1200);
+          return true;
+        }
+      } catch {
+        // durante o restart da API a conexão pode cair por alguns segundos
+      }
+    }
+
+    toast.warning('O deploy foi iniciado, mas não foi possível confirmar a conclusão automaticamente.');
+    return false;
+  };
+
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
     localStorage.setItem('theme', darkMode ? 'dark' : 'light');
@@ -122,11 +166,6 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const handleDeploy = async () => {
     const apiUrl = resolveDeployApiUrl();
 
-    if (!apiUrl) {
-      toast.error('Configure a URL da API da VPS em Configurações.');
-      return;
-    }
-
     setDeploying(true);
 
     try {
@@ -141,16 +180,12 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       const data = await parseApiResponse(res);
 
       if (!res.ok || !data.success) {
-        toast.error(data.error || 'Erro ao atualizar a VPS');
+        toast.error(data.error || 'Erro ao iniciar a atualização da VPS');
         return;
       }
 
-      const now = new Date().toISOString();
-      localStorage.setItem('last_deploy_at', now);
-      setLastDeployAt(now);
-      setHasUpdate(false);
-      toast.success(data.message || 'Atualização concluída com sucesso.');
-      await checkForUpdates();
+      toast.success(data.message || 'Atualização iniciada com sucesso.');
+      await waitForDeployCompletion(apiUrl);
     } catch {
       toast.error('Não foi possível conectar à API da VPS');
     } finally {
