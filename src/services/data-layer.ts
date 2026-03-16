@@ -66,6 +66,26 @@ function apiBaseUrl(): string {
   return env || '/api';
 }
 
+async function safeJsonParse(res: Response): Promise<any> {
+  const text = await res.text();
+  if (!text.trim()) return {};
+
+  // Detect HTML responses (Nginx error pages, 502, etc.)
+  if (text.trim().startsWith('<') || text.trim().startsWith('<!')) {
+    const status = res.status;
+    if (status === 502 || status === 503 || status === 504) {
+      throw new Error(`Servidor VPS indisponível (HTTP ${status}). Verifique se o PM2 está rodando.`);
+    }
+    throw new Error(`Servidor retornou HTML em vez de JSON (HTTP ${status}). O backend pode estar fora do ar.`);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Resposta inválida do servidor (HTTP ${res.status}): ${text.substring(0, 120)}`);
+  }
+}
+
 function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
   const headers = authHeaders(options.headers as Record<string, string> || {});
 
@@ -419,7 +439,7 @@ export async function fetchQueue(): Promise<QueueItem[]> {
       result = (data || []) as QueueItem[];
     } else {
       const res = await apiFetch('/queue');
-      const json = await res.json();
+      const json = await safeJsonParse(res);
       if (!json.success) throw new Error(json.error || 'Erro ao buscar fila');
       result = json.data || [];
     }
@@ -439,7 +459,7 @@ export async function clearQueue(): Promise<void> {
       if (error) throw error;
     } else {
       const res = await apiFetch('/queue', { method: 'DELETE' });
-      const json = await res.json();
+      const json = await safeJsonParse(res);
       if (!json.success) throw new Error(json.error || 'Erro ao limpar fila');
     }
     addOperationLog(backend, 'Fila', 'DELETE', 'Limpou toda a fila');
@@ -496,7 +516,7 @@ export async function fetchSettings(): Promise<BillingSettings> {
       return settings;
     } else {
       const res = await apiFetch('/settings');
-      const json = await res.json();
+      const json = await safeJsonParse(res);
       if (!json.success) return defaults;
       addOperationLog(backend, 'Config', 'SELECT', 'Carregou configurações');
       return { ...defaults, ...json.data };
@@ -548,7 +568,7 @@ export async function invokeEvolutionProxy(payload: EvolutionPayload): Promise<{
   } else {
     try {
       const res = await apiFetch('/whatsapp', { method: 'POST', body: JSON.stringify(payload) });
-      const data = await res.json();
+      const data = await safeJsonParse(res);
       if (!res.ok) {
         let debugMessage = data?.debug?.response?.message?.[0] || data?.debug?.error || data?.debug?.message;
         if (debugMessage && typeof debugMessage === 'object') debugMessage = JSON.stringify(debugMessage);
