@@ -160,8 +160,8 @@ const ConfiguracoesPage = () => {
   return (
     <div className="space-y-4 max-w-2xl">
 
-      {/* Gerenciar Usuários */}
-      <Collapsible open={openSection === 'users'} onOpenChange={() => toggleSection('users')}>
+      {/* Gerenciar Usuários - apenas admin */}
+      {userIsAdmin && <Collapsible open={openSection === 'users'} onOpenChange={() => toggleSection('users')}>
         <Card>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">

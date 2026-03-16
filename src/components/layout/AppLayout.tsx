@@ -43,7 +43,7 @@ const allBottomNavItems = [
 
 const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const userIsAdmin = isAdmin();
-  const bottomNavItems = allBottomNavItems.filter(item => !item.adminOnly || userIsAdmin);
+  const bottomNavItems = allBottomNavItems;
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
