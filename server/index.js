@@ -10,6 +10,7 @@ import queueRouter from './routes/queue.js';
 import settingsRouter from './routes/settings.js';
 import billsRouter from './routes/bills.js';
 import { startScheduler } from './scheduler.js';
+import { extractOwnerId } from './middleware/owner.js';
 
 const envPath = new URL('../.env', import.meta.url);
 dotenv.config({ path: envPath.pathname });
@@ -18,6 +19,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(extractOwnerId);
 
 // Rotas da API
 app.use('/api', deployRouter);

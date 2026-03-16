@@ -6,7 +6,14 @@ const router = express.Router();
 // Listar templates
 router.get('/', async (req, res) => {
   try {
-    const rows = await query('SELECT * FROM message_templates ORDER BY id');
+    let sql = 'SELECT * FROM message_templates WHERE 1=1';
+    const params = [];
+    if (req.ownerId) {
+      sql += ' AND owner_id = ?';
+      params.push(req.ownerId);
+    }
+    sql += ' ORDER BY id';
+    const rows = await query(sql, params);
     const data = Array.isArray(rows) ? rows.filter(r => r && typeof r === 'object' && 'id' in r) : [];
     res.json(data);
   } catch (err) {
@@ -25,7 +32,12 @@ router.put('/:id', async (req, res) => {
     if (fields.length === 0) return res.status(400).json({ message: 'Nenhum campo' });
 
     values.push(req.params.id);
-    await query(`UPDATE message_templates SET ${fields.join(', ')} WHERE id = ?`, values);
+    let sql = `UPDATE message_templates SET ${fields.join(', ')} WHERE id = ?`;
+    if (req.ownerId) {
+      sql += ' AND owner_id = ?';
+      values.push(req.ownerId);
+    }
+    await query(sql, values);
     const updated = await query('SELECT * FROM message_templates WHERE id = ?', [req.params.id]);
     res.json(updated[0]);
   } catch (err) {

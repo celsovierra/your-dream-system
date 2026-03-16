@@ -62,6 +62,15 @@ class ApiService {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
 
+    // Send owner ID for tenant isolation on VPS
+    try {
+      const { getCurrentOwnerId } = await import('@/services/auth');
+      const ownerId = getCurrentOwnerId();
+      if (ownerId) {
+        headers['X-Owner-Id'] = ownerId;
+      }
+    } catch { /* ignore */ }
+
     try {
       const response = await fetch(`${this.resolveBaseUrl()}${endpoint}`, {
         ...options,

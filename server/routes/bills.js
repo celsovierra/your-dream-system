@@ -62,14 +62,17 @@ function sanitizeBillPayload(payload = {}) {
   };
 }
 
-// GET /api/bills — lista contas (somente pai, para manter consistência com o preview)
-router.get('/', async (_req, res) => {
+// GET /api/bills
+router.get('/', async (req, res) => {
   try {
-    const rows = await query(
-      'SELECT * FROM bills_payable WHERE parent_bill_id IS NULL ORDER BY due_date ASC, id ASC'
-    );
-
-    console.log('GET /bills raw type:', typeof rows, 'isArray:', Array.isArray(rows), 'length:', rows?.length);
+    let sql = 'SELECT * FROM bills_payable WHERE parent_bill_id IS NULL';
+    const params = [];
+    if (req.ownerId) {
+      sql += ' AND owner_id = ?';
+      params.push(req.ownerId);
+    }
+    sql += ' ORDER BY due_date ASC, id ASC';
+    const rows = await query(sql, params);
 
     const data = Array.isArray(rows)
       ? rows.filter(r => r && typeof r === 'object' && 'id' in r).map(normalizeBillRow)
@@ -82,10 +85,11 @@ router.get('/', async (_req, res) => {
   }
 });
 
-// POST /api/bills — cria conta única ou parcela pai
+// POST /api/bills
 router.post('/', async (req, res) => {
   try {
     const bill = sanitizeBillPayload(req.body);
+    const ownerId = req.ownerId || null;
 
     if (!bill.description || !bill.due_date || bill.total_amount === undefined || bill.amount === undefined) {
       return res.status(400).json({ success: false, error: 'Campos obrigatórios: description, due_date, total_amount, amount' });
@@ -93,34 +97,22 @@ router.post('/', async (req, res) => {
 
     const result = await query(
       `INSERT INTO bills_payable
-      (description, supplier, category, payment_type, total_amount, installments_count, current_installment, parent_bill_id, amount, due_date, paid_date, status, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (description, supplier, category, payment_type, total_amount, installments_count, current_installment, parent_bill_id, amount, due_date, paid_date, status, notes, owner_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        bill.description,
-        bill.supplier,
-        bill.category,
-        bill.payment_type,
-        bill.total_amount,
-        bill.installments_count,
-        bill.current_installment,
-        bill.parent_bill_id,
-        bill.amount,
-        bill.due_date,
-        bill.paid_date,
-        bill.status,
-        bill.notes,
+        bill.description, bill.supplier, bill.category, bill.payment_type,
+        bill.total_amount, bill.installments_count, bill.current_installment,
+        bill.parent_bill_id, bill.amount, bill.due_date, bill.paid_date,
+        bill.status, bill.notes, ownerId,
       ]
     );
 
     const insertId = Number(result.insertId ?? result[0]?.insertId ?? 0);
-    console.log('POST /bills insertId:', insertId, 'raw:', result.insertId);
-
     if (!insertId) {
       return res.status(201).json({ success: true, data: { id: 0, ...bill } });
     }
 
     const inserted = await query('SELECT * FROM bills_payable WHERE id = ?', [insertId]);
-    console.log('POST /bills SELECT after insert:', inserted?.length, 'rows');
     return res.status(201).json({ success: true, data: normalizeBillRow(inserted[0] || { id: insertId, ...bill }) });
   } catch (err) {
     console.error('POST /bills error:', err);
@@ -128,32 +120,24 @@ router.post('/', async (req, res) => {
   }
 });
 
-// POST /api/bills/batch — cria parcelas filhas
+// POST /api/bills/batch
 router.post('/batch', async (req, res) => {
   try {
     const bills = Array.isArray(req.body?.bills) ? req.body.bills : [];
     if (bills.length === 0) return res.json({ success: true });
+    const ownerId = req.ownerId || null;
 
     for (const item of bills) {
       const bill = sanitizeBillPayload(item);
       await query(
         `INSERT INTO bills_payable
-        (description, supplier, category, payment_type, total_amount, installments_count, current_installment, parent_bill_id, amount, due_date, paid_date, status, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (description, supplier, category, payment_type, total_amount, installments_count, current_installment, parent_bill_id, amount, due_date, paid_date, status, notes, owner_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          bill.description,
-          bill.supplier,
-          bill.category,
-          bill.payment_type,
-          bill.total_amount,
-          bill.installments_count,
-          bill.current_installment,
-          bill.parent_bill_id,
-          bill.amount,
-          bill.due_date,
-          bill.paid_date,
-          bill.status,
-          bill.notes,
+          bill.description, bill.supplier, bill.category, bill.payment_type,
+          bill.total_amount, bill.installments_count, bill.current_installment,
+          bill.parent_bill_id, bill.amount, bill.due_date, bill.paid_date,
+          bill.status, bill.notes, ownerId,
         ]
       );
     }
@@ -165,7 +149,7 @@ router.post('/batch', async (req, res) => {
   }
 });
 
-// PUT /api/bills/:id — atualiza conta
+// PUT /api/bills/:id
 router.put('/:id', async (req, res) => {
   try {
     const payload = req.body || {};
@@ -196,11 +180,13 @@ router.put('/:id', async (req, res) => {
     }
 
     values.push(req.params.id);
+    let sql = `UPDATE bills_payable SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
+    if (req.ownerId) {
+      sql += ' AND owner_id = ?';
+      values.push(req.ownerId);
+    }
 
-    await query(
-      `UPDATE bills_payable SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      values
-    );
+    await query(sql, values);
 
     const updated = await query('SELECT * FROM bills_payable WHERE id = ?', [req.params.id]);
     return res.json({ success: true, data: normalizeBillRow(updated[0]) });
@@ -210,10 +196,16 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/bills/:id — remove conta
+// DELETE /api/bills/:id
 router.delete('/:id', async (req, res) => {
   try {
-    await query('DELETE FROM bills_payable WHERE id = ?', [req.params.id]);
+    let sql = 'DELETE FROM bills_payable WHERE id = ?';
+    const params = [req.params.id];
+    if (req.ownerId) {
+      sql += ' AND owner_id = ?';
+      params.push(req.ownerId);
+    }
+    await query(sql, params);
     return res.json({ success: true });
   } catch (err) {
     console.error('DELETE /bills/:id error:', err);
@@ -221,14 +213,16 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// PATCH /api/bills/:id/pay — marca como paga
+// PATCH /api/bills/:id/pay
 router.patch('/:id/pay', async (req, res) => {
   try {
-    await query(
-      "UPDATE bills_payable SET status = 'paid', paid_date = CURDATE(), updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-      [req.params.id]
-    );
-
+    let sql = "UPDATE bills_payable SET status = 'paid', paid_date = CURDATE(), updated_at = CURRENT_TIMESTAMP WHERE id = ?";
+    const params = [req.params.id];
+    if (req.ownerId) {
+      sql += ' AND owner_id = ?';
+      params.push(req.ownerId);
+    }
+    await query(sql, params);
     return res.json({ success: true });
   } catch (err) {
     console.error('PATCH /bills/:id/pay error:', err);
