@@ -27,6 +27,7 @@ const ConfiguracoesPage = () => {
   const [layoutPrimaryColor, setLayoutPrimaryColor] = useState(() => localStorage.getItem('layout_primary_color') || '#3b82f6');
   const [layoutLogo, setLayoutLogo] = useState<string | null>(() => localStorage.getItem('layout_logo'));
   const [apiBaseUrl, setApiBaseUrl] = useState(() => localStorage.getItem('api_base_url') || '');
+  const configuredWebhookBase = (apiBaseUrl || window.location.origin).trim().replace(/\/+$/, '').replace(/\/api$/, '');
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [traccarUrl, setTraccarUrl] = useState(() => userStorageGet('traccar_url') || '');
@@ -263,12 +264,12 @@ const ConfiguracoesPage = () => {
               )}
 
               {(payment.gateway === 'mercadopago' || payment.gateway === 'asaas') && (
-                <div className="space-y-1">
+                <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
                   <Label>URL do Webhook</Label>
-                  <div className="flex gap-2">
-                    <Input readOnly value={`${window.location.origin}/api/webhook/${payment.gateway}`} className="bg-muted cursor-default text-xs" />
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Input readOnly value={`${configuredWebhookBase}/api/webhook/${payment.gateway}`} className="bg-background cursor-default text-xs" />
                     <Button size="sm" variant="outline" type="button" onClick={() => {
-                      navigator.clipboard.writeText(`${window.location.origin}/api/webhook/${payment.gateway}`);
+                      navigator.clipboard.writeText(`${configuredWebhookBase}/api/webhook/${payment.gateway}`);
                       toast.success('URL do Webhook copiada!');
                     }}>
                       <Copy className="h-3 w-3" />
