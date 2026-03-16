@@ -315,7 +315,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             </div>
             <p className="text-[11px] text-sidebar-foreground/50 text-center">
               {!deployApiConfigured
-                ? '⚙️ Configure a URL da API da VPS em Configurações'
+                ? '⚙️ Esse botão funciona na instalação da VPS'
                 : deployCheckError
                   ? `⚠️ Falha ao verificar: ${deployCheckError}`
                   : hasUpdate
