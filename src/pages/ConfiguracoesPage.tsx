@@ -425,8 +425,8 @@ const ConfiguracoesPage = () => {
         </Card>
       </Collapsible>
 
-      {/* Backup */}
-      <Collapsible open={openSection === 'backup'} onOpenChange={() => toggleSection('backup')}>
+      {/* Backup - apenas admin */}
+      {userIsAdmin && <Collapsible open={openSection === 'backup'} onOpenChange={() => toggleSection('backup')}>
         <Card>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
@@ -448,7 +448,7 @@ const ConfiguracoesPage = () => {
             </CardContent>
           </CollapsibleContent>
         </Card>
-      </Collapsible>
+      </Collapsible>}
 
       {/* API Traccar */}
       <Collapsible open={openSection === 'traccar'} onOpenChange={() => toggleSection('traccar')}>
@@ -509,8 +509,8 @@ const ConfiguracoesPage = () => {
         </Card>
       </Collapsible>
 
-      {/* Layout */}
-      <Collapsible open={openSection === 'layout'} onOpenChange={() => toggleSection('layout')}>
+      {/* Layout - apenas admin */}
+      {userIsAdmin && <Collapsible open={openSection === 'layout'} onOpenChange={() => toggleSection('layout')}>
         <Card>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
@@ -625,7 +625,6 @@ const ConfiguracoesPage = () => {
                   localStorage.removeItem('layout_logo');
                 }
 
-                // Apply color to CSS custom property
                 const hsl = hexToHSL(layoutPrimaryColor);
                 if (hsl) {
                   document.documentElement.style.setProperty('--primary', hsl);
@@ -639,7 +638,7 @@ const ConfiguracoesPage = () => {
             </CardContent>
           </CollapsibleContent>
         </Card>
-      </Collapsible>
+      </Collapsible>}
     </div>
   );
 };
