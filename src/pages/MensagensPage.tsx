@@ -73,13 +73,21 @@ const MensagensPage = () => {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Variáveis disponíveis: <code className="rounded bg-secondary px-1">{'{nome}'}</code>,{' '}
-        <code className="rounded bg-secondary px-1">{'{valor}'}</code>,{' '}
-        <code className="rounded bg-secondary px-1">{'{data_vencimento}'}</code>,{' '}
-        <code className="rounded bg-secondary px-1">{'{dias_atraso}'}</code>,{' '}
-        <code className="rounded bg-secondary px-1">{'{link_pagamento}'}</code>
-      </p>
+      <p className="text-sm text-muted-foreground mb-1">Variáveis disponíveis:</p>
+      <div className="flex flex-wrap gap-2 text-xs">
+        <Badge variant="secondary" className="bg-orange-600 text-white hover:bg-orange-700">{'{nome}'}</Badge>
+        <Badge variant="secondary" className="bg-blue-600 text-white hover:bg-blue-700">{'{vencimento}'}</Badge>
+        <Badge variant="secondary" className="bg-blue-600 text-white hover:bg-blue-700">{'{valor}'}</Badge>
+        <Badge variant="secondary" className="bg-orange-600 text-white hover:bg-orange-700">{'{valor_atualizado}'}</Badge>
+        <Badge variant="secondary" className="bg-yellow-600 text-white hover:bg-yellow-700">{'{multa}'}</Badge>
+        <Badge variant="secondary" className="bg-blue-600 text-white hover:bg-blue-700">{'{juros}'}</Badge>
+        <Badge variant="secondary" className="bg-blue-600 text-white hover:bg-blue-700">{'{mes}'}</Badge>
+        <Badge variant="secondary" className="bg-blue-600 text-white hover:bg-blue-700">{'{link_boleto}'}</Badge>
+        <Badge variant="secondary" className="bg-purple-600 text-white hover:bg-purple-700">{'{pix_copia_cola}'}</Badge>
+        <Badge variant="secondary" className="bg-green-600 text-white hover:bg-green-700">{'{prox_vencimento}'}</Badge>
+        <Badge variant="secondary" className="bg-green-600 text-white hover:bg-green-700">{'{data_hoje}'}</Badge>
+        <Badge variant="secondary" className="bg-green-600 text-white hover:bg-green-700">{'{desconto}'}</Badge>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         {templates.map((template) => (
