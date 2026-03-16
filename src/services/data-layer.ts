@@ -390,7 +390,7 @@ export async function fetchQueue(): Promise<QueueItem[]> {
       if (error) throw error;
       result = (data || []) as QueueItem[];
     } else {
-      const res = await fetch('/api/queue');
+      const res = await apiFetch('/queue');
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Erro ao buscar fila');
       result = json.data || [];
