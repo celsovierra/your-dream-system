@@ -129,7 +129,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
     }
 
     try {
-      const res = await fetch(`${apiUrl}/check-update?t=${Date.now()}`, {
+      const res = await proxyFetch(`${apiUrl}/check-update?t=${Date.now()}`, {
         cache: 'no-store',
       });
       const data = await parseApiResponse(res);
