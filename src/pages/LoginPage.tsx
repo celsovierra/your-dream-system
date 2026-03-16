@@ -254,7 +254,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
           </button>
 
           <p className="text-center text-xs text-muted-foreground pt-4">
-            © {new Date().getFullYear()} CobrançaPro. Todos os direitos reservados.
+            © {new Date().getFullYear()} {companyName}. Todos os direitos reservados.
           </p>
         </div>
       </div>
