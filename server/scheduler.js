@@ -63,8 +63,8 @@ async function populateQueue() {
       const daysOverdue = diffDays < 0 ? Math.abs(diffDays) : 0;
 
       await query(
-        'INSERT INTO billing_queue (client_id, client_name, client_phone, type, amount, due_date, days_overdue, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [client.id, client.name, client.phone, type, client.amount, client.due_date, daysOverdue, 'pending']
+        'INSERT INTO billing_queue (client_id, client_name, client_phone, type, amount, due_date, days_overdue, status, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [client.id, client.name, client.phone, type, client.amount, client.due_date, daysOverdue, 'pending', client.owner_id || null]
       );
       added++;
     }
