@@ -57,7 +57,9 @@ export function clearCurrentUser() {
 
 export function isAdmin(): boolean {
   const user = getCurrentUser();
-  return user?.role === 'admin';
+  // If no current_user is set (legacy session), treat as admin (first user)
+  if (!user) return true;
+  return user.role === 'admin';
 }
 
 export function getCurrentOwnerId(): string {
