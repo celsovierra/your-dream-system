@@ -362,9 +362,21 @@ const ClientesPage = () => {
     if (baixaClient.phone && baixaClient.phone.length > 2 && waConfig?.api_url) {
       const receiptTemplate = await getReceiptTemplate();
       if (receiptTemplate) {
-        const message = receiptTemplate.content
-          .replace('{nome}', baixaClient.name)
-          .replace('{valor}', `R$ ${totalAmount.toFixed(2)}`);
+        const today = new Date();
+        const nextDueFormatted = newDueDate ? formatDatePtBr(newDueDate) : '-';
+        const todayFormatted = today.toLocaleDateString('pt-BR');
+        const message = replaceTemplateVars(receiptTemplate.content, {
+          nome: baixaClient.name,
+          valor: Number(baixaClient.amount || 0).toFixed(2),
+          data_vencimento: formatDatePtBr(baixaClient.due_date),
+          multa: '0,00',
+          juros: '0,00',
+          valor_atualizado: `R$ ${totalAmount.toFixed(2)}`,
+          data_hoje: todayFormatted,
+          prox_vencimento: nextDueFormatted,
+          link_pagamento: '',
+          dias_atraso: '0',
+        });
         try {
           toast.loading('Enviando recibo...', { id: `receipt-${baixaClient.id}` });
           await ensureWhatsAppConnected(waConfig);
