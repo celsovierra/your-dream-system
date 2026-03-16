@@ -7,11 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Users, ChevronDown, Copy, QrCode, Palette, ImageIcon, MapPin } from 'lucide-react';
+import { Wifi, WifiOff, CreditCard, Save, Download, Upload, ChevronDown, Copy, QrCode, Palette, ImageIcon, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import asaasLogo from '@/assets/asaas.png';
 import mercadoPagoLogo from '@/assets/mercado-pago.png';
-import { type AppUser, getStoredUsers, saveUsers, userStorageGet, userStorageSet, isAdmin, isVpsMode, fetchUsersVps, registerVps, deleteUserVps } from '@/services/auth';
+import { userStorageGet, userStorageSet, isAdmin } from '@/services/auth';
 
 const ConfiguracoesPage = () => {
   const userIsAdmin = isAdmin();
