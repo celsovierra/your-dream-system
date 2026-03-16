@@ -256,10 +256,15 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       >
         <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-3">
           <div className={cn("flex items-center gap-2", sidebarCollapsed && "justify-center w-full")}>
-            <Receipt className="h-7 w-7 shrink-0 text-sidebar-primary" />
+            {(() => {
+              const customLogo = localStorage.getItem('layout_logo');
+              return customLogo
+                ? <img src={customLogo} alt="" className="h-7 w-7 shrink-0 rounded object-contain" />
+                : <Receipt className="h-7 w-7 shrink-0 text-sidebar-primary" />;
+            })()}
             {!sidebarCollapsed && (
               <span className="text-lg font-bold tracking-tight text-sidebar-primary-foreground">
-                CobrançaPro
+                {localStorage.getItem('layout_company_name') || 'CobrançaPro'}
               </span>
             )}
           </div>
