@@ -57,10 +57,13 @@ const App = () => {
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
     const currentUser = getCurrentUser();
+    const isJwt = Boolean(token && token.split('.').length === 3);
 
-    if (token && currentUser) {
+    if (token && currentUser && isJwt) {
       setIsAuthenticated(true);
     } else {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('current_user');
       setIsAuthenticated(false);
     }
 
