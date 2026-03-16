@@ -163,11 +163,31 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   }, [sidebarCollapsed]);
 
   useEffect(() => {
+    const confirmPendingDeploy = async () => {
+      const pending = localStorage.getItem('deploy_pending');
+      if (pending) {
+        // Tenta confirmar que a API está respondendo com o código atualizado
+        const data = await checkForUpdates();
+        if (data && !data.hasUpdate) {
+          // API respondeu e está atualizada — agora sim registra o horário real
+          const confirmedAt = new Date().toISOString();
+          localStorage.setItem('last_deploy_at', confirmedAt);
+          localStorage.removeItem('deploy_pending');
+          setLastDeployAt(confirmedAt);
+          return;
+        }
+        // Se ainda não confirmou, remove o flag para não ficar preso
+        localStorage.removeItem('deploy_pending');
+      }
+    };
+
     const syncDeployApi = () => {
       void checkForUpdates();
     };
 
-    syncDeployApi();
+    confirmPendingDeploy().then(() => {
+      syncDeployApi();
+    });
     const interval = setInterval(syncDeployApi, 60000);
 
     return () => {
