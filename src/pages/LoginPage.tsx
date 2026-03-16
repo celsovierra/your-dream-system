@@ -104,10 +104,14 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20">
           <div className="flex items-center gap-3 mb-8">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500 shadow-lg shadow-blue-500/30">
-              <Receipt className="h-6 w-6 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">CobrançaPro</h1>
+            {customLogo ? (
+              <img src={customLogo} alt={companyName} className="h-12 w-auto object-contain" />
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500 shadow-lg shadow-blue-500/30">
+                <Receipt className="h-6 w-6 text-white" />
+              </div>
+            )}
+            <h1 className="text-3xl font-bold text-white tracking-tight">{companyName}</h1>
           </div>
           
           <h2 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-6">
