@@ -339,6 +339,54 @@ const ConfiguracoesPage = () => {
         </Card>
       </Collapsible>
 
+      {userIsAdmin && <Collapsible open={openSection === 'vps-api'} onOpenChange={() => toggleSection('vps-api')}>
+        <Card>
+          <CollapsibleTrigger className="w-full">
+            <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
+              <div className="flex items-center gap-2 text-base font-semibold">
+                <Server className="h-5 w-5 text-primary" />
+                API da VPS
+                {apiBaseUrl && <Badge variant="default">Ativa</Badge>}
+              </div>
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'vps-api' ? 'rotate-180' : ''}`} />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-4 pt-0">
+              <div>
+                <Label>URL base da VPS</Label>
+                <Input value={apiBaseUrl} onChange={(e) => setApiBaseUrl(e.target.value)} placeholder="https://seudominio.com ou https://seudominio.com/api" />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Quando salva aqui, o preview passa a usar a mesma API e o mesmo banco MariaDB da VPS.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => {
+                  const trimmed = apiBaseUrl.trim().replace(/\/+$/, '');
+                  if (!trimmed) {
+                    toast.error('Informe a URL da API da VPS');
+                    return;
+                  }
+                  const normalized = trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+                  localStorage.setItem('api_base_url', normalized);
+                  toast.success('API da VPS salva! Recarregando para usar o banco da VPS...');
+                  setTimeout(() => window.location.reload(), 700);
+                }}>
+                  <Save className="mr-2 h-3 w-3" /> Salvar API VPS
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  localStorage.removeItem('api_base_url');
+                  toast.success('API da VPS removida! Recarregando...');
+                  setTimeout(() => window.location.reload(), 500);
+                }}>
+                  Limpar
+                </Button>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>}
+
       {userIsAdmin && <Collapsible open={openSection === 'layout'} onOpenChange={() => toggleSection('layout')}>
         <Card>
           <CollapsibleTrigger className="w-full">
