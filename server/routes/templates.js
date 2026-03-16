@@ -1,14 +1,19 @@
 import express from 'express';
-import { query } from '../db.js';
+import { hasColumn, query } from '../db.js';
 
 const router = express.Router();
+
+async function supportsOwnerScope() {
+  return hasColumn('message_templates', 'owner_id');
+}
 
 // Listar templates
 router.get('/', async (req, res) => {
   try {
+    const ownerScoped = await supportsOwnerScope();
     let sql = 'SELECT * FROM message_templates WHERE 1=1';
     const params = [];
-    if (req.ownerId) {
+    if (ownerScoped && req.ownerId) {
       sql += ' AND owner_id = ?';
       params.push(req.ownerId);
     }
@@ -24,6 +29,7 @@ router.get('/', async (req, res) => {
 // Atualizar template
 router.put('/:id', async (req, res) => {
   try {
+    const ownerScoped = await supportsOwnerScope();
     const { content, is_active } = req.body;
     const fields = [];
     const values = [];
@@ -33,7 +39,7 @@ router.put('/:id', async (req, res) => {
 
     values.push(req.params.id);
     let sql = `UPDATE message_templates SET ${fields.join(', ')} WHERE id = ?`;
-    if (req.ownerId) {
+    if (ownerScoped && req.ownerId) {
       sql += ' AND owner_id = ?';
       values.push(req.ownerId);
     }

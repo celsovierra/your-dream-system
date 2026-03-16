@@ -1,5 +1,5 @@
 import express from 'express';
-import { query } from '../db.js';
+import { hasColumn, query } from '../db.js';
 
 const router = express.Router();
 
@@ -42,6 +42,10 @@ function normalizeClientRow(row) {
   };
 }
 
+async function supportsOwnerScope() {
+  return hasColumn('clients', 'owner_id');
+}
+
 // Listar clientes
 router.get('/', async (req, res) => {
   try {
@@ -50,13 +54,14 @@ router.get('/', async (req, res) => {
     const limit = 100;
     const offset = (page - 1) * limit;
     const ownerId = req.ownerId;
+    const ownerScoped = await supportsOwnerScope();
 
     let sql = 'SELECT * FROM clients WHERE 1=1';
     let countSql = 'SELECT COUNT(*) as total FROM clients WHERE 1=1';
     const params = [];
     const countParams = [];
 
-    if (ownerId) {
+    if (ownerScoped && ownerId) {
       sql += ' AND owner_id = ?';
       countSql += ' AND owner_id = ?';
       params.push(ownerId);
@@ -98,9 +103,10 @@ router.get('/', async (req, res) => {
 // Buscar cliente por ID
 router.get('/:id', async (req, res) => {
   try {
+    const ownerScoped = await supportsOwnerScope();
     let sql = 'SELECT * FROM clients WHERE id = ?';
     const params = [req.params.id];
-    if (req.ownerId) {
+    if (ownerScoped && req.ownerId) {
       sql += ' AND owner_id = ?';
       params.push(req.ownerId);
     }
@@ -118,12 +124,18 @@ router.post('/', async (req, res) => {
     const { name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes } = req.body;
     if (!name || !phone) return res.status(400).json({ message: 'Nome e telefone são obrigatórios' });
 
-    const ownerId = req.ownerId || null;
+    const ownerScoped = await supportsOwnerScope();
+    const ownerId = ownerScoped ? req.ownerId || null : null;
 
-    const result = await query(
-      'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null, ownerId]
-    );
+    const result = ownerScoped
+      ? await query(
+          'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null, ownerId]
+        )
+      : await query(
+          'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null]
+        );
 
     const newClient = await query('SELECT * FROM clients WHERE id = ?', [Number(result.insertId)]);
     res.status(201).json(normalizeClientRow(newClient[0]));
@@ -157,9 +169,10 @@ router.put('/:id', async (req, res) => {
 
     if (fields.length === 0) return res.status(400).json({ message: 'Nenhum campo para atualizar' });
 
+    const ownerScoped = await supportsOwnerScope();
     values.push(req.params.id);
     let sql = `UPDATE clients SET ${fields.join(', ')} WHERE id = ?`;
-    if (req.ownerId) {
+    if (ownerScoped && req.ownerId) {
       sql += ' AND owner_id = ?';
       values.push(req.ownerId);
     }
@@ -176,9 +189,10 @@ router.put('/:id', async (req, res) => {
 // Deletar cliente
 router.delete('/:id', async (req, res) => {
   try {
+    const ownerScoped = await supportsOwnerScope();
     let sql = 'DELETE FROM clients WHERE id = ?';
     const params = [req.params.id];
-    if (req.ownerId) {
+    if (ownerScoped && req.ownerId) {
       sql += ' AND owner_id = ?';
       params.push(req.ownerId);
     }

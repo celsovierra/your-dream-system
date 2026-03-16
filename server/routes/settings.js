@@ -1,14 +1,19 @@
 import express from 'express';
-import { query } from '../db.js';
+import { hasColumn, query } from '../db.js';
 
 const router = express.Router();
+
+async function supportsOwnerScope() {
+  return hasColumn('billing_settings', 'owner_id');
+}
 
 // GET /api/settings — configurações do owner
 router.get('/', async (req, res) => {
   try {
+    const ownerScoped = await supportsOwnerScope();
     let sql = 'SELECT `key`, `value` FROM billing_settings WHERE 1=1';
     const params = [];
-    if (req.ownerId) {
+    if (ownerScoped && req.ownerId) {
       sql += ' AND owner_id = ?';
       params.push(req.ownerId);
     }
@@ -27,9 +32,10 @@ router.get('/', async (req, res) => {
 router.put('/', async (req, res) => {
   try {
     const settings = req.body;
-    const ownerId = req.ownerId || null;
+    const ownerScoped = await supportsOwnerScope();
+    const ownerId = ownerScoped ? req.ownerId || null : null;
     for (const [key, value] of Object.entries(settings)) {
-      if (ownerId) {
+      if (ownerScoped && ownerId) {
         await query(
           'INSERT INTO billing_settings (`key`, `value`, `owner_id`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = ?',
           [key, String(value), ownerId, String(value)]

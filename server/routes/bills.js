@@ -1,5 +1,5 @@
 import express from 'express';
-import { query } from '../db.js';
+import { hasColumn, query } from '../db.js';
 
 const router = express.Router();
 
@@ -62,12 +62,17 @@ function sanitizeBillPayload(payload = {}) {
   };
 }
 
+async function supportsOwnerScope() {
+  return hasColumn('bills_payable', 'owner_id');
+}
+
 // GET /api/bills
 router.get('/', async (req, res) => {
   try {
+    const ownerScoped = await supportsOwnerScope();
     let sql = 'SELECT * FROM bills_payable WHERE parent_bill_id IS NULL';
     const params = [];
-    if (req.ownerId) {
+    if (ownerScoped && req.ownerId) {
       sql += ' AND owner_id = ?';
       params.push(req.ownerId);
     }
@@ -89,23 +94,36 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const bill = sanitizeBillPayload(req.body);
-    const ownerId = req.ownerId || null;
+    const ownerScoped = await supportsOwnerScope();
+    const ownerId = ownerScoped ? req.ownerId || null : null;
 
     if (!bill.description || !bill.due_date || bill.total_amount === undefined || bill.amount === undefined) {
       return res.status(400).json({ success: false, error: 'Campos obrigatórios: description, due_date, total_amount, amount' });
     }
 
-    const result = await query(
-      `INSERT INTO bills_payable
-      (description, supplier, category, payment_type, total_amount, installments_count, current_installment, parent_bill_id, amount, due_date, paid_date, status, notes, owner_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        bill.description, bill.supplier, bill.category, bill.payment_type,
-        bill.total_amount, bill.installments_count, bill.current_installment,
-        bill.parent_bill_id, bill.amount, bill.due_date, bill.paid_date,
-        bill.status, bill.notes, ownerId,
-      ]
-    );
+    const result = ownerScoped
+      ? await query(
+          `INSERT INTO bills_payable
+          (description, supplier, category, payment_type, total_amount, installments_count, current_installment, parent_bill_id, amount, due_date, paid_date, status, notes, owner_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            bill.description, bill.supplier, bill.category, bill.payment_type,
+            bill.total_amount, bill.installments_count, bill.current_installment,
+            bill.parent_bill_id, bill.amount, bill.due_date, bill.paid_date,
+            bill.status, bill.notes, ownerId,
+          ]
+        )
+      : await query(
+          `INSERT INTO bills_payable
+          (description, supplier, category, payment_type, total_amount, installments_count, current_installment, parent_bill_id, amount, due_date, paid_date, status, notes)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            bill.description, bill.supplier, bill.category, bill.payment_type,
+            bill.total_amount, bill.installments_count, bill.current_installment,
+            bill.parent_bill_id, bill.amount, bill.due_date, bill.paid_date,
+            bill.status, bill.notes,
+          ]
+        );
 
     const insertId = Number(result.insertId ?? result[0]?.insertId ?? 0);
     if (!insertId) {
@@ -125,21 +143,36 @@ router.post('/batch', async (req, res) => {
   try {
     const bills = Array.isArray(req.body?.bills) ? req.body.bills : [];
     if (bills.length === 0) return res.json({ success: true });
-    const ownerId = req.ownerId || null;
+    const ownerScoped = await supportsOwnerScope();
+    const ownerId = ownerScoped ? req.ownerId || null : null;
 
     for (const item of bills) {
       const bill = sanitizeBillPayload(item);
-      await query(
-        `INSERT INTO bills_payable
-        (description, supplier, category, payment_type, total_amount, installments_count, current_installment, parent_bill_id, amount, due_date, paid_date, status, notes, owner_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          bill.description, bill.supplier, bill.category, bill.payment_type,
-          bill.total_amount, bill.installments_count, bill.current_installment,
-          bill.parent_bill_id, bill.amount, bill.due_date, bill.paid_date,
-          bill.status, bill.notes, ownerId,
-        ]
-      );
+      if (ownerScoped) {
+        await query(
+          `INSERT INTO bills_payable
+          (description, supplier, category, payment_type, total_amount, installments_count, current_installment, parent_bill_id, amount, due_date, paid_date, status, notes, owner_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            bill.description, bill.supplier, bill.category, bill.payment_type,
+            bill.total_amount, bill.installments_count, bill.current_installment,
+            bill.parent_bill_id, bill.amount, bill.due_date, bill.paid_date,
+            bill.status, bill.notes, ownerId,
+          ]
+        );
+      } else {
+        await query(
+          `INSERT INTO bills_payable
+          (description, supplier, category, payment_type, total_amount, installments_count, current_installment, parent_bill_id, amount, due_date, paid_date, status, notes)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            bill.description, bill.supplier, bill.category, bill.payment_type,
+            bill.total_amount, bill.installments_count, bill.current_installment,
+            bill.parent_bill_id, bill.amount, bill.due_date, bill.paid_date,
+            bill.status, bill.notes,
+          ]
+        );
+      }
     }
 
     return res.json({ success: true });
@@ -179,9 +212,10 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Nenhum campo para atualizar' });
     }
 
+    const ownerScoped = await supportsOwnerScope();
     values.push(req.params.id);
     let sql = `UPDATE bills_payable SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
-    if (req.ownerId) {
+    if (ownerScoped && req.ownerId) {
       sql += ' AND owner_id = ?';
       values.push(req.ownerId);
     }
@@ -199,9 +233,10 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/bills/:id
 router.delete('/:id', async (req, res) => {
   try {
+    const ownerScoped = await supportsOwnerScope();
     let sql = 'DELETE FROM bills_payable WHERE id = ?';
     const params = [req.params.id];
-    if (req.ownerId) {
+    if (ownerScoped && req.ownerId) {
       sql += ' AND owner_id = ?';
       params.push(req.ownerId);
     }
@@ -216,9 +251,10 @@ router.delete('/:id', async (req, res) => {
 // PATCH /api/bills/:id/pay
 router.patch('/:id/pay', async (req, res) => {
   try {
+    const ownerScoped = await supportsOwnerScope();
     let sql = "UPDATE bills_payable SET status = 'paid', paid_date = CURDATE(), updated_at = CURRENT_TIMESTAMP WHERE id = ?";
     const params = [req.params.id];
-    if (req.ownerId) {
+    if (ownerScoped && req.ownerId) {
       sql += ' AND owner_id = ?';
       params.push(req.ownerId);
     }

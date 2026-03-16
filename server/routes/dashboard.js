@@ -1,13 +1,18 @@
 import express from 'express';
-import { query } from '../db.js';
+import { hasColumn, query } from '../db.js';
 
 const router = express.Router();
 
+async function supportsOwnerScope() {
+  return hasColumn('clients', 'owner_id');
+}
+
 router.get('/', async (req, res) => {
   try {
+    const ownerScoped = await supportsOwnerScope();
     let sql = 'SELECT * FROM clients WHERE 1=1';
     const params = [];
-    if (req.ownerId) {
+    if (ownerScoped && req.ownerId) {
       sql += ' AND owner_id = ?';
       params.push(req.ownerId);
     }
