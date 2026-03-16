@@ -511,7 +511,11 @@ export async function fetchBills(): Promise<BillPayable[]> {
   try {
     let result: BillPayable[];
     if (isLovableEnv()) {
-      const { data, error } = await supabase.from('bills_payable').select('*').is('parent_bill_id', null).order('due_date', { ascending: true });
+      let query = supabase.from('bills_payable').select('*').is('parent_bill_id', null).order('due_date', { ascending: true });
+      if (!isAdmin()) {
+        query = query.eq('owner_id', getCurrentOwnerId());
+      }
+      const { data, error } = await query;
       if (error) throw error;
       result = (data as unknown as BillPayable[]) || [];
     } else {
