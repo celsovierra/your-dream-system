@@ -415,12 +415,18 @@ export async function getReceiptTemplate(): Promise<MessageTemplate | null> {
 export async function getTemplateByType(type: string): Promise<MessageTemplate | null> {
   const backend = ACTIVE_DATA_BACKEND;
   try {
-    const templates = await fetchMessageTemplates();
-    const matches = templates
-      .filter((template) => template.type === type && isActiveTemplate(template as any))
-      .sort((a, b) => sortTemplatePriority(a as any, b as any));
+    let result: MessageTemplate | null = null;
+    if (isLovableEnv()) {
+      const templates = await fetchMessageTemplates();
+      const matches = templates
+        .filter((template) => template.type === type && isActiveTemplate(template as any))
+        .sort((a, b) => sortTemplatePriority(a as any, b as any));
+      result = matches[0] || null;
+    } else {
+      const res = await api.getMessageTemplateByType(type, true);
+      if (res.success && res.data) result = res.data as MessageTemplate;
+    }
 
-    const result = matches[0] || null;
     addOperationLog(backend, 'Templates', 'SELECT', `Buscou template tipo ${type}${result ? ` (id=${result.id})` : ' (não encontrado)'}`);
     return result;
   } catch (err: any) {

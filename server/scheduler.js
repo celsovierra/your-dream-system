@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import { query } from './db.js';
+import { resolveTemplateByType } from './utils/template-resolution.js';
 
 // Busca configuração do banco
 async function getSetting(key, fallback) {
@@ -99,20 +100,11 @@ async function processQueue(type) {
       return;
     }
 
-    // Buscar template de mensagem
+    // Buscar template de mensagem resolvido por owner/tipo
     const typeMap = { reminder: 'reminder', due: 'due', overdue: 'overdue' };
     const ownerIds = Array.from(new Set(items.map(item => item?.owner_id).filter(Boolean)));
     const ownerId = ownerIds.length === 1 ? ownerIds[0] : null;
-    const templateRows = ownerId
-      ? await query(
-          'SELECT * FROM message_templates WHERE type = ? AND is_active = 1 AND (owner_id = ? OR owner_id IS NULL) ORDER BY (owner_id = ?) DESC, id DESC LIMIT 1',
-          [typeMap[type], ownerId, ownerId]
-        )
-      : await query(
-          'SELECT * FROM message_templates WHERE type = ? AND is_active = 1 ORDER BY id DESC LIMIT 1',
-          [typeMap[type]]
-        );
-    const template = Array.isArray(templateRows) ? templateRows.find(row => row && typeof row === 'object' && "id" in row) : null;
+    const template = await resolveTemplateByType(typeMap[type], ownerId, { activeOnly: true });
 
     if (!template) {
       console.log(`[Scheduler] Template do tipo ${type} não encontrado ou desativado`);
