@@ -8,6 +8,10 @@ function isTemplateActive(template) {
   return Boolean(template?.is_active);
 }
 
+function isTemplateRow(row) {
+  return Boolean(row && typeof row === 'object' && 'id' in row && row.type);
+}
+
 function sortTemplatesByPriority(a, b, ownerId) {
   const aOwned = ownerId && a?.owner_id === ownerId ? 1 : 0;
   const bOwned = ownerId && b?.owner_id === ownerId ? 1 : 0;
@@ -19,7 +23,7 @@ function dedupeTemplatesByType(rows, ownerId) {
   const map = new Map();
 
   for (const row of rows) {
-    if (!row || typeof row !== 'object' || !('id' in row) || !row.type) continue;
+    if (!isTemplateRow(row)) continue;
     const current = map.get(row.type);
     if (!current || sortTemplatesByPriority(row, current, ownerId) < 0) {
       map.set(row.type, row);
@@ -27,6 +31,24 @@ function dedupeTemplatesByType(rows, ownerId) {
   }
 
   return Array.from(map.values()).sort((a, b) => Number(a.id) - Number(b.id));
+}
+
+async function findPreferredTemplateTarget(templateId, ownerId) {
+  const currentRows = await query('SELECT * FROM message_templates WHERE id = ?', [templateId]);
+  const currentTemplate = Array.isArray(currentRows) ? currentRows.find(isTemplateRow) : null;
+
+  if (!currentTemplate) return null;
+  if (!ownerId) return currentTemplate;
+
+  const sameTypeRows = await query(
+    'SELECT * FROM message_templates WHERE type = ? AND (owner_id = ? OR owner_id IS NULL) ORDER BY id DESC',
+    [currentTemplate.type, ownerId]
+  );
+
+  const validRows = Array.isArray(sameTypeRows) ? sameTypeRows.filter(isTemplateRow) : [];
+  if (validRows.length === 0) return currentTemplate;
+
+  return [...validRows].sort((a, b) => sortTemplatesByPriority(a, b, ownerId))[0] || currentTemplate;
 }
 
 // Listar templates
