@@ -42,9 +42,9 @@ const ContratosPage = () => {
   const [traccarConfigured, setTraccarConfigured] = useState(false);
 
   useEffect(() => {
-    const url = localStorage.getItem('traccar_url');
-    const user = localStorage.getItem('traccar_user');
-    const pass = localStorage.getItem('traccar_password');
+    const url = userStorageGet('traccar_url');
+    const user = userStorageGet('traccar_user');
+    const pass = userStorageGet('traccar_password');
     setTraccarConfigured(!!(url && user && pass));
   }, []);
 
