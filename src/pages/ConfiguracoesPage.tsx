@@ -97,8 +97,6 @@ const ConfiguracoesPage = () => {
     } catch {}
   }, [autoInstanceName]);
 
-  const [users, setUsers] = useState<AppUser[]>([]);
-  const [newUser, setNewUser] = useState({ email: '', password: '', name: '' });
 
   const [openSection, setOpenSection] = useState<string | null>(null);
 
