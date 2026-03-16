@@ -114,6 +114,11 @@ const ConfiguracoesPage = () => {
   const [layoutLogo, setLayoutLogo] = useState<string | null>(() => localStorage.getItem('layout_logo'));
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // Traccar API config state
+  const [traccarUrl, setTraccarUrl] = useState(() => localStorage.getItem('traccar_url') || '');
+  const [traccarUser, setTraccarUser] = useState(() => localStorage.getItem('traccar_user') || '');
+  const [traccarPassword, setTraccarPassword] = useState(() => localStorage.getItem('traccar_password') || '');
+
   const toggleSection = (key: string) => {
     setOpenSection(prev => prev === key ? null : key);
   };
