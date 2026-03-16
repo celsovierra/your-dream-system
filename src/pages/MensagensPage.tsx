@@ -81,8 +81,6 @@ const MensagensPage = () => {
         <Badge variant="secondary" className="bg-orange-600 text-white hover:bg-orange-700">{'{valor_atualizado}'}</Badge>
         <Badge variant="secondary" className="bg-yellow-600 text-white hover:bg-yellow-700">{'{multa}'}</Badge>
         <Badge variant="secondary" className="bg-blue-600 text-white hover:bg-blue-700">{'{juros}'}</Badge>
-        <Badge variant="secondary" className="bg-blue-600 text-white hover:bg-blue-700">{'{mes}'}</Badge>
-        <Badge variant="secondary" className="bg-blue-600 text-white hover:bg-blue-700">{'{link_boleto}'}</Badge>
         <Badge variant="secondary" className="bg-purple-600 text-white hover:bg-purple-700">{'{pix_copia_cola}'}</Badge>
         <Badge variant="secondary" className="bg-green-600 text-white hover:bg-green-700">{'{prox_vencimento}'}</Badge>
         <Badge variant="secondary" className="bg-green-600 text-white hover:bg-green-700">{'{data_hoje}'}</Badge>
