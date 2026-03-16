@@ -105,7 +105,7 @@ const ClientesPage = () => {
         return;
       }
 
-      let imported = 0;
+      let imported = 0, updated = 0;
       for (const user of traccarUsers) {
         const name = user.name || user.email || 'Sem nome';
         const phone = user.phone ? user.phone.replace(/\D/g, '') : '';
@@ -118,16 +118,20 @@ const ClientesPage = () => {
             email,
           });
           if (result === 'created') imported++;
+          if (result === 'updated') updated++;
         } catch (err) {
           console.error(`Erro ao importar ${name}:`, err);
         }
       }
 
-      if (imported > 0) {
-        toast.success(`${imported} usuário(s) importado(s) do Traccar!`);
+      const msgs: string[] = [];
+      if (imported > 0) msgs.push(`${imported} novo(s)`);
+      if (updated > 0) msgs.push(`${updated} atualizado(s)`);
+      if (msgs.length > 0) {
+        toast.success(`Traccar: ${msgs.join(', ')}!`);
         loadClients();
       } else {
-        toast.info('Todos os usuários do Traccar já estão cadastrados');
+        toast.info('Todos os usuários do Traccar já estão sincronizados');
       }
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao buscar usuários do Traccar');
