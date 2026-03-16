@@ -14,6 +14,8 @@ Deno.serve(async (req) => {
     const vpsBaseUrl = url.searchParams.get('vps_url');
     const endpoint = url.searchParams.get('endpoint');
 
+    console.log(`[vps-proxy] ${req.method} vps_url=${vpsBaseUrl} endpoint=${endpoint}`);
+
     if (!vpsBaseUrl || !endpoint) {
       return new Response(
         JSON.stringify({ error: 'Parâmetros vps_url e endpoint são obrigatórios' }),
@@ -23,13 +25,18 @@ Deno.serve(async (req) => {
 
     // Build target URL
     const targetUrl = `${vpsBaseUrl.replace(/\/+$/, '')}${endpoint}`;
+    console.log(`[vps-proxy] -> ${targetUrl}`);
 
-    // Forward headers (except host)
+    // Forward headers (except host and supabase-internal)
     const forwardHeaders: Record<string, string> = {};
     for (const [key, value] of req.headers.entries()) {
       const lower = key.toLowerCase();
-      if (lower === 'host' || lower === 'origin' || lower === 'referer') continue;
-      if (lower === 'apikey' || lower === 'x-client-info') continue;
+      if (['host', 'origin', 'referer', 'apikey', 'x-client-info',
+           'x-supabase-client-platform', 'x-supabase-client-platform-version',
+           'x-supabase-client-runtime', 'x-supabase-client-runtime-version',
+           'cf-connecting-ip', 'cf-ipcountry', 'cf-ray', 'cf-visitor',
+           'x-forwarded-for', 'x-forwarded-proto', 'x-real-ip',
+           'sb-ext-function-id'].includes(lower)) continue;
       forwardHeaders[key] = value;
     }
 
@@ -46,6 +53,7 @@ Deno.serve(async (req) => {
     });
 
     const responseBody = await response.text();
+    console.log(`[vps-proxy] <- ${response.status} (${responseBody.length} bytes)`);
 
     return new Response(responseBody, {
       status: response.status,
@@ -55,6 +63,7 @@ Deno.serve(async (req) => {
       },
     });
   } catch (err) {
+    console.error(`[vps-proxy] ERROR:`, err);
     return new Response(
       JSON.stringify({ error: `Proxy error: ${err.message}` }),
       { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
