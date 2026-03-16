@@ -519,7 +519,7 @@ export async function invokeEvolutionProxy(payload: EvolutionPayload): Promise<{
     return { data };
   } else {
     try {
-      const res = await fetch('/api/whatsapp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const res = await apiFetch('/whatsapp', { method: 'POST', body: JSON.stringify(payload) });
       const data = await res.json();
       if (!res.ok) {
         let debugMessage = data?.debug?.response?.message?.[0] || data?.debug?.error || data?.debug?.message;
