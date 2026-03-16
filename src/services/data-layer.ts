@@ -362,6 +362,31 @@ export async function deleteClient(id: number): Promise<void> {
 
 // ===== TEMPLATES DE MENSAGEM =====
 
+function isActiveTemplate(template: MessageTemplate | Record<string, unknown>): boolean {
+  return Boolean((template as any)?.is_active);
+}
+
+function sortTemplatePriority(a: MessageTemplate | Record<string, unknown>, b: MessageTemplate | Record<string, unknown>): number {
+  const ownerId = getCurrentOwnerId();
+  const aOwned = ownerId && (a as any)?.owner_id === ownerId ? 1 : 0;
+  const bOwned = ownerId && (b as any)?.owner_id === ownerId ? 1 : 0;
+  if (aOwned !== bOwned) return bOwned - aOwned;
+  return Number((b as any)?.id || 0) - Number((a as any)?.id || 0);
+}
+
+function dedupeTemplates(templates: MessageTemplate[]): MessageTemplate[] {
+  const byType = new Map<string, MessageTemplate>();
+
+  for (const template of templates) {
+    const current = byType.get(template.type);
+    if (!current || sortTemplatePriority(template as any, current as any) < 0) {
+      byType.set(template.type, template);
+    }
+  }
+
+  return Array.from(byType.values()).sort((a, b) => a.id - b.id);
+}
+
 export async function fetchMessageTemplates(): Promise<MessageTemplate[]> {
   const backend = ACTIVE_DATA_BACKEND;
   try {
@@ -369,11 +394,11 @@ export async function fetchMessageTemplates(): Promise<MessageTemplate[]> {
     if (isLovableEnv()) {
       const { data, error } = await supabase.from('message_templates').select('*').order('id');
       if (error) throw error;
-      result = (data || []) as MessageTemplate[];
+      result = dedupeTemplates((data || []) as MessageTemplate[]);
     } else {
       const res = await api.getMessageTemplates();
       if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar templates');
-      result = res.data;
+      result = dedupeTemplates(res.data as MessageTemplate[]);
     }
     addOperationLog(backend, 'Templates', 'SELECT', `Listou ${result.length} templates`);
     return result;
@@ -390,16 +415,12 @@ export async function getReceiptTemplate(): Promise<MessageTemplate | null> {
 export async function getTemplateByType(type: string): Promise<MessageTemplate | null> {
   const backend = ACTIVE_DATA_BACKEND;
   try {
-    let result: MessageTemplate | null;
-    if (isLovableEnv()) {
-      const { data } = await supabase.from('message_templates').select('*').eq('type', type).eq('is_active', true).limit(1);
-      result = (data?.[0] as MessageTemplate) || null;
-    } else {
-      const res = await api.getMessageTemplates();
-      if (!res.success || !res.data) return null;
-      // MariaDB may return is_active as 1/0 instead of true/false
-      result = res.data.find(t => t.type === type && Boolean(t.is_active)) || null;
-    }
+    const templates = await fetchMessageTemplates();
+    const matches = templates
+      .filter((template) => template.type === type && isActiveTemplate(template as any))
+      .sort((a, b) => sortTemplatePriority(a as any, b as any));
+
+    const result = matches[0] || null;
     addOperationLog(backend, 'Templates', 'SELECT', `Buscou template tipo ${type}${result ? ` (id=${result.id})` : ' (não encontrado)'}`);
     return result;
   } catch (err: any) {
