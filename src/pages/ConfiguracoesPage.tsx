@@ -215,6 +215,9 @@ const ConfiguracoesPage = () => {
               <div className="flex items-center gap-2 text-base font-semibold">
                 <CreditCard className="h-5 w-5 text-primary" />
                 Gateway de Pagamento
+                {((payment.gateway === 'mercadopago' && payment.access_token) || (payment.gateway === 'asaas' && payment.asaas_token) || payment.gateway === 'pix_manual') && (
+                  <Badge variant="default">Ativa</Badge>
+                )}
               </div>
               <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'payment' ? 'rotate-180' : ''}`} />
             </div>
