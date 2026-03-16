@@ -38,8 +38,14 @@ const ContratosPage = () => {
     const saved = localStorage.getItem(CONTRACTS_STORAGE_KEY);
     return saved ? JSON.parse(saved) : defaultContracts;
   });
+  const [traccarConfigured, setTraccarConfigured] = useState(false);
 
-  const traccarConfigured = !!(localStorage.getItem('traccar_url') && localStorage.getItem('traccar_user') && localStorage.getItem('traccar_password'));
+  useEffect(() => {
+    const url = localStorage.getItem('traccar_url');
+    const user = localStorage.getItem('traccar_user');
+    const pass = localStorage.getItem('traccar_password');
+    setTraccarConfigured(!!(url && user && pass));
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(CONTRACTS_STORAGE_KEY, JSON.stringify(contracts));
@@ -114,7 +120,7 @@ const ContratosPage = () => {
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">Gerencie contratos e envie para assinatura digital</p>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleImportTraccar} disabled={traccarLoading || !traccarConfigured}>
+          <Button variant="outline" onClick={handleImportTraccar} disabled={traccarLoading}>
             {traccarLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}
             {traccarLoading ? 'Importando...' : 'Importar Traccar'}
           </Button>
