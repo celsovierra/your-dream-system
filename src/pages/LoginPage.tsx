@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Receipt, Eye, EyeOff, UserPlus, LogIn, Shield, Zap, BarChart3 } from 'lucide-react';
+import { Receipt, Eye, EyeOff, UserPlus, LogIn, Shield, Zap, BarChart3, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface LoginPageProps {
