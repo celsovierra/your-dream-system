@@ -45,6 +45,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
   const [deploying, setDeploying] = useState(false);
   const [hasUpdate, setHasUpdate] = useState(false);
+  const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
 
   const resolveDeployApiUrl = () => {
     const savedUrl = localStorage.getItem('api_base_url')?.trim();
@@ -102,6 +103,9 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         return;
       }
 
+      const now = new Date().toISOString();
+      localStorage.setItem('last_deploy_at', now);
+      setLastDeployAt(now);
       setHasUpdate(false);
       toast.success(data.message || 'Atualização concluída com sucesso.');
       await checkForUpdates();
@@ -200,7 +204,11 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
               </button>
             </div>
             <p className="text-[11px] text-sidebar-foreground/50 text-center">
-              {hasUpdate ? '🔴 Nova versão disponível' : '✅ Nenhuma atualização disponível'}
+              {hasUpdate
+                ? '🔴 Nova versão disponível'
+                : lastDeployAt
+                  ? `✅ Atualizado em ${new Date(lastDeployAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
+                  : '✅ Nenhuma atualização disponível'}
             </p>
           </div>
         )}
