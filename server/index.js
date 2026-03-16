@@ -34,8 +34,18 @@ app.use('/api/queue', queueRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/bills', billsRouter);
 
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok' });
+app.get('/api/health', async (_req, res) => {
+  const { hasColumn } = await import('./db.js');
+  const schema = {};
+  for (const table of ['clients', 'billing_queue', 'bills_payable', 'message_templates', 'billing_settings']) {
+    schema[table] = { owner_id: await hasColumn(table, 'owner_id') };
+  }
+  res.json({
+    status: 'ok',
+    code_version: 'v2-owner-scope-fallback',
+    has_reconcile: true,
+    schema,
+  });
 });
 
 const PORT = Number(process.env.PORT || 3001);
