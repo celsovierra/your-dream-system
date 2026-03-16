@@ -382,7 +382,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
               <Menu className="h-5 w-5" />
             </button>
             <h2 className="text-lg font-semibold text-card-foreground">
-              {navItems.find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
+              {[...navItems, ...bottomNavItems].find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
             </h2>
           </div>
           <div className="flex items-center gap-2">
