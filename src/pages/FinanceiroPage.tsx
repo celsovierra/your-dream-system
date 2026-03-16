@@ -49,19 +49,23 @@ const FinanceiroPage = () => {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [saving, setSaving] = useState(false);
+  const activeBackend = getActiveDataBackend();
 
   const loadBills = async () => {
     setLoading(true);
     try {
       const data = await fetchBills();
       setBills(data);
-    } catch {
-      toast.error('Erro ao carregar contas');
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao carregar contas');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  useEffect(() => { loadBills(); }, []);
+  useEffect(() => {
+    loadBills();
+  }, []);
 
   const resetForm = () => {
     setForm(emptyForm);
