@@ -142,18 +142,31 @@ export function getCurrentOwnerId(): string {
 
 // ===== VPS API-based auth =====
 
+function unwrapApiData<T>(payload: unknown): T {
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    return (payload as { data: T }).data;
+  }
+  return payload as T;
+}
+
 export async function loginVps(email: string, password: string): Promise<AppUser> {
   const res = await api.login(email, password);
   if (!res.success || !res.data) throw new Error(res.error || 'Erro ao fazer login');
 
-  const { token, user } = res.data;
+  const payload = unwrapApiData<{ token: string; user: { id: string; name: string; email: string; role: string; createdAt?: string } }>(res.data);
+  const { token, user } = payload;
+
+  if (!token || !user?.id) {
+    throw new Error('Resposta inválida do servidor ao fazer login');
+  }
+
   const appUser: AppUser = {
     id: String(user.id),
     email: user.email,
-    password: '', // never store password
+    password: '',
     name: user.name,
     role: (user.role as 'admin' | 'user') || 'user',
-    createdAt: '',
+    createdAt: user.createdAt || '',
   };
 
   api.setToken(token);
@@ -171,7 +184,9 @@ export async function registerVps(name: string, email: string, password: string)
 export async function fetchUsersVps(): Promise<AppUser[]> {
   const res = await api.getUsers();
   if (!res.success || !res.data) throw new Error(res.error || 'Erro ao listar usuários');
-  return res.data.map(u => ({
+
+  const users = unwrapApiData<Array<{ id: string; email: string; name: string; role: string; createdAt?: string }>>(res.data);
+  return users.map(u => ({
     id: String(u.id),
     email: u.email,
     password: '',
