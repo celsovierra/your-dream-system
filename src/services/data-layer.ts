@@ -397,13 +397,14 @@ export async function getTemplateByType(type: string): Promise<MessageTemplate |
     } else {
       const res = await api.getMessageTemplates();
       if (!res.success || !res.data) return null;
-      result = res.data.find(t => t.type === type && t.is_active) || null;
+      // MariaDB may return is_active as 1/0 instead of true/false
+      result = res.data.find(t => t.type === type && (t.is_active === true || t.is_active === 1 || t.is_active === '1')) || null;
     }
-    addOperationLog(backend, 'Templates', 'SELECT', `Buscou template tipo ${type}`);
+    addOperationLog(backend, 'Templates', 'SELECT', `Buscou template tipo ${type}${result ? ` (id=${result.id})` : ' (não encontrado)'}`);
     return result;
   } catch (err: any) {
     addOperationLog(backend, 'Templates', 'SELECT', `Erro ao buscar template tipo ${type}`, 'error', err?.message);
-    throw err;
+    return null;
   }
 }
 
