@@ -64,7 +64,7 @@ const ConfiguracoesPage = () => {
     const savedMpToken = localStorage.getItem('mp_access_token') || '';
     const savedAsaasToken = localStorage.getItem('asaas_access_token') || '';
     setPayment({ gateway: savedGateway as any, access_token: savedMpToken, asaas_token: savedAsaasToken });
-    setApiBaseUrl(localStorage.getItem('api_base_url') || '');
+    
 
     // Carregar config WhatsApp salva (mantendo instance_name padronizado pela VPS)
     const savedWa = localStorage.getItem('whatsapp_config');
