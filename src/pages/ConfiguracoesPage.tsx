@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { invokeEvolutionProxy } from '@/services/data-layer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Users, ChevronDown, Copy, QrCode } from 'lucide-react';
+import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Users, ChevronDown, Copy, QrCode, Palette, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import asaasLogo from '@/assets/asaas.png';
 import mercadoPagoLogo from '@/assets/mercado-pago.png';
@@ -107,6 +107,12 @@ const ConfiguracoesPage = () => {
   const [newUser, setNewUser] = useState({ email: '', password: '', name: '' });
 
   const [openSection, setOpenSection] = useState<string | null>(null);
+
+  // Layout config state
+  const [layoutCompanyName, setLayoutCompanyName] = useState(() => localStorage.getItem('layout_company_name') || 'CobrançaPro');
+  const [layoutPrimaryColor, setLayoutPrimaryColor] = useState(() => localStorage.getItem('layout_primary_color') || '#3b82f6');
+  const [layoutLogo, setLayoutLogo] = useState<string | null>(() => localStorage.getItem('layout_logo'));
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const toggleSection = (key: string) => {
     setOpenSection(prev => prev === key ? null : key);
@@ -453,8 +459,161 @@ const ConfiguracoesPage = () => {
           </CollapsibleContent>
         </Card>
       </Collapsible>
+
+      {/* Layout */}
+      <Collapsible open={openSection === 'layout'} onOpenChange={() => toggleSection('layout')}>
+        <Card>
+          <CollapsibleTrigger className="w-full">
+            <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
+              <div className="flex items-center gap-2 text-base font-semibold">
+                <Palette className="h-5 w-5 text-primary" />
+                Configuração de Layout
+              </div>
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'layout' ? 'rotate-180' : ''}`} />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-5 pt-0">
+              {/* Company Name */}
+              <div>
+                <Label>Nome da Empresa (tela de login)</Label>
+                <Input
+                  value={layoutCompanyName}
+                  onChange={(e) => setLayoutCompanyName(e.target.value)}
+                  placeholder="Nome da sua empresa"
+                  maxLength={50}
+                />
+              </div>
+
+              {/* Primary Color */}
+              <div>
+                <Label>Cor Principal do Sistema</Label>
+                <div className="flex items-center gap-3 mt-1">
+                  <input
+                    type="color"
+                    value={layoutPrimaryColor}
+                    onChange={(e) => setLayoutPrimaryColor(e.target.value)}
+                    className="h-10 w-14 rounded border border-border cursor-pointer"
+                  />
+                  <Input
+                    value={layoutPrimaryColor}
+                    onChange={(e) => setLayoutPrimaryColor(e.target.value)}
+                    placeholder="#3b82f6"
+                    className="w-32 font-mono text-sm"
+                    maxLength={7}
+                  />
+                  <div className="h-10 w-10 rounded-md border" style={{ backgroundColor: layoutPrimaryColor }} />
+                </div>
+              </div>
+
+              {/* Logo Upload */}
+              <div>
+                <Label>Logo da Tela de Login</Label>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 2 * 1024 * 1024) {
+                      toast.error('Imagem deve ter no máximo 2MB');
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      const base64 = reader.result as string;
+                      setLayoutLogo(base64);
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                <div className="mt-1 flex items-center gap-4">
+                  {layoutLogo ? (
+                    <div className="relative">
+                      <img src={layoutLogo} alt="Logo" className="h-16 w-auto rounded-md border object-contain bg-white p-1" />
+                      <button
+                        onClick={() => setLayoutLogo(null)}
+                        className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="h-16 w-24 rounded-md border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                      <ImageIcon className="h-6 w-6 text-muted-foreground/50" />
+                    </div>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => logoInputRef.current?.click()}>
+                    <Upload className="mr-2 h-3 w-3" /> {layoutLogo ? 'Trocar' : 'Enviar Logo'}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">PNG, JPG ou SVG, máx. 2MB</p>
+              </div>
+
+              {/* Preview */}
+              <div className="rounded-lg border p-4 space-y-2">
+                <Label className="text-xs text-muted-foreground">Pré-visualização</Label>
+                <div className="flex items-center gap-3">
+                  {layoutLogo ? (
+                    <img src={layoutLogo} alt="Preview" className="h-10 w-auto object-contain" />
+                  ) : (
+                    <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: layoutPrimaryColor }}>
+                      <span className="text-white font-bold text-sm">{layoutCompanyName.charAt(0)}</span>
+                    </div>
+                  )}
+                  <span className="text-lg font-bold">{layoutCompanyName}</span>
+                </div>
+              </div>
+
+              <Button size="sm" onClick={() => {
+                localStorage.setItem('layout_company_name', layoutCompanyName);
+                localStorage.setItem('layout_primary_color', layoutPrimaryColor);
+                if (layoutLogo) {
+                  localStorage.setItem('layout_logo', layoutLogo);
+                } else {
+                  localStorage.removeItem('layout_logo');
+                }
+
+                // Apply color to CSS custom property
+                const hsl = hexToHSL(layoutPrimaryColor);
+                if (hsl) {
+                  document.documentElement.style.setProperty('--primary', hsl);
+                  localStorage.setItem('layout_primary_hsl', hsl);
+                }
+
+                toast.success('Layout salvo! A tela de login será atualizada.');
+              }}>
+                <Save className="mr-2 h-3 w-3" /> Salvar Layout
+              </Button>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
     </div>
   );
 };
+
+function hexToHSL(hex: string): string | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return null;
+  let r = parseInt(result[1], 16) / 255;
+  let g = parseInt(result[2], 16) / 255;
+  let b = parseInt(result[3], 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
+    }
+  }
+  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
 
 export default ConfiguracoesPage;

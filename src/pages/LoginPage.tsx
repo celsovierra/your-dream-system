@@ -18,6 +18,8 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   const [regName, setRegName] = useState('');
   const [regPassword, setRegPassword] = useState('');
 
+  const companyName = localStorage.getItem('layout_company_name') || 'CobrançaPro';
+  const customLogo = localStorage.getItem('layout_logo');
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -102,10 +104,14 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20">
           <div className="flex items-center gap-3 mb-8">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500 shadow-lg shadow-blue-500/30">
-              <Receipt className="h-6 w-6 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">CobrançaPro</h1>
+            {customLogo ? (
+              <img src={customLogo} alt={companyName} className="h-12 w-auto object-contain" />
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500 shadow-lg shadow-blue-500/30">
+                <Receipt className="h-6 w-6 text-white" />
+              </div>
+            )}
+            <h1 className="text-3xl font-bold text-white tracking-tight">{companyName}</h1>
           </div>
           
           <h2 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-6">
@@ -156,10 +162,14 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
           <div className="flex flex-col items-center lg:hidden mb-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/30 mb-3">
-              <Receipt className="h-7 w-7 text-primary-foreground" />
-            </div>
-            <h1 className="text-2xl font-bold">CobrançaPro</h1>
+            {customLogo ? (
+              <img src={customLogo} alt={companyName} className="h-14 w-auto object-contain mb-3" />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/30 mb-3">
+                <Receipt className="h-7 w-7 text-primary-foreground" />
+              </div>
+            )}
+            <h1 className="text-2xl font-bold">{companyName}</h1>
           </div>
 
           <div className="space-y-2 lg:text-left text-center">
@@ -244,7 +254,7 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
           </button>
 
           <p className="text-center text-xs text-muted-foreground pt-4">
-            © {new Date().getFullYear()} CobrançaPro. Todos os direitos reservados.
+            © {new Date().getFullYear()} {companyName}. Todos os direitos reservados.
           </p>
         </div>
       </div>
