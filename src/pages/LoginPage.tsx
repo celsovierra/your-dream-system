@@ -162,10 +162,14 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
           <div className="flex flex-col items-center lg:hidden mb-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/30 mb-3">
-              <Receipt className="h-7 w-7 text-primary-foreground" />
-            </div>
-            <h1 className="text-2xl font-bold">CobrançaPro</h1>
+            {customLogo ? (
+              <img src={customLogo} alt={companyName} className="h-14 w-auto object-contain mb-3" />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/30 mb-3">
+                <Receipt className="h-7 w-7 text-primary-foreground" />
+              </div>
+            )}
+            <h1 className="text-2xl font-bold">{companyName}</h1>
           </div>
 
           <div className="space-y-2 lg:text-left text-center">
