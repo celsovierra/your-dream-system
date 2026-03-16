@@ -59,6 +59,14 @@ function isVpsMode(): boolean {
   if (forced === 'cloud') return false;
   if (forced === 'api') return true;
 
+  if (typeof window !== 'undefined') {
+    const storedApi = window.localStorage.getItem('api_base_url')?.trim();
+    if (storedApi) return true;
+  }
+
+  const envApi = String(import.meta.env.VITE_API_BASE_URL || '').trim();
+  if (envApi && envApi !== '/api') return true;
+
   const hostname = window.location.hostname.toLowerCase();
   const isLovableHost =
     hostname.endsWith('.lovable.app') ||
@@ -66,17 +74,9 @@ function isVpsMode(): boolean {
     hostname.includes('lovable');
 
   if (isLovableHost) return false;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return false;
 
-  // Only VPS if there's an explicit API base URL configured
-  if (typeof window !== 'undefined') {
-    const storedApi = window.localStorage.getItem('api_base_url')?.trim();
-    if (storedApi) return true;
-  }
-  const envApi = String(import.meta.env.VITE_API_BASE_URL || '').trim();
-  if (envApi && envApi !== '/api') return true;
-
-  // localhost without configured API → not VPS
-  return false;
+  return true;
 }
 
 // ===== localStorage-based auth (Lovable/cloud mode) =====

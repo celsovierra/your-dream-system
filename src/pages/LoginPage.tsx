@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Receipt, Eye, EyeOff, LogIn, Shield, Zap, BarChart3, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { getStoredUsers, setCurrentUser } from '@/services/auth';
+import { getStoredUsers, isVpsMode, loginVps, setCurrentUser } from '@/services/auth';
 
 interface LoginPageProps {
   onLogin: (token: string) => void;
@@ -28,6 +28,13 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
     setLoading(true);
     try {
+      if (isVpsMode()) {
+        await loginVps(email.trim(), password);
+        onLogin(localStorage.getItem('auth_token') || `token-${Date.now()}`);
+        toast.success('Login realizado com sucesso!');
+        return;
+      }
+
       const users = getStoredUsers();
       const loginValue = email.toLowerCase().trim();
       const user = users.find(u => 

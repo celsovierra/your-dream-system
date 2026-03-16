@@ -31,13 +31,23 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
   return headers;
 }
 
+function normalizeApiBaseUrl(value?: string | null): string {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return '';
+
+  const normalized = trimmed.replace(/\/+$/, '');
+  if (normalized === '/api' || normalized.endsWith('/api')) return normalized;
+  if (normalized.startsWith('http://') || normalized.startsWith('https://')) return `${normalized}/api`;
+  return normalized;
+}
+
 // Helper: resolves the correct base URL for raw fetch calls
 function apiBaseUrl(): string {
   if (typeof window !== 'undefined') {
-    const stored = window.localStorage.getItem('api_base_url')?.trim();
+    const stored = normalizeApiBaseUrl(window.localStorage.getItem('api_base_url'));
     if (stored) return stored;
   }
-  const env = String(import.meta.env.VITE_API_BASE_URL || '').trim();
+  const env = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
   return env || '/api';
 }
 
@@ -52,10 +62,10 @@ function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response
 type DataBackend = 'cloud' | 'api';
 
 function getConfiguredApiBaseUrl(): string {
-  const envApiBaseUrl = String(import.meta.env.VITE_API_BASE_URL || '').trim();
+  const envApiBaseUrl = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 
   if (typeof window !== 'undefined') {
-    const storedApiBaseUrl = window.localStorage.getItem('api_base_url')?.trim();
+    const storedApiBaseUrl = normalizeApiBaseUrl(window.localStorage.getItem('api_base_url'));
     if (storedApiBaseUrl) return storedApiBaseUrl;
   }
 
@@ -63,20 +73,21 @@ function getConfiguredApiBaseUrl(): string {
 }
 
 function hasConfiguredApiBaseUrl(): boolean {
-  const apiBaseUrl = getConfiguredApiBaseUrl();
-  return Boolean(apiBaseUrl && apiBaseUrl !== '/api');
+  const configuredUrl = getConfiguredApiBaseUrl();
+  return Boolean(configuredUrl && configuredUrl !== '/api');
 }
 
 function resolveDataBackend(): DataBackend {
   const forcedBackend = String(import.meta.env.VITE_DATA_BACKEND || '').toLowerCase();
-  if (forcedBackend === 'cloud' || forcedBackend === 'api') return forcedBackend;
+  if (forcedBackend === 'cloud' || forcedBackend === 'api') return forcedBackend as DataBackend;
+
+  if (hasConfiguredApiBaseUrl()) return 'api';
 
   const hostname = window.location.hostname.toLowerCase();
   const isLovableHost =
     hostname.endsWith('.lovable.app') || hostname.endsWith('.lovableproject.com');
 
   if (isLovableHost) return 'cloud';
-  if (hasConfiguredApiBaseUrl()) return 'api';
 
   return 'api';
 }
