@@ -58,6 +58,12 @@ const App = () => {
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
     if (token) setIsAuthenticated(true);
+
+    // Apply saved primary color
+    const savedHSL = localStorage.getItem('layout_primary_hsl');
+    if (savedHSL) {
+      document.documentElement.style.setProperty('--primary', savedHSL);
+    }
   }, []);
 
   const handleLogin = (token: string) => {
