@@ -46,12 +46,32 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [deploying, setDeploying] = useState(false);
   const [hasUpdate, setHasUpdate] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
-  const deployApiConfigured = true;
   const [deployCheckError, setDeployCheckError] = useState<string | null>(null);
+
+  function isLovableHost() {
+    if (typeof window === 'undefined') return false;
+    const hostname = window.location.hostname.toLowerCase();
+    return hostname.endsWith('.lovable.app') || hostname.endsWith('.lovableproject.com');
+  }
+
+  function getConfiguredDeployApiUrl() {
+    if (typeof window === 'undefined') return '';
+
+    const envApiBaseUrl = String(import.meta.env.VITE_API_BASE_URL || '').trim();
+    const storedApiBaseUrl = window.localStorage.getItem('api_base_url')?.trim();
+    const configuredApiBaseUrl = storedApiBaseUrl || envApiBaseUrl;
+
+    if (!configuredApiBaseUrl) return '';
+
+    const normalized = configuredApiBaseUrl.replace(/\/+$/, '');
+    return normalized.endsWith('/api') ? normalized : `${normalized}/api`;
+  }
+
+  const deployApiConfigured = !isLovableHost() || Boolean(getConfiguredDeployApiUrl());
 
   function resolveDeployApiUrl() {
     if (typeof window === 'undefined') return '';
-    return `${window.location.origin}/api`;
+    return isLovableHost() ? getConfiguredDeployApiUrl() : `${window.location.origin}/api`;
   }
 
   async function parseApiResponse(response: Response) {
@@ -166,7 +186,10 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const handleDeploy = async () => {
     const apiUrl = resolveDeployApiUrl();
 
-    setDeploying(true);
+    if (!apiUrl) {
+      toast.error('Abra o sistema na VPS para executar a atualização.');
+      return;
+    }
 
     try {
       const res = await fetch(`${apiUrl}/deploy`, {
@@ -283,7 +306,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
                   {deploying
                     ? 'Atualizando...'
                     : !deployApiConfigured
-                      ? 'Configurar VPS'
+                      ? 'Use na VPS'
                       : hasUpdate
                         ? 'Atualização disponível!'
                         : 'Atualizar VPS'}
@@ -292,7 +315,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             </div>
             <p className="text-[11px] text-sidebar-foreground/50 text-center">
               {!deployApiConfigured
-                ? '⚙️ Configure a URL da API da VPS em Configurações'
+                ? '⚙️ Esse botão funciona na instalação da VPS'
                 : deployCheckError
                   ? `⚠️ Falha ao verificar: ${deployCheckError}`
                   : hasUpdate
