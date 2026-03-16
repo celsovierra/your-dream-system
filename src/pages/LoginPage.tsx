@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Receipt, Eye, EyeOff, LogIn, Shield, Zap, BarChart3, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { getStoredUsers, setCurrentUser } from '@/services/auth';
+import { getStoredUsers, setCurrentUser, loginVps, isVpsMode } from '@/services/auth';
 
 interface LoginPageProps {
   onLogin: (token: string) => void;
@@ -28,22 +28,30 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
     setLoading(true);
     try {
-      const users = getStoredUsers();
-      const loginValue = email.toLowerCase().trim();
-      const user = users.find(u => 
-        (u.email.toLowerCase() === loginValue || u.name.toLowerCase() === loginValue) && u.password === password
-      );
-      if (user) {
-        const token = 'token-' + Date.now();
-        localStorage.setItem('auth_token', token);
-        setCurrentUser(user);
-        onLogin(token);
-        toast.success('Login realizado com sucesso!');
+      if (isVpsMode()) {
+        // VPS: authenticate via backend API
+        const user = await loginVps(email, password);
+        onLogin(localStorage.getItem('auth_token') || 'token');
+        toast.success(`Bem-vindo, ${user.name}!`);
       } else {
-        toast.error('Usuário ou senha incorretos');
+        // Cloud/Lovable: authenticate via localStorage
+        const users = getStoredUsers();
+        const loginValue = email.toLowerCase().trim();
+        const user = users.find(u => 
+          (u.email.toLowerCase() === loginValue || u.name.toLowerCase() === loginValue) && u.password === password
+        );
+        if (user) {
+          const token = 'token-' + Date.now();
+          localStorage.setItem('auth_token', token);
+          setCurrentUser(user);
+          onLogin(token);
+          toast.success('Login realizado com sucesso!');
+        } else {
+          toast.error('Usuário ou senha incorretos');
+        }
       }
-    } catch {
-      toast.error('Erro ao realizar login');
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao realizar login');
     } finally {
       setLoading(false);
     }
