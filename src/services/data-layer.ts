@@ -19,7 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import api from '@/services/api';
 import type { Client, MessageTemplate, DashboardStats } from '@/types/billing';
 import { addOperationLog } from '@/services/operation-logger';
-import { getCurrentOwnerId, isAdmin } from '@/services/auth';
+import { getCurrentOwnerId, isAdmin, userStorageGet, userStorageSet } from '@/services/auth';
 
 type DataBackend = 'cloud' | 'api';
 

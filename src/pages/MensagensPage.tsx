@@ -10,6 +10,7 @@ import { mockTemplates } from '@/services/mock-data';
 import { Save, MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { fetchSettings, saveSettings } from '@/services/data-layer';
+import { userStorageSet } from '@/services/auth';
 
 const typeLabels: Record<string, string> = {
   reminder: 'Lembrete',
