@@ -73,7 +73,9 @@ const ClientesPage = () => {
   const [baixaDialogOpen, setBaixaDialogOpen] = useState(false);
   const [baixaClient, setBaixaClient] = useState<Client | null>(null);
   const [baixaMonths, setBaixaMonths] = useState('1');
-  const [traccarLoading, setTraccarLoading] = useState(false);
+  const [traccarLoading, setTraccarLoading] = false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   const handleImportTraccar = async () => {
     const traccarUrl = userStorageGet('traccar_url');
