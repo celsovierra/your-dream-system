@@ -7,10 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Save, MessageSquare, Loader2 } from 'lucide-react';
-import { Save, MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { fetchSettings, saveSettings, fetchMessageTemplates, updateMessageTemplateByType } from '@/services/data-layer';
 import { userStorageSet } from '@/services/auth';
+import type { MessageTemplate } from '@/types/billing';
 
 const typeLabels: Record<string, string> = {
   reminder: 'Lembrete',
@@ -21,7 +21,7 @@ const typeLabels: Record<string, string> = {
 };
 
 const MensagensPage = () => {
-  const [templates, setTemplates] = useState(mockTemplates);
+  const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [reminderDays, setReminderDays] = useState(3);
   const [sendTimeReminder, setSendTimeReminder] = useState('08:00');
   const [sendTimeDue, setSendTimeDue] = useState('08:00');
@@ -31,15 +31,13 @@ const MensagensPage = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    // Buscar templates do banco de dados
     fetchMessageTemplates()
       .then((dbTemplates) => {
-        if (dbTemplates && dbTemplates.length > 0) {
-          setTemplates(dbTemplates);
-        }
+        setTemplates(dbTemplates || []);
       })
       .catch((err) => {
-        console.error('Erro ao buscar templates, usando mock:', err);
+        console.error('Erro ao buscar templates do banco:', err);
+        toast.error('Erro ao carregar templates do banco de dados');
       });
 
     fetchSettings().then((s) => {
