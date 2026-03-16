@@ -91,6 +91,7 @@ const App = () => {
             <ErrorBoundary>
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
+                <Route path="/financeiro" element={<DashboardPage />} />
                 <Route path="/clientes" element={<ClientesPage />} />
                 <Route path="/financeiro" element={<FinanceiroPage />} />
                 <Route path="/logs" element={<LogsPage />} />
