@@ -118,6 +118,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
 
       if (!apiUrl) {
         setHasUpdate(false);
+        setDeployCheckError(null);
         return;
       }
 
