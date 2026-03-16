@@ -7,7 +7,7 @@ set -e
 
 # ===== CREDENCIAIS DO BANCO (GERADAS AUTOMATICAMENTE) =====
 DB_USER="cobranca_admin"
-DB_PASS="Xk9#mL2vR7@pQ4nW"
+DB_PASS="Xk9mL2vR7pQ4nW"
 DB_NAME="cobranca_pro"
 DOMAIN="$(curl -s ifconfig.me 2>/dev/null || echo 'localhost')"
 
