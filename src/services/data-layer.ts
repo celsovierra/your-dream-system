@@ -456,7 +456,7 @@ export async function saveSettings(settings: Partial<BillingSettings>): Promise<
   try {
     if (isLovableEnv()) {
       for (const [key, value] of Object.entries(settings)) {
-        await supabase.from('billing_settings').upsert({ key, value: String(value), updated_at: new Date().toISOString() });
+        userStorageSet(`billing_setting_${key}`, String(value));
       }
     } else {
       await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });

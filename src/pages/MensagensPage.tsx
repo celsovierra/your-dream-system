@@ -54,12 +54,11 @@ const MensagensPage = () => {
         send_time_overdue: sendTimeOverdue,
         overdue_frequency: String(overdueFrequency),
       });
-      // Also save to localStorage for backward compat
-      localStorage.setItem('cobranca_reminder_days', String(reminderDays));
-      localStorage.setItem('cobranca_send_time_reminder', sendTimeReminder);
-      localStorage.setItem('cobranca_send_time_due', sendTimeDue);
-      localStorage.setItem('cobranca_send_time_overdue', sendTimeOverdue);
-      localStorage.setItem('cobranca_overdue_frequency', String(overdueFrequency));
+      userStorageSet('cobranca_reminder_days', String(reminderDays));
+      userStorageSet('cobranca_send_time_reminder', sendTimeReminder);
+      userStorageSet('cobranca_send_time_due', sendTimeDue);
+      userStorageSet('cobranca_send_time_overdue', sendTimeOverdue);
+      userStorageSet('cobranca_overdue_frequency', String(overdueFrequency));
       toast.success('Todas as configurações salvas!');
     } catch (err: any) {
       toast.error('Erro ao salvar: ' + (err.message || ''));
