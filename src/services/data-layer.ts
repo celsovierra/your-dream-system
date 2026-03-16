@@ -333,7 +333,11 @@ export async function fetchQueue(): Promise<QueueItem[]> {
   try {
     let result: QueueItem[];
     if (isLovableEnv()) {
-      const { data, error } = await supabase.from('billing_queue').select('*').order('created_at', { ascending: false });
+      let query = supabase.from('billing_queue').select('*').order('created_at', { ascending: false });
+      if (!isAdmin()) {
+        query = query.eq('owner_id', getCurrentOwnerId());
+      }
+      const { data, error } = await query;
       if (error) throw error;
       result = (data || []) as QueueItem[];
     } else {
