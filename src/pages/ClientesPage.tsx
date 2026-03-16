@@ -111,17 +111,13 @@ const ClientesPage = () => {
         const phone = user.phone ? user.phone.replace(/\D/g, '') : '';
         const email = user.email || '';
 
-        // Skip if already exists by name
-        const exists = clients.find(c => c.name.toLowerCase() === name.toLowerCase());
-        if (exists) continue;
-
         try {
-          await createClient({
+          const result = await upsertClientFromTraccar({
             name,
             phone: phone.length > 2 ? phone : '55',
             email,
           });
-          imported++;
+          if (result === 'created') imported++;
         } catch (err) {
           console.error(`Erro ao importar ${name}:`, err);
         }
