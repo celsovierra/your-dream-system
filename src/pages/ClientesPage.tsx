@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle, Loader2, MapPin } from 'lucide-react';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
-import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, invokeEvolutionProxy } from '@/services/data-layer';
+import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, invokeEvolutionProxy, upsertClientFromTraccar } from '@/services/data-layer';
 import { supabase } from '@/integrations/supabase/client';
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -111,17 +111,13 @@ const ClientesPage = () => {
         const phone = user.phone ? user.phone.replace(/\D/g, '') : '';
         const email = user.email || '';
 
-        // Skip if already exists by name
-        const exists = clients.find(c => c.name.toLowerCase() === name.toLowerCase());
-        if (exists) continue;
-
         try {
-          await createClient({
+          const result = await upsertClientFromTraccar({
             name,
             phone: phone.length > 2 ? phone : '55',
             email,
           });
-          imported++;
+          if (result === 'created') imported++;
         } catch (err) {
           console.error(`Erro ao importar ${name}:`, err);
         }

@@ -166,6 +166,7 @@ export type Database = {
           phone: string
           phone2: string | null
           state: string | null
+          traccar_email: string | null
           updated_at: string | null
           zip_code: string | null
         }
@@ -184,6 +185,7 @@ export type Database = {
           phone: string
           phone2?: string | null
           state?: string | null
+          traccar_email?: string | null
           updated_at?: string | null
           zip_code?: string | null
         }
@@ -202,6 +204,7 @@ export type Database = {
           phone?: string
           phone2?: string | null
           state?: string | null
+          traccar_email?: string | null
           updated_at?: string | null
           zip_code?: string | null
         }
