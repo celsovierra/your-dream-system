@@ -1,21 +1,23 @@
 import express from 'express';
-import { hasColumn, query } from '../db.js';
+import { query } from '../db.js';
+import { queryWithOptionalOwnerScope } from '../utils/owner-scope.js';
 
 const router = express.Router();
-
-async function supportsOwnerScope() {
-  return hasColumn('billing_settings', 'owner_id');
-}
 
 // GET /api/settings — configurações do owner
 router.get('/', async (req, res) => {
   try {
-    const ownerScoped = await supportsOwnerScope();
-    const ownerId = ownerScoped ? (req.ownerId || '__global__') : '__global__';
-    const rows = await query(
-      'SELECT `key`, `value` FROM billing_settings WHERE owner_id = ?',
-      [ownerId]
-    );
+    const rows = await queryWithOptionalOwnerScope({
+      tableName: 'billing_settings',
+      ownerId: req.ownerId,
+      run: async ({ useOwnerScope, ownerId }) => {
+        const effectiveOwner = (useOwnerScope && ownerId) ? ownerId : '__global__';
+        return query(
+          'SELECT `key`, `value` FROM billing_settings WHERE owner_id = ?',
+          [effectiveOwner]
+        );
+      },
+    });
     const settings = {};
     if (Array.isArray(rows)) {
       for (const row of rows) {
@@ -34,14 +36,21 @@ router.get('/', async (req, res) => {
 router.put('/', async (req, res) => {
   try {
     const settings = req.body;
-    const ownerScoped = await supportsOwnerScope();
-    const ownerId = ownerScoped ? (req.ownerId || '__global__') : '__global__';
-    for (const [key, value] of Object.entries(settings)) {
-      await query(
-        'INSERT INTO billing_settings (`key`, `value`, `owner_id`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = ?',
-        [key, String(value), ownerId, String(value)]
-      );
-    }
+
+    await queryWithOptionalOwnerScope({
+      tableName: 'billing_settings',
+      ownerId: req.ownerId,
+      run: async ({ useOwnerScope, ownerId }) => {
+        const effectiveOwner = (useOwnerScope && ownerId) ? ownerId : '__global__';
+        for (const [key, value] of Object.entries(settings)) {
+          await query(
+            'INSERT INTO billing_settings (`key`, `value`, `owner_id`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = ?',
+            [key, String(value), effectiveOwner, String(value)]
+          );
+        }
+      },
+    });
+
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

@@ -1,24 +1,26 @@
 import express from 'express';
-import { hasColumn, query } from '../db.js';
+import { query } from '../db.js';
+import { queryWithOptionalOwnerScope } from '../utils/owner-scope.js';
 
 const router = express.Router();
-
-async function supportsOwnerScope() {
-  return hasColumn('message_templates', 'owner_id');
-}
 
 // Listar templates
 router.get('/', async (req, res) => {
   try {
-    const ownerScoped = await supportsOwnerScope();
-    let sql = 'SELECT * FROM message_templates WHERE 1=1';
-    const params = [];
-    if (ownerScoped && req.ownerId) {
-      sql += ' AND owner_id = ?';
-      params.push(req.ownerId);
-    }
-    sql += ' ORDER BY id';
-    const rows = await query(sql, params);
+    const rows = await queryWithOptionalOwnerScope({
+      tableName: 'message_templates',
+      ownerId: req.ownerId,
+      run: async ({ useOwnerScope, ownerId }) => {
+        let sql = 'SELECT * FROM message_templates WHERE 1=1';
+        const params = [];
+        if (useOwnerScope && ownerId) {
+          sql += ' AND owner_id = ?';
+          params.push(ownerId);
+        }
+        sql += ' ORDER BY id';
+        return query(sql, params);
+      },
+    });
     const data = Array.isArray(rows) ? rows.filter(r => r && typeof r === 'object' && 'id' in r) : [];
     res.json(data);
   } catch (err) {
@@ -29,7 +31,6 @@ router.get('/', async (req, res) => {
 // Atualizar template
 router.put('/:id', async (req, res) => {
   try {
-    const ownerScoped = await supportsOwnerScope();
     const { content, is_active } = req.body;
     const fields = [];
     const values = [];
@@ -37,13 +38,20 @@ router.put('/:id', async (req, res) => {
     if (is_active !== undefined) { fields.push('is_active = ?'); values.push(is_active); }
     if (fields.length === 0) return res.status(400).json({ message: 'Nenhum campo' });
 
-    values.push(req.params.id);
-    let sql = `UPDATE message_templates SET ${fields.join(', ')} WHERE id = ?`;
-    if (ownerScoped && req.ownerId) {
-      sql += ' AND owner_id = ?';
-      values.push(req.ownerId);
-    }
-    await query(sql, values);
+    await queryWithOptionalOwnerScope({
+      tableName: 'message_templates',
+      ownerId: req.ownerId,
+      run: async ({ useOwnerScope, ownerId }) => {
+        const params = [...values, req.params.id];
+        let sql = `UPDATE message_templates SET ${fields.join(', ')} WHERE id = ?`;
+        if (useOwnerScope && ownerId) {
+          sql += ' AND owner_id = ?';
+          params.push(ownerId);
+        }
+        return query(sql, params);
+      },
+    });
+
     const updated = await query('SELECT * FROM message_templates WHERE id = ?', [req.params.id]);
     res.json(updated[0]);
   } catch (err) {
