@@ -270,6 +270,30 @@ const ConfiguracoesPage = () => {
               }}>
                 <Save className="mr-2 h-3 w-3" /> Salvar
               </Button>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                <div className="rounded-lg border p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <img src={mercadoPagoLogo} alt="Mercado Pago" className="h-6 w-auto" />
+                    <h4 className="text-sm font-semibold">Tutorial Mercado Pago</h4>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Como cadastrar e obter seu Access Token no Mercado Pago.</p>
+                  <div className="aspect-video bg-muted rounded-md flex items-center justify-center text-muted-foreground text-sm">
+                    📹 Vídeo em breve
+                  </div>
+                </div>
+
+                <div className="rounded-lg border p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <img src={asaasLogo} alt="Asaas" className="h-6 w-auto" />
+                    <h4 className="text-sm font-semibold">Tutorial Asaas</h4>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Como configurar sua conta Asaas e obter o token de API.</p>
+                  <div className="aspect-video bg-muted rounded-md flex items-center justify-center text-muted-foreground text-sm">
+                    📹 Vídeo em breve
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </CollapsibleContent>
         </Card>
