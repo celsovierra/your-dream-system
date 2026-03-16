@@ -51,7 +51,8 @@ router.get('/check-update', (_req, res) => {
     git fetch origin "$BRANCH" 2>/dev/null &&
     echo "$BRANCH" &&
     git rev-parse HEAD &&
-    git rev-parse "origin/$BRANCH"
+    git rev-parse "origin/$BRANCH" &&
+    git log -1 --format=%cI HEAD
   `;
 
   exec(script, { shell: '/bin/bash' }, (error, stdout) => {
@@ -64,6 +65,7 @@ router.get('/check-update', (_req, res) => {
     const branch = lines[0];
     const local = lines[1];
     const remote = lines[2];
+    const lastCommitDate = lines[3] || null;
 
     return res.json({
       success: true,
@@ -71,6 +73,7 @@ router.get('/check-update', (_req, res) => {
       branch,
       localCommit: local?.substring(0, 7),
       remoteCommit: remote?.substring(0, 7),
+      lastCommitDate,
     });
   });
 });
