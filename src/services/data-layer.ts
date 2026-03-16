@@ -66,6 +66,26 @@ function apiBaseUrl(): string {
   return env || '/api';
 }
 
+async function safeJsonParse(res: Response): Promise<any> {
+  const text = await res.text();
+  if (!text.trim()) return {};
+
+  // Detect HTML responses (Nginx error pages, 502, etc.)
+  if (text.trim().startsWith('<') || text.trim().startsWith('<!')) {
+    const status = res.status;
+    if (status === 502 || status === 503 || status === 504) {
+      throw new Error(`Servidor VPS indisponível (HTTP ${status}). Verifique se o PM2 está rodando.`);
+    }
+    throw new Error(`Servidor retornou HTML em vez de JSON (HTTP ${status}). O backend pode estar fora do ar.`);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Resposta inválida do servidor (HTTP ${res.status}): ${text.substring(0, 120)}`);
+  }
+}
+
 function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
   const headers = authHeaders(options.headers as Record<string, string> || {});
 
