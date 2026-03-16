@@ -7,11 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Users, ChevronDown, Copy, QrCode, Palette, ImageIcon, MapPin } from 'lucide-react';
+import { Wifi, WifiOff, CreditCard, Save, Download, Upload, ChevronDown, Copy, QrCode, Palette, ImageIcon, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import asaasLogo from '@/assets/asaas.png';
 import mercadoPagoLogo from '@/assets/mercado-pago.png';
-import { type AppUser, getStoredUsers, saveUsers, userStorageGet, userStorageSet, isAdmin, isVpsMode, fetchUsersVps, registerVps, deleteUserVps } from '@/services/auth';
+import { userStorageGet, userStorageSet, isAdmin } from '@/services/auth';
 
 const ConfiguracoesPage = () => {
   const userIsAdmin = isAdmin();
@@ -21,14 +21,23 @@ const ConfiguracoesPage = () => {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [pollingStatus, setPollingStatus] = useState(false);
+  const [openSection, setOpenSection] = useState<string | null>(null);
 
-  // Poll for connection status after QR code is shown
+  const [layoutCompanyName, setLayoutCompanyName] = useState(() => localStorage.getItem('layout_company_name') || 'CobrançaPro');
+  const [layoutPrimaryColor, setLayoutPrimaryColor] = useState(() => localStorage.getItem('layout_primary_color') || '#3b82f6');
+  const [layoutLogo, setLayoutLogo] = useState<string | null>(() => localStorage.getItem('layout_logo'));
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const [traccarUrl, setTraccarUrl] = useState(() => userStorageGet('traccar_url') || '');
+  const [traccarUser, setTraccarUser] = useState(() => userStorageGet('traccar_user') || '');
+  const [traccarPassword, setTraccarPassword] = useState(() => userStorageGet('traccar_password') || '');
+
   useEffect(() => {
     if (!qrCode || !whatsapp.api_url || !whatsapp.api_key || !whatsapp.instance_name) return;
-    
+
     setPollingStatus(true);
     let active = true;
-    
+
     const checkStatus = async () => {
       try {
         const { data } = await invokeEvolutionProxy({
@@ -48,9 +57,12 @@ const ConfiguracoesPage = () => {
       } catch {}
       if (active) setTimeout(checkStatus, 3000);
     };
-    
+
     const timeout = setTimeout(checkStatus, 3000);
-    return () => { active = false; clearTimeout(timeout); };
+    return () => {
+      active = false;
+      clearTimeout(timeout);
+    };
   }, [qrCode, whatsapp.api_url, whatsapp.api_key, whatsapp.instance_name]);
 
   useEffect(() => {
@@ -58,9 +70,7 @@ const ConfiguracoesPage = () => {
     const savedMpToken = userStorageGet('mp_access_token') || '';
     const savedAsaasToken = userStorageGet('asaas_access_token') || '';
     setPayment({ gateway: savedGateway as any, access_token: savedMpToken, asaas_token: savedAsaasToken });
-    
 
-    // Carregar config WhatsApp salva (mantendo instance_name padronizado pela VPS)
     const savedWa = userStorageGet('whatsapp_config');
     if (!savedWa) return;
 
@@ -68,9 +78,8 @@ const ConfiguracoesPage = () => {
       const parsed = JSON.parse(savedWa);
       const api_url = parsed?.api_url || '';
       const api_key = parsed?.api_key || '';
-
       const cachedStatus = userStorageGet('whatsapp_status');
-      const initialStatus = (cachedStatus === 'connected') ? 'connected' : 'disconnected';
+      const initialStatus = cachedStatus === 'connected' ? 'connected' : 'disconnected';
 
       setWhatsapp({
         api_url,
@@ -97,95 +106,12 @@ const ConfiguracoesPage = () => {
     } catch {}
   }, [autoInstanceName]);
 
-  const [users, setUsers] = useState<AppUser[]>([]);
-  const [newUser, setNewUser] = useState({ email: '', password: '', name: '' });
-
-  const [openSection, setOpenSection] = useState<string | null>(null);
-
-  // Layout config state
-  const [layoutCompanyName, setLayoutCompanyName] = useState(() => localStorage.getItem('layout_company_name') || 'CobrançaPro');
-  const [layoutPrimaryColor, setLayoutPrimaryColor] = useState(() => localStorage.getItem('layout_primary_color') || '#3b82f6');
-  const [layoutLogo, setLayoutLogo] = useState<string | null>(() => localStorage.getItem('layout_logo'));
-  const logoInputRef = useRef<HTMLInputElement>(null);
-
-  // Traccar API config state
-  const [traccarUrl, setTraccarUrl] = useState(() => userStorageGet('traccar_url') || '');
-  const [traccarUser, setTraccarUser] = useState(() => userStorageGet('traccar_user') || '');
-  const [traccarPassword, setTraccarPassword] = useState(() => userStorageGet('traccar_password') || '');
-
   const toggleSection = (key: string) => {
-    setOpenSection(prev => prev === key ? null : key);
-  };
-
-
-  useEffect(() => {
-    if (isVpsMode()) {
-      fetchUsersVps().then(setUsers).catch(() => setUsers(getStoredUsers()));
-    } else {
-      setUsers(getStoredUsers());
-    }
-  }, []);
-
-  const handleAddUser = async () => {
-    if (!newUser.email || !newUser.password || !newUser.name) {
-      toast.error('Preencha todos os campos');
-      return;
-    }
-    if (users.find(u => u.email === newUser.email)) {
-      toast.error('Este email já está cadastrado');
-      return;
-    }
-
-    try {
-      if (isVpsMode()) {
-        await registerVps(newUser.name, newUser.email, newUser.password);
-        const refreshed = await fetchUsersVps();
-        setUsers(refreshed);
-      } else {
-        const user: AppUser = {
-          id: Date.now().toString(),
-          email: newUser.email,
-          password: newUser.password,
-          name: newUser.name,
-          role: 'user',
-          createdAt: new Date().toISOString(),
-        };
-        const updated = [...users, user];
-        setUsers(updated);
-        saveUsers(updated);
-      }
-      setNewUser({ email: '', password: '', name: '' });
-      toast.success('Usuário criado com sucesso!');
-    } catch (err: any) {
-      toast.error(err?.message || 'Erro ao criar usuário');
-    }
-  };
-
-  const handleDeleteUser = async (id: string) => {
-    if (users.length <= 1) {
-      toast.error('Deve existir pelo menos 1 usuário');
-      return;
-    }
-    try {
-      if (isVpsMode()) {
-        await deleteUserVps(id);
-        const refreshed = await fetchUsersVps();
-        setUsers(refreshed);
-      } else {
-        const updated = users.filter(u => u.id !== id);
-        setUsers(updated);
-        saveUsers(updated);
-      }
-      toast.success('Usuário removido');
-    } catch (err: any) {
-      toast.error(err?.message || 'Erro ao remover usuário');
-    }
+    setOpenSection(prev => (prev === key ? null : key));
   };
 
   return (
     <div className="space-y-4 max-w-2xl">
-
-      {/* WhatsApp */}
       <Collapsible open={openSection === 'whatsapp'} onOpenChange={() => toggleSection('whatsapp')}>
         <Card>
           <CollapsibleTrigger className="w-full">
@@ -244,7 +170,6 @@ const ConfiguracoesPage = () => {
                     action: 'create',
                   });
                   if (error) throw new Error(error);
-                  console.log('Evolution proxy response:', data);
                   const base64 = data?.qrcode;
                   if (base64) {
                     setQrCode(base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`);
@@ -253,16 +178,7 @@ const ConfiguracoesPage = () => {
                     toast.success('Instância já está conectada!');
                     setWhatsapp(prev => ({ ...prev, status: 'connected' }));
                   } else {
-                    console.log('Evolution API debug:', JSON.stringify(data?.debug, null, 2));
-                    const debugInfo = data?.debug;
-                    const createStatus = debugInfo?.createResult?.status;
-                    if (createStatus === 401) {
-                      toast.error('API Key inválida. Verifique a chave na Evolution API.');
-                    } else {
-                      const instances = debugInfo?.instances;
-                      const detail = instances ? ` Instâncias encontradas: ${JSON.stringify(instances).substring(0, 150)}` : '';
-                      toast.warning('QR Code não disponível. Verifique o console para debug.' + detail);
-                    }
+                    toast.warning('QR Code não disponível. Verifique a configuração.');
                   }
                 } catch (err: any) {
                   toast.error('Erro ao gerar QR Code: ' + (err?.message || 'verifique a URL e API Key'));
@@ -273,7 +189,7 @@ const ConfiguracoesPage = () => {
                 <QrCode className="mr-2 h-3 w-3" /> {qrLoading ? 'Gerando...' : 'Gerar QR Code'}
               </Button>
               {qrCode && (
-                <div className="mt-4 flex flex-col items-center gap-2 p-4 border rounded-lg bg-white">
+                <div className="mt-4 flex flex-col items-center gap-2 p-4 border rounded-lg bg-background">
                   <p className="text-sm font-medium text-foreground">Escaneie o QR Code com seu WhatsApp:</p>
                   <img src={qrCode} alt="QR Code WhatsApp" className="w-64 h-64 object-contain" />
                   {pollingStatus && <p className="text-xs text-muted-foreground animate-pulse">Aguardando conexão...</p>}
@@ -281,7 +197,7 @@ const ConfiguracoesPage = () => {
                 </div>
               )}
               {whatsapp.status === 'connected' && !qrCode && (
-                <div className="mt-4 flex items-center gap-2 p-3 border rounded-lg bg-green-50 text-green-700">
+                <div className="mt-4 flex items-center gap-2 p-3 border rounded-lg bg-muted text-foreground">
                   <Wifi className="h-4 w-4" />
                   <span className="text-sm font-medium">WhatsApp conectado!</span>
                 </div>
@@ -291,7 +207,6 @@ const ConfiguracoesPage = () => {
         </Card>
       </Collapsible>
 
-      {/* Pagamento */}
       <Collapsible open={openSection === 'payment'} onOpenChange={() => toggleSection('payment')}>
         <Card>
           <CollapsibleTrigger className="w-full">
@@ -329,57 +244,19 @@ const ConfiguracoesPage = () => {
                 </Select>
               </div>
 
-              {/* Mostrar apenas o gateway selecionado */}
               {payment.gateway === 'mercadopago' && (
-                <div className="rounded-lg border border-primary p-4 space-y-3 bg-primary/5">
-                  <div className="flex items-center gap-2">
-                    <img src={mercadoPagoLogo} alt="Mercado Pago" className="h-6 w-auto" />
-                    <span className="font-medium text-sm">Mercado Pago</span>
-                    <Badge variant="default" className="text-xs">Ativo</Badge>
-                  </div>
-                  <div>
-                    <Label className="text-xs">Access Token</Label>
-                    <Input type="password" value={payment.access_token} onChange={(e) => setPayment({ ...payment, access_token: e.target.value })} placeholder="APP_USR-..." />
-                  </div>
+                <div>
+                  <Label>Access Token Mercado Pago</Label>
+                  <Input type="password" value={payment.access_token} onChange={(e) => setPayment({ ...payment, access_token: e.target.value })} />
                 </div>
               )}
 
               {payment.gateway === 'asaas' && (
-                <div className="rounded-lg border border-primary p-4 space-y-3 bg-primary/5">
-                  <div className="flex items-center gap-2">
-                    <img src={asaasLogo} alt="Asaas" className="h-6 w-auto" />
-                    <span className="font-medium text-sm">Asaas</span>
-                    <Badge variant="default" className="text-xs">Ativo</Badge>
-                  </div>
-                  <div>
-                    <Label className="text-xs">API Key</Label>
-                    <Input type="password" value={payment.asaas_token} onChange={(e) => setPayment({ ...payment, asaas_token: e.target.value })} placeholder="$aas_..." />
-                  </div>
+                <div>
+                  <Label>Token Asaas</Label>
+                  <Input type="password" value={payment.asaas_token} onChange={(e) => setPayment({ ...payment, asaas_token: e.target.value })} />
                 </div>
               )}
-
-              {/* Webhook URL */}
-              <div className="rounded-lg border-2 border-dashed border-primary/40 p-4 space-y-2 bg-primary/5">
-                <Label className="text-sm font-semibold flex items-center gap-2">
-                  🔗 URL do Webhook
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Copie e cole nas configurações de webhook do {payment.gateway === 'mercadopago' ? 'Mercado Pago' : payment.gateway === 'asaas' ? 'Asaas' : 'gateway'}
-                </p>
-                <div className="flex gap-2">
-                  <Input 
-                    readOnly 
-                    value={`${window.location.origin}/api/webhook/${payment.gateway}`} 
-                    className="text-xs font-mono bg-background" 
-                  />
-                  <Button size="sm" variant="outline" onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/api/webhook/${payment.gateway}`);
-                    toast.success('URL do Webhook copiada!');
-                  }}>
-                    <Copy className="h-4 w-4 mr-1" /> Copiar
-                  </Button>
-                </div>
-              </div>
 
               <Button size="sm" onClick={() => {
                 userStorageSet('payment_gateway', payment.gateway);
@@ -394,7 +271,6 @@ const ConfiguracoesPage = () => {
         </Card>
       </Collapsible>
 
-      {/* Backup - apenas admin */}
       {userIsAdmin && <Collapsible open={openSection === 'backup'} onOpenChange={() => toggleSection('backup')}>
         <Card>
           <CollapsibleTrigger className="w-full">
@@ -419,7 +295,6 @@ const ConfiguracoesPage = () => {
         </Card>
       </Collapsible>}
 
-      {/* API Traccar */}
       <Collapsible open={openSection === 'traccar'} onOpenChange={() => toggleSection('traccar')}>
         <Card>
           <CollapsibleTrigger className="w-full">
@@ -427,9 +302,7 @@ const ConfiguracoesPage = () => {
               <div className="flex items-center gap-2 text-base font-semibold">
                 <MapPin className="h-5 w-5 text-primary" />
                 API Traccar
-                {traccarUrl && traccarUser && traccarPassword && (
-                  <Badge variant="default">Configurado</Badge>
-                )}
+                {traccarUrl && traccarUser && traccarPassword && <Badge variant="default">Configurado</Badge>}
               </div>
               <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'traccar' ? 'rotate-180' : ''}`} />
             </div>
@@ -438,28 +311,15 @@ const ConfiguracoesPage = () => {
             <CardContent className="space-y-4 pt-0">
               <div>
                 <Label>URL do Servidor Traccar</Label>
-                <Input
-                  value={traccarUrl}
-                  onChange={(e) => setTraccarUrl(e.target.value)}
-                  placeholder="https://traccar.seudominio.com.br"
-                />
+                <Input value={traccarUrl} onChange={(e) => setTraccarUrl(e.target.value)} placeholder="https://traccar.seudominio.com.br" />
               </div>
               <div>
                 <Label>Usuário / Email</Label>
-                <Input
-                  value={traccarUser}
-                  onChange={(e) => setTraccarUser(e.target.value)}
-                  placeholder="admin@exemplo.com"
-                />
+                <Input value={traccarUser} onChange={(e) => setTraccarUser(e.target.value)} placeholder="admin@exemplo.com" />
               </div>
               <div>
                 <Label>Senha</Label>
-                <Input
-                  type="password"
-                  value={traccarPassword}
-                  onChange={(e) => setTraccarPassword(e.target.value)}
-                  placeholder="Senha do Traccar"
-                />
+                <Input type="password" value={traccarPassword} onChange={(e) => setTraccarPassword(e.target.value)} placeholder="Senha do Traccar" />
               </div>
               <Button size="sm" onClick={() => {
                 if (!traccarUrl || !traccarUser || !traccarPassword) {
@@ -478,7 +338,6 @@ const ConfiguracoesPage = () => {
         </Card>
       </Collapsible>
 
-      {/* Layout - apenas admin */}
       {userIsAdmin && <Collapsible open={openSection === 'layout'} onOpenChange={() => toggleSection('layout')}>
         <Card>
           <CollapsibleTrigger className="w-full">
@@ -492,39 +351,20 @@ const ConfiguracoesPage = () => {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <CardContent className="space-y-5 pt-0">
-              {/* Company Name */}
               <div>
                 <Label>Nome da Empresa (tela de login)</Label>
-                <Input
-                  value={layoutCompanyName}
-                  onChange={(e) => setLayoutCompanyName(e.target.value)}
-                  placeholder="Nome da sua empresa"
-                  maxLength={50}
-                />
+                <Input value={layoutCompanyName} onChange={(e) => setLayoutCompanyName(e.target.value)} placeholder="Nome da sua empresa" maxLength={50} />
               </div>
 
-              {/* Primary Color */}
               <div>
                 <Label>Cor Principal do Sistema</Label>
                 <div className="flex items-center gap-3 mt-1">
-                  <input
-                    type="color"
-                    value={layoutPrimaryColor}
-                    onChange={(e) => setLayoutPrimaryColor(e.target.value)}
-                    className="h-10 w-14 rounded border border-border cursor-pointer"
-                  />
-                  <Input
-                    value={layoutPrimaryColor}
-                    onChange={(e) => setLayoutPrimaryColor(e.target.value)}
-                    placeholder="#3b82f6"
-                    className="w-32 font-mono text-sm"
-                    maxLength={7}
-                  />
+                  <input type="color" value={layoutPrimaryColor} onChange={(e) => setLayoutPrimaryColor(e.target.value)} className="h-10 w-14 rounded border border-border cursor-pointer" />
+                  <Input value={layoutPrimaryColor} onChange={(e) => setLayoutPrimaryColor(e.target.value)} placeholder="#3b82f6" className="w-32 font-mono text-sm" maxLength={7} />
                   <div className="h-10 w-10 rounded-md border" style={{ backgroundColor: layoutPrimaryColor }} />
                 </div>
               </div>
 
-              {/* Logo Upload */}
               <div>
                 <Label>Logo da Tela de Login</Label>
                 <input
@@ -540,23 +380,15 @@ const ConfiguracoesPage = () => {
                       return;
                     }
                     const reader = new FileReader();
-                    reader.onload = () => {
-                      const base64 = reader.result as string;
-                      setLayoutLogo(base64);
-                    };
+                    reader.onload = () => setLayoutLogo(reader.result as string);
                     reader.readAsDataURL(file);
                   }}
                 />
                 <div className="mt-1 flex items-center gap-4">
                   {layoutLogo ? (
                     <div className="relative">
-                      <img src={layoutLogo} alt="Logo" className="h-16 w-auto rounded-md border object-contain bg-white p-1" />
-                      <button
-                        onClick={() => setLayoutLogo(null)}
-                        className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs"
-                      >
-                        ×
-                      </button>
+                      <img src={layoutLogo} alt="Logo" className="h-16 w-auto rounded-md border object-contain bg-background p-1" />
+                      <button onClick={() => setLayoutLogo(null)} className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs">×</button>
                     </div>
                   ) : (
                     <div className="h-16 w-24 rounded-md border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
@@ -570,7 +402,6 @@ const ConfiguracoesPage = () => {
                 <p className="text-xs text-muted-foreground mt-1">PNG, JPG ou SVG, máx. 2MB</p>
               </div>
 
-              {/* Preview */}
               <div className="rounded-lg border p-4 space-y-2">
                 <Label className="text-xs text-muted-foreground">Pré-visualização</Label>
                 <div className="flex items-center gap-3">
@@ -588,11 +419,8 @@ const ConfiguracoesPage = () => {
               <Button size="sm" onClick={() => {
                 localStorage.setItem('layout_company_name', layoutCompanyName);
                 localStorage.setItem('layout_primary_color', layoutPrimaryColor);
-                if (layoutLogo) {
-                  localStorage.setItem('layout_logo', layoutLogo);
-                } else {
-                  localStorage.removeItem('layout_logo');
-                }
+                if (layoutLogo) localStorage.setItem('layout_logo', layoutLogo);
+                else localStorage.removeItem('layout_logo');
 
                 const hsl = hexToHSL(layoutPrimaryColor);
                 if (hsl) {
@@ -615,21 +443,31 @@ const ConfiguracoesPage = () => {
 function hexToHSL(hex: string): string | null {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) return null;
-  let r = parseInt(result[1], 16) / 255;
-  let g = parseInt(result[2], 16) / 255;
-  let b = parseInt(result[3], 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0;
+  const r = parseInt(result[1], 16) / 255;
+  const g = parseInt(result[2], 16) / 255;
+  const b = parseInt(result[3], 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
   const l = (max + min) / 2;
+
   if (max !== min) {
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
     switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-      case g: h = ((b - r) / d + 2) / 6; break;
-      case b: h = ((r - g) / d + 4) / 6; break;
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        break;
+      case g:
+        h = ((b - r) / d + 2) / 6;
+        break;
+      case b:
+        h = ((r - g) / d + 4) / 6;
+        break;
     }
   }
+
   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
