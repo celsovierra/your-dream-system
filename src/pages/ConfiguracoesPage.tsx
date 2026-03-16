@@ -253,7 +253,7 @@ const ConfiguracoesPage = () => {
                   toast.error('Preencha a URL e a API Key');
                   return;
                 }
-                localStorage.setItem('whatsapp_config', JSON.stringify({
+                userStorageSet('whatsapp_config', JSON.stringify({
                   api_url: whatsapp.api_url,
                   api_key: whatsapp.api_key,
                   instance_name: autoInstanceName,
