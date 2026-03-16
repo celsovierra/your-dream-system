@@ -118,20 +118,7 @@ const ConfiguracoesPage = () => {
 
 
   useEffect(() => {
-    const stored = localStorage.getItem('app_users');
-    if (stored) {
-      setUsers(JSON.parse(stored));
-    } else {
-      const defaultUser: AppUser = {
-        id: '1',
-        email: 'admin@cobranca.com',
-        password: 'admin123',
-        name: 'Administrador',
-        createdAt: new Date().toISOString(),
-      };
-      setUsers([defaultUser]);
-      localStorage.setItem('app_users', JSON.stringify([defaultUser]));
-    }
+    setUsers(getStoredUsers());
   }, []);
 
   const handleAddUser = () => {
