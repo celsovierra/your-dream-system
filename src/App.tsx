@@ -56,7 +56,13 @@ const App = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
-    if (token) setIsAuthenticated(true);
+    const currentUser = getCurrentUser();
+
+    if (token && currentUser) {
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
+    }
 
     const savedHSL = localStorage.getItem('layout_primary_hsl');
     if (savedHSL) {

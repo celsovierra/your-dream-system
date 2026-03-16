@@ -43,13 +43,12 @@ function resolveDataBackend(): DataBackend {
   const forcedBackend = String(import.meta.env.VITE_DATA_BACKEND || '').toLowerCase();
   if (forcedBackend === 'cloud' || forcedBackend === 'api') return forcedBackend;
 
-  if (hasConfiguredApiBaseUrl()) return 'api';
-
   const hostname = window.location.hostname.toLowerCase();
   const isLovableHost =
     hostname.endsWith('.lovable.app') || hostname.endsWith('.lovableproject.com');
 
   if (isLovableHost) return 'cloud';
+  if (hasConfiguredApiBaseUrl()) return 'api';
 
   return 'api';
 }

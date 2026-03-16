@@ -79,7 +79,7 @@ export function isAdmin(): boolean {
 
 export function getCurrentOwnerId(): string {
   const user = getCurrentUser();
-  return user?.id || '1';
+  return user?.id || '';
 }
 
 // ===== User-scoped localStorage =====
