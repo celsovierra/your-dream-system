@@ -17,7 +17,7 @@ export const mockQueue: BillingQueue[] = [
 ];
 
 export const mockTemplates: MessageTemplate[] = [
-  { id: 1, name: 'Lembrete', type: 'reminder', content: 'Olá {nome}, lembramos que seu boleto de R$ {valor} vence em {data_vencimento}.', is_active: true, created_at: '2024-01-01' },
+  { id: 1, name: 'Lembrete', type: 'reminder', content: '🚨 Olá {nome}, tudo bem?\nBom dia, aqui é um lembrete que sua fatura já está disponível.\n\n🗓 Vencimento: {data_vencimento}\n💰 Valor: R$ {valor}\n\nUtilize o link abaixo para efetuar o pagamento:\n{link_pagamento}\n\nApós vencimento será cobrado juros pela operadora.\n\nO pagamento é confirmado automaticamente. Você receberá o recibo em seguida, sem precisar enviar comprovante.', is_active: true, created_at: '2024-01-01' },
   { id: 2, name: 'Vencimento', type: 'due', content: 'Olá {nome}, seu boleto de R$ {valor} vence hoje ({data_vencimento}). Pague pelo link: {link_pagamento}', is_active: true, created_at: '2024-01-01' },
   { id: 3, name: 'Atraso', type: 'overdue', content: 'Olá {nome}, seu boleto de R$ {valor} está em atraso há {dias_atraso} dias. Regularize: {link_pagamento}', is_active: true, created_at: '2024-01-01' },
   { id: 4, name: 'Recibo', type: 'receipt', content: 'Olá {nome}, confirmamos o recebimento de R$ {valor}. Obrigado!', is_active: true, created_at: '2024-01-01' },
