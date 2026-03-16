@@ -496,9 +496,9 @@ const ConfiguracoesPage = () => {
                   toast.error('Preencha todos os campos do Traccar');
                   return;
                 }
-                localStorage.setItem('traccar_url', traccarUrl);
-                localStorage.setItem('traccar_user', traccarUser);
-                localStorage.setItem('traccar_password', traccarPassword);
+                userStorageSet('traccar_url', traccarUrl);
+                userStorageSet('traccar_user', traccarUser);
+                userStorageSet('traccar_password', traccarPassword);
                 toast.success('Configuração do Traccar salva!');
               }}>
                 <Save className="mr-2 h-3 w-3" /> Salvar
