@@ -262,6 +262,22 @@ const ConfiguracoesPage = () => {
                 </div>
               )}
 
+              {(payment.gateway === 'mercadopago' || payment.gateway === 'asaas') && (
+                <div className="space-y-1">
+                  <Label>URL do Webhook</Label>
+                  <div className="flex gap-2">
+                    <Input readOnly value={`${window.location.origin}/api/webhook/${payment.gateway}`} className="bg-muted cursor-default text-xs" />
+                    <Button size="sm" variant="outline" type="button" onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/api/webhook/${payment.gateway}`);
+                      toast.success('URL do Webhook copiada!');
+                    }}>
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Cole esta URL nas configurações de webhook do {payment.gateway === 'mercadopago' ? 'Mercado Pago' : 'Asaas'}.</p>
+                </div>
+              )}
+
               <div className="space-y-3 rounded-lg border border-border/70 bg-muted/20 p-4">
                 <div>
                   <h4 className="text-sm font-semibold">Tutoriais de configuração</h4>
