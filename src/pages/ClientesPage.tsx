@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle, Loader2, MapPin } from 'lucide-react';
+import { userStorageGet } from '@/services/auth';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
 import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, invokeEvolutionProxy, upsertClientFromTraccar } from '@/services/data-layer';
