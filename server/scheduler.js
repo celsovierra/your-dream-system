@@ -4,8 +4,9 @@ import { query } from './db.js';
 // Busca configuração do banco
 async function getSetting(key, fallback) {
   try {
-    const rows = await query('SELECT `value` FROM billing_settings WHERE `key` = ?', [key]);
-    return rows?.[0]?.value || fallback;
+    const rows = await query('SELECT `value` FROM billing_settings WHERE `key` = ? LIMIT 1', [key]);
+    const row = Array.isArray(rows) ? rows.find(r => r && typeof r === 'object' && 'value' in r) : null;
+    return row?.value || fallback;
   } catch {
     return fallback;
   }
