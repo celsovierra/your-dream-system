@@ -7,10 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle, Loader2, MapPin } from 'lucide-react';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
 import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, invokeEvolutionProxy } from '@/services/data-layer';
+import { supabase } from '@/integrations/supabase/client';
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -70,6 +71,74 @@ const ClientesPage = () => {
   const [baixaDialogOpen, setBaixaDialogOpen] = useState(false);
   const [baixaClient, setBaixaClient] = useState<Client | null>(null);
   const [baixaMonths, setBaixaMonths] = useState('1');
+  const [traccarLoading, setTraccarLoading] = useState(false);
+
+  const handleImportTraccar = async () => {
+    const traccarUrl = localStorage.getItem('traccar_url');
+    const traccarUser = localStorage.getItem('traccar_user');
+    const traccarPassword = localStorage.getItem('traccar_password');
+
+    if (!traccarUrl || !traccarUser || !traccarPassword) {
+      toast.error('Configure a API Traccar em Configurações primeiro');
+      return;
+    }
+
+    setTraccarLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('traccar-proxy', {
+        body: {
+          traccar_url: traccarUrl,
+          traccar_user: traccarUser,
+          traccar_password: traccarPassword,
+          endpoint: '/api/users',
+          method: 'GET',
+        },
+      });
+
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      const traccarUsers = data?.data;
+      if (!Array.isArray(traccarUsers) || traccarUsers.length === 0) {
+        toast.info('Nenhum usuário encontrado no Traccar');
+        setTraccarLoading(false);
+        return;
+      }
+
+      let imported = 0;
+      for (const user of traccarUsers) {
+        const name = user.name || user.email || 'Sem nome';
+        const phone = user.phone ? user.phone.replace(/\D/g, '') : '';
+        const email = user.email || '';
+
+        // Skip if already exists by name
+        const exists = clients.find(c => c.name.toLowerCase() === name.toLowerCase());
+        if (exists) continue;
+
+        try {
+          await createClient({
+            name,
+            phone: phone.length > 2 ? phone : '55',
+            email,
+          });
+          imported++;
+        } catch (err) {
+          console.error(`Erro ao importar ${name}:`, err);
+        }
+      }
+
+      if (imported > 0) {
+        toast.success(`${imported} usuário(s) importado(s) do Traccar!`);
+        loadClients();
+      } else {
+        toast.info('Todos os usuários do Traccar já estão cadastrados');
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao buscar usuários do Traccar');
+    } finally {
+      setTraccarLoading(false);
+    }
+  };
 
   const loadClients = async () => {
     setLoading(true);
@@ -256,10 +325,15 @@ const ClientesPage = () => {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Buscar por nome, CPF ou telefone..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingClient(null); setForm({ name: '', email: '', phone: '55', phone2: '55', document: '', amount: '', due_date: '' }); } }}>
-          <DialogTrigger asChild>
-            <Button><Plus className="mr-2 h-4 w-4" /> Novo Cliente</Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleImportTraccar} disabled={traccarLoading}>
+            {traccarLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}
+            {traccarLoading ? 'Importando...' : 'Importar Traccar'}
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingClient(null); setForm({ name: '', email: '', phone: '55', phone2: '55', document: '', amount: '', due_date: '' }); } }}>
+            <DialogTrigger asChild>
+              <Button><Plus className="mr-2 h-4 w-4" /> Novo Cliente</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{editingClient ? 'Editar Cliente' : 'Novo Cliente'}</DialogTitle>
@@ -276,6 +350,7 @@ const ClientesPage = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Dialog open={baixaDialogOpen} onOpenChange={setBaixaDialogOpen}>
