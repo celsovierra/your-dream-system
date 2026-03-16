@@ -68,7 +68,7 @@ const ConfiguracoesPage = () => {
       const api_url = parsed?.api_url || '';
       const api_key = parsed?.api_key || '';
 
-      const cachedStatus = localStorage.getItem('whatsapp_status');
+      const cachedStatus = userStorageGet('whatsapp_status');
       const initialStatus = (cachedStatus === 'connected') ? 'connected' : 'disconnected';
 
       setWhatsapp({
