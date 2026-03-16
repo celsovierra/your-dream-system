@@ -33,6 +33,9 @@ const navItems = [
   { path: '/fila', label: 'Fila de Envio', icon: ListTodo, color: 'text-purple-400' },
   { path: '/mensagens', label: 'Mensagens', icon: MessageSquare, color: 'text-green-400' },
   { path: '/contratos', label: 'Contratos', icon: FileText, color: 'text-orange-400' },
+];
+
+const bottomNavItems = [
   { path: '/logs', label: 'Logs', icon: ScrollText, color: 'text-cyan-400' },
   { path: '/configuracoes', label: 'Configurações', icon: Settings, color: 'text-rose-400' },
 ];
@@ -295,6 +298,29 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           })}
         </nav>
 
+        <div className="border-t border-sidebar-border space-y-1 p-2">
+          {bottomNavItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={() => setSidebarOpen(false)}
+                title={sidebarCollapsed ? item.label : undefined}
+                className={cn(
+                  'flex items-center rounded-md py-2.5 text-sm font-medium transition-colors',
+                  sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3',
+                  isActive
+                    ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                )}
+              >
+                <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-sidebar-primary-foreground" : item.color)} />
+                {!sidebarCollapsed && item.label}
+              </Link>
+            );
+          })}
+        </div>
 
         {!sidebarCollapsed && (
           <div className="border-t border-sidebar-border p-4 space-y-3">
@@ -356,7 +382,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
               <Menu className="h-5 w-5" />
             </button>
             <h2 className="text-lg font-semibold text-card-foreground">
-              {navItems.find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
+              {[...navItems, ...bottomNavItems].find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
             </h2>
           </div>
           <div className="flex items-center gap-2">
