@@ -113,15 +113,6 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
 
   useEffect(() => {
     const syncDeployApi = () => {
-      const apiUrl = resolveDeployApiUrl();
-      setDeployApiConfigured(Boolean(apiUrl));
-
-      if (!apiUrl) {
-        setHasUpdate(false);
-        setDeployCheckError(null);
-        return;
-      }
-
       void checkForUpdates();
     };
 
