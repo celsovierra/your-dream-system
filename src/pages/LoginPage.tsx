@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Receipt, Eye, EyeOff, UserPlus, LogIn, Shield, Zap, BarChart3 } from 'lucide-react';
+import { Receipt, Eye, EyeOff, UserPlus, LogIn, Shield, Zap, BarChart3, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface LoginPageProps {
@@ -151,6 +151,15 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
               <div>
                 <p className="text-sm font-semibold text-white">Dashboard Completo</p>
                 <p className="text-xs text-slate-500">Relatórios em tempo real</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/15 border border-purple-500/20">
+                <FileText className="h-5 w-5 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Gestão de Contratos</p>
+                <p className="text-xs text-slate-500">Controle total de contratos</p>
               </div>
             </div>
           </div>
