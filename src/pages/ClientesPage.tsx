@@ -367,7 +367,6 @@ const ClientesPage = () => {
         const today = new Date();
         const nextDueFormatted = newDueDate ? formatDatePtBr(newDueDate) : '-';
         const todayFormatted = today.toLocaleDateString('pt-BR');
-        const dueDate = parseDateOnly(baixaClient.due_date);
         const message = replaceTemplateVars(receiptTemplate.content, {
           nome: baixaClient.name,
           valor: Number(baixaClient.amount || 0).toFixed(2),
@@ -378,10 +377,7 @@ const ClientesPage = () => {
           valor_atualizado: `R$ ${totalAmount.toFixed(2)}`,
           data_hoje: todayFormatted,
           prox_vencimento: nextDueFormatted,
-          link_boleto: '',
           pix_copia_cola: '',
-          mes: dueDate ? dueDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '',
-          dias_atraso: '0',
         });
         try {
           toast.loading('Enviando recibo...', { id: `receipt-${baixaClient.id}` });
