@@ -1,5 +1,6 @@
 import express from 'express';
-import { hasColumn, query } from '../db.js';
+import { query } from '../db.js';
+import { queryWithOptionalOwnerScope } from '../utils/owner-scope.js';
 
 const router = express.Router();
 
@@ -42,10 +43,6 @@ function normalizeClientRow(row) {
   };
 }
 
-async function supportsOwnerScope() {
-  return hasColumn('clients', 'owner_id');
-}
-
 // Listar clientes
 router.get('/', async (req, res) => {
   try {
@@ -53,46 +50,52 @@ router.get('/', async (req, res) => {
     const search = req.query.search || '';
     const limit = 100;
     const offset = (page - 1) * limit;
-    const ownerId = req.ownerId;
-    const ownerScoped = await supportsOwnerScope();
 
-    let sql = 'SELECT * FROM clients WHERE 1=1';
-    let countSql = 'SELECT COUNT(*) as total FROM clients WHERE 1=1';
-    const params = [];
-    const countParams = [];
+    const result = await queryWithOptionalOwnerScope({
+      tableName: 'clients',
+      ownerId: req.ownerId,
+      run: async ({ useOwnerScope, ownerId }) => {
+        let sql = 'SELECT * FROM clients WHERE 1=1';
+        let countSql = 'SELECT COUNT(*) as total FROM clients WHERE 1=1';
+        const params = [];
+        const countParams = [];
 
-    if (ownerScoped && ownerId) {
-      sql += ' AND owner_id = ?';
-      countSql += ' AND owner_id = ?';
-      params.push(ownerId);
-      countParams.push(ownerId);
-    }
+        if (useOwnerScope && ownerId) {
+          sql += ' AND owner_id = ?';
+          countSql += ' AND owner_id = ?';
+          params.push(ownerId);
+          countParams.push(ownerId);
+        }
 
-    if (search) {
-      const searchClause = ' AND (name LIKE ? OR document LIKE ? OR phone LIKE ?)';
-      const searchParam = `%${search}%`;
-      sql += searchClause;
-      countSql += searchClause;
-      params.push(searchParam, searchParam, searchParam);
-      countParams.push(searchParam, searchParam, searchParam);
-    }
+        if (search) {
+          const searchClause = ' AND (name LIKE ? OR document LIKE ? OR phone LIKE ?)';
+          const searchParam = `%${search}%`;
+          sql += searchClause;
+          countSql += searchClause;
+          params.push(searchParam, searchParam, searchParam);
+          countParams.push(searchParam, searchParam, searchParam);
+        }
 
-    sql += ' ORDER BY name LIMIT ? OFFSET ?';
-    params.push(limit, offset);
+        sql += ' ORDER BY name LIMIT ? OFFSET ?';
+        params.push(limit, offset);
 
-    const [countResult] = await query(countSql, countParams);
-    const rows = await query(sql, params);
+        const [countResult] = await query(countSql, countParams);
+        const rows = await query(sql, params);
 
-    const data = Array.isArray(rows)
-      ? rows.filter(r => r && typeof r === 'object' && 'id' in r).map(normalizeClientRow)
+        return { countResult, rows };
+      },
+    });
+
+    const data = Array.isArray(result.rows)
+      ? result.rows.filter(r => r && typeof r === 'object' && 'id' in r).map(normalizeClientRow)
       : [];
 
     res.json({
       data,
-      total: Number(countResult?.total || 0),
+      total: Number(result.countResult?.total || 0),
       page,
       per_page: limit,
-      total_pages: Math.ceil(Number(countResult?.total || 0) / limit),
+      total_pages: Math.ceil(Number(result.countResult?.total || 0) / limit),
     });
   } catch (err) {
     console.error('GET /clients error:', err);
@@ -103,14 +106,19 @@ router.get('/', async (req, res) => {
 // Buscar cliente por ID
 router.get('/:id', async (req, res) => {
   try {
-    const ownerScoped = await supportsOwnerScope();
-    let sql = 'SELECT * FROM clients WHERE id = ?';
-    const params = [req.params.id];
-    if (ownerScoped && req.ownerId) {
-      sql += ' AND owner_id = ?';
-      params.push(req.ownerId);
-    }
-    const rows = await query(sql, params);
+    const rows = await queryWithOptionalOwnerScope({
+      tableName: 'clients',
+      ownerId: req.ownerId,
+      run: async ({ useOwnerScope, ownerId }) => {
+        let sql = 'SELECT * FROM clients WHERE id = ?';
+        const params = [req.params.id];
+        if (useOwnerScope && ownerId) {
+          sql += ' AND owner_id = ?';
+          params.push(ownerId);
+        }
+        return query(sql, params);
+      },
+    });
     if (!rows.length) return res.status(404).json({ message: 'Cliente não encontrado' });
     res.json(normalizeClientRow(rows[0]));
   } catch (err) {
@@ -124,18 +132,22 @@ router.post('/', async (req, res) => {
     const { name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes } = req.body;
     if (!name || !phone) return res.status(400).json({ message: 'Nome e telefone são obrigatórios' });
 
-    const ownerScoped = await supportsOwnerScope();
-    const ownerId = ownerScoped ? req.ownerId || null : null;
-
-    const result = ownerScoped
-      ? await query(
-          'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null, ownerId]
-        )
-      : await query(
+    const result = await queryWithOptionalOwnerScope({
+      tableName: 'clients',
+      ownerId: req.ownerId,
+      run: async ({ useOwnerScope, ownerId }) => {
+        if (useOwnerScope) {
+          return query(
+            'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null, ownerId || null]
+          );
+        }
+        return query(
           'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
           [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null]
         );
+      },
+    });
 
     const newClient = await query('SELECT * FROM clients WHERE id = ?', [Number(result.insertId)]);
     res.status(201).json(normalizeClientRow(newClient[0]));
@@ -169,14 +181,19 @@ router.put('/:id', async (req, res) => {
 
     if (fields.length === 0) return res.status(400).json({ message: 'Nenhum campo para atualizar' });
 
-    const ownerScoped = await supportsOwnerScope();
-    values.push(req.params.id);
-    let sql = `UPDATE clients SET ${fields.join(', ')} WHERE id = ?`;
-    if (ownerScoped && req.ownerId) {
-      sql += ' AND owner_id = ?';
-      values.push(req.ownerId);
-    }
-    await query(sql, values);
+    await queryWithOptionalOwnerScope({
+      tableName: 'clients',
+      ownerId: req.ownerId,
+      run: async ({ useOwnerScope, ownerId }) => {
+        const params = [...values, req.params.id];
+        let sql = `UPDATE clients SET ${fields.join(', ')} WHERE id = ?`;
+        if (useOwnerScope && ownerId) {
+          sql += ' AND owner_id = ?';
+          params.push(ownerId);
+        }
+        return query(sql, params);
+      },
+    });
 
     const updated = await query('SELECT * FROM clients WHERE id = ?', [req.params.id]);
     res.json(normalizeClientRow(updated[0]));
@@ -189,14 +206,19 @@ router.put('/:id', async (req, res) => {
 // Deletar cliente
 router.delete('/:id', async (req, res) => {
   try {
-    const ownerScoped = await supportsOwnerScope();
-    let sql = 'DELETE FROM clients WHERE id = ?';
-    const params = [req.params.id];
-    if (ownerScoped && req.ownerId) {
-      sql += ' AND owner_id = ?';
-      params.push(req.ownerId);
-    }
-    await query(sql, params);
+    await queryWithOptionalOwnerScope({
+      tableName: 'clients',
+      ownerId: req.ownerId,
+      run: async ({ useOwnerScope, ownerId }) => {
+        let sql = 'DELETE FROM clients WHERE id = ?';
+        const params = [req.params.id];
+        if (useOwnerScope && ownerId) {
+          sql += ' AND owner_id = ?';
+          params.push(ownerId);
+        }
+        return query(sql, params);
+      },
+    });
     res.json({ message: 'Cliente removido' });
   } catch (err) {
     res.status(500).json({ message: 'Erro ao remover cliente' });
