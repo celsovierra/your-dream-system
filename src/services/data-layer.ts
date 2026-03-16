@@ -384,23 +384,35 @@ export async function fetchMessageTemplates(): Promise<MessageTemplate[]> {
 }
 
 export async function getReceiptTemplate(): Promise<MessageTemplate | null> {
+  return getTemplateByType('receipt');
+}
+
+export async function getTemplateByType(type: string): Promise<MessageTemplate | null> {
   const backend = ACTIVE_DATA_BACKEND;
   try {
     let result: MessageTemplate | null;
     if (isLovableEnv()) {
-      const { data } = await supabase.from('message_templates').select('*').eq('type', 'receipt').eq('is_active', true).limit(1);
+      const { data } = await supabase.from('message_templates').select('*').eq('type', type).eq('is_active', true).limit(1);
       result = (data?.[0] as MessageTemplate) || null;
     } else {
       const res = await api.getMessageTemplates();
       if (!res.success || !res.data) return null;
-      result = res.data.find(t => t.type === 'receipt' && t.is_active) || null;
+      result = res.data.find(t => t.type === type && t.is_active) || null;
     }
-    addOperationLog(backend, 'Templates', 'SELECT', 'Buscou template de recibo');
+    addOperationLog(backend, 'Templates', 'SELECT', `Buscou template tipo ${type}`);
     return result;
   } catch (err: any) {
-    addOperationLog(backend, 'Templates', 'SELECT', 'Erro ao buscar template de recibo', 'error', err?.message);
+    addOperationLog(backend, 'Templates', 'SELECT', `Erro ao buscar template tipo ${type}`, 'error', err?.message);
     throw err;
   }
+}
+
+export function replaceTemplateVars(content: string, vars: Record<string, string>): string {
+  let msg = content;
+  for (const [key, value] of Object.entries(vars)) {
+    msg = msg.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+  }
+  return msg;
 }
 
 // ===== DASHBOARD =====

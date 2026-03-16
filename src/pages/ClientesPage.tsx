@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { userStorageGet } from '@/services/auth';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
-import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, invokeEvolutionProxy, upsertClientFromTraccar } from '@/services/data-layer';
+import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, getTemplateByType, replaceTemplateVars, invokeEvolutionProxy, upsertClientFromTraccar } from '@/services/data-layer';
 import api from '@/services/api';
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
