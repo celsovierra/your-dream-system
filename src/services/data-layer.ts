@@ -467,7 +467,7 @@ export async function fetchSettings(): Promise<BillingSettings> {
       addOperationLog(backend, 'Config', 'SELECT', 'Carregou configurações isoladas por usuário');
       return settings;
     } else {
-      const res = await fetch('/api/settings');
+      const res = await apiFetch('/settings');
       const json = await res.json();
       if (!json.success) return defaults;
       addOperationLog(backend, 'Config', 'SELECT', 'Carregou configurações');
