@@ -11,7 +11,7 @@ import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Us
 import { toast } from 'sonner';
 import asaasLogo from '@/assets/asaas.png';
 import mercadoPagoLogo from '@/assets/mercado-pago.png';
-import { type AppUser, getStoredUsers, saveUsers, userStorageGet, userStorageSet, isAdmin } from '@/services/auth';
+import { type AppUser, getStoredUsers, saveUsers, userStorageGet, userStorageSet, isAdmin, isVpsMode, fetchUsersVps, registerVps, deleteUserVps } from '@/services/auth';
 
 const ConfiguracoesPage = () => {
   const userIsAdmin = isAdmin();
