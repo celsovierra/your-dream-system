@@ -49,7 +49,7 @@ const ContratosPage = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(CONTRACTS_STORAGE_KEY, JSON.stringify(contracts));
+    userStorageSet('contracts_data', JSON.stringify(contracts));
   }, [contracts]);
 
   const handleDeleteContract = (id: number) => {
