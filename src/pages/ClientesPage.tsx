@@ -89,20 +89,17 @@ const ClientesPage = () => {
 
     setTraccarLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('traccar-proxy', {
-        body: {
-          traccar_url: traccarUrl,
-          traccar_user: traccarUser,
-          traccar_password: traccarPassword,
-          endpoint: '/api/users',
-          method: 'GET',
-        },
+      const result = await api.traccarProxy({
+        traccar_url: traccarUrl,
+        traccar_user: traccarUser,
+        traccar_password: traccarPassword,
+        endpoint: '/api/users',
+        method: 'GET',
       });
 
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
-
-      const traccarUsers = data?.data;
+      if (!result.success) throw new Error(result.error || 'Erro ao conectar ao Traccar');
+      
+      const traccarUsers = result.data?.data;
       if (!Array.isArray(traccarUsers) || traccarUsers.length === 0) {
         toast.info('Nenhum usuário encontrado no Traccar');
         setTraccarLoading(false);
