@@ -262,6 +262,37 @@ const ConfiguracoesPage = () => {
                 </div>
               )}
 
+              <div className="space-y-3 rounded-lg border border-border/70 bg-muted/20 p-4">
+                <div>
+                  <h4 className="text-sm font-semibold">Tutoriais de configuração</h4>
+                  <p className="text-xs text-muted-foreground">Esses vídeos vão junto no código e aparecerão também em novas instalações na VPS.</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <div className="rounded-lg border bg-card p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <img src={mercadoPagoLogo} alt="Mercado Pago" className="h-6 w-auto" />
+                      <h5 className="text-sm font-semibold">Tutorial Mercado Pago</h5>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Cadastro da conta, geração do Access Token e configuração para cobranças via PIX.</p>
+                    <div className="aspect-video rounded-md border border-dashed border-border bg-muted flex items-center justify-center text-sm text-muted-foreground">
+                      📹 Vídeo do Mercado Pago em breve
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border bg-card p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <img src={asaasLogo} alt="Asaas" className="h-6 w-auto" />
+                      <h5 className="text-sm font-semibold">Tutorial Asaas</h5>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Configuração da conta, obtenção do token e ativação da integração com o sistema.</p>
+                    <div className="aspect-video rounded-md border border-dashed border-border bg-muted flex items-center justify-center text-sm text-muted-foreground">
+                      📹 Vídeo do Asaas em breve
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <Button size="sm" onClick={() => {
                 userStorageSet('payment_gateway', payment.gateway);
                 userStorageSet('mp_access_token', payment.access_token);
@@ -270,30 +301,6 @@ const ConfiguracoesPage = () => {
               }}>
                 <Save className="mr-2 h-3 w-3" /> Salvar
               </Button>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-                <div className="rounded-lg border p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <img src={mercadoPagoLogo} alt="Mercado Pago" className="h-6 w-auto" />
-                    <h4 className="text-sm font-semibold">Tutorial Mercado Pago</h4>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Como cadastrar e obter seu Access Token no Mercado Pago.</p>
-                  <div className="aspect-video bg-muted rounded-md flex items-center justify-center text-muted-foreground text-sm">
-                    📹 Vídeo em breve
-                  </div>
-                </div>
-
-                <div className="rounded-lg border p-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <img src={asaasLogo} alt="Asaas" className="h-6 w-auto" />
-                    <h4 className="text-sm font-semibold">Tutorial Asaas</h4>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Como configurar sua conta Asaas e obter o token de API.</p>
-                  <div className="aspect-video bg-muted rounded-md flex items-center justify-center text-muted-foreground text-sm">
-                    📹 Vídeo em breve
-                  </div>
-                </div>
-              </div>
             </CardContent>
           </CollapsibleContent>
         </Card>
