@@ -25,7 +25,7 @@ interface Contract {
   created_at: string;
 }
 
-const CONTRACTS_STORAGE_KEY = 'contracts_data';
+// contracts_data is now user-scoped via userStorageGet/Set
 
 const defaultContracts: Contract[] = [
   { id: 1, client_name: 'João Silva', template: 'Contrato Padrão', status: 'signed', signed_at: '2024-03-10', created_at: '2024-03-08' },
