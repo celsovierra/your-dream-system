@@ -82,6 +82,8 @@ export function saveUsers(users: AppUser[]) {
 
 export function getCurrentUser(): AppUser | null {
   const userJson = localStorage.getItem('current_user');
+  const token = localStorage.getItem('auth_token');
+
   if (!userJson) {
     localStorage.removeItem('auth_token');
     return null;
@@ -90,8 +92,14 @@ export function getCurrentUser(): AppUser | null {
   try {
     const user: AppUser = JSON.parse(userJson);
 
-    // In VPS mode, trust stored user directly (came from backend)
+    // Em modo VPS, só aceita sessão real do backend (JWT com 3 partes)
     if (isVpsMode()) {
+      const isJwt = Boolean(token && token.split('.').length === 3);
+      if (!isJwt || !user?.id) {
+        localStorage.removeItem('current_user');
+        localStorage.removeItem('auth_token');
+        return null;
+      }
       return user;
     }
 
