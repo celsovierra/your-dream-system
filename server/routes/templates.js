@@ -14,7 +14,8 @@ router.get('/', async (req, res) => {
         let sql = 'SELECT * FROM message_templates WHERE 1=1';
         const params = [];
         if (useOwnerScope && ownerId) {
-          sql += ' AND owner_id = ?';
+          // Return templates belonging to this owner OR global templates (NULL owner_id)
+          sql += ' AND (owner_id = ? OR owner_id IS NULL)';
           params.push(ownerId);
         }
         sql += ' ORDER BY id';
