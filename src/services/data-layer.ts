@@ -123,7 +123,7 @@ export async function createClient(client: Partial<Client>): Promise<void> {
       const { error } = await supabase.from('clients').insert({ name: client.name, email: client.email || null, phone: client.phone, phone2: client.phone2 || null, document: client.document || null, amount: client.amount || null, due_date: client.due_date || null, owner_id: getCurrentOwnerId() } as any);
       if (error) throw error;
     } else {
-      const res = await api.createClient(client);
+      const res = await api.createClient({ ...client, owner_id: getCurrentOwnerId() });
       if (!res.success) throw new Error(res.error || 'Erro ao criar cliente');
     }
     addOperationLog(backend, 'Clientes', 'INSERT', `Criou cliente "${client.name}"`);
