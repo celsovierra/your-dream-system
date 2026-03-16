@@ -3,10 +3,16 @@ import { query } from '../db.js';
 
 const router = express.Router();
 
-// GET /api/settings — todas as configurações
+// GET /api/settings — configurações do owner
 router.get('/', async (req, res) => {
   try {
-    const rows = await query('SELECT `key`, `value` FROM billing_settings');
+    let sql = 'SELECT `key`, `value` FROM billing_settings WHERE 1=1';
+    const params = [];
+    if (req.ownerId) {
+      sql += ' AND owner_id = ?';
+      params.push(req.ownerId);
+    }
+    const rows = await query(sql, params);
     const settings = {};
     for (const row of rows) {
       settings[row.key] = row.value;
@@ -17,15 +23,23 @@ router.get('/', async (req, res) => {
   }
 });
 
-// PUT /api/settings — salva todas as configurações
+// PUT /api/settings — salva configurações do owner
 router.put('/', async (req, res) => {
   try {
     const settings = req.body;
+    const ownerId = req.ownerId || null;
     for (const [key, value] of Object.entries(settings)) {
-      await query(
-        'INSERT INTO billing_settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?',
-        [key, String(value), String(value)]
-      );
+      if (ownerId) {
+        await query(
+          'INSERT INTO billing_settings (`key`, `value`, `owner_id`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = ?',
+          [key, String(value), ownerId, String(value)]
+        );
+      } else {
+        await query(
+          'INSERT INTO billing_settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?',
+          [key, String(value), String(value)]
+        );
+      }
     }
     res.json({ success: true });
   } catch (err) {

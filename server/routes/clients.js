@@ -49,17 +49,25 @@ router.get('/', async (req, res) => {
     const search = req.query.search || '';
     const limit = 100;
     const offset = (page - 1) * limit;
+    const ownerId = req.ownerId;
 
-    let sql = 'SELECT * FROM clients';
-    let countSql = 'SELECT COUNT(*) as total FROM clients';
+    let sql = 'SELECT * FROM clients WHERE 1=1';
+    let countSql = 'SELECT COUNT(*) as total FROM clients WHERE 1=1';
     const params = [];
     const countParams = [];
 
+    if (ownerId) {
+      sql += ' AND owner_id = ?';
+      countSql += ' AND owner_id = ?';
+      params.push(ownerId);
+      countParams.push(ownerId);
+    }
+
     if (search) {
-      const where = ' WHERE name LIKE ? OR document LIKE ? OR phone LIKE ?';
+      const searchClause = ' AND (name LIKE ? OR document LIKE ? OR phone LIKE ?)';
       const searchParam = `%${search}%`;
-      sql += where;
-      countSql += where;
+      sql += searchClause;
+      countSql += searchClause;
       params.push(searchParam, searchParam, searchParam);
       countParams.push(searchParam, searchParam, searchParam);
     }
@@ -70,7 +78,6 @@ router.get('/', async (req, res) => {
     const [countResult] = await query(countSql, countParams);
     const rows = await query(sql, params);
 
-    // Remove metadata row from mariadb driver e normaliza datas
     const data = Array.isArray(rows)
       ? rows.filter(r => r && typeof r === 'object' && 'id' in r).map(normalizeClientRow)
       : [];
@@ -91,7 +98,13 @@ router.get('/', async (req, res) => {
 // Buscar cliente por ID
 router.get('/:id', async (req, res) => {
   try {
-    const rows = await query('SELECT * FROM clients WHERE id = ?', [req.params.id]);
+    let sql = 'SELECT * FROM clients WHERE id = ?';
+    const params = [req.params.id];
+    if (req.ownerId) {
+      sql += ' AND owner_id = ?';
+      params.push(req.ownerId);
+    }
+    const rows = await query(sql, params);
     if (!rows.length) return res.status(404).json({ message: 'Cliente não encontrado' });
     res.json(normalizeClientRow(rows[0]));
   } catch (err) {
@@ -105,9 +118,11 @@ router.post('/', async (req, res) => {
     const { name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes } = req.body;
     if (!name || !phone) return res.status(400).json({ message: 'Nome e telefone são obrigatórios' });
 
+    const ownerId = req.ownerId || null;
+
     const result = await query(
-      'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null]
+      'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null, ownerId]
     );
 
     const newClient = await query('SELECT * FROM clients WHERE id = ?', [Number(result.insertId)]);
@@ -143,7 +158,12 @@ router.put('/:id', async (req, res) => {
     if (fields.length === 0) return res.status(400).json({ message: 'Nenhum campo para atualizar' });
 
     values.push(req.params.id);
-    await query(`UPDATE clients SET ${fields.join(', ')} WHERE id = ?`, values);
+    let sql = `UPDATE clients SET ${fields.join(', ')} WHERE id = ?`;
+    if (req.ownerId) {
+      sql += ' AND owner_id = ?';
+      values.push(req.ownerId);
+    }
+    await query(sql, values);
 
     const updated = await query('SELECT * FROM clients WHERE id = ?', [req.params.id]);
     res.json(normalizeClientRow(updated[0]));
@@ -156,7 +176,13 @@ router.put('/:id', async (req, res) => {
 // Deletar cliente
 router.delete('/:id', async (req, res) => {
   try {
-    await query('DELETE FROM clients WHERE id = ?', [req.params.id]);
+    let sql = 'DELETE FROM clients WHERE id = ?';
+    const params = [req.params.id];
+    if (req.ownerId) {
+      sql += ' AND owner_id = ?';
+      params.push(req.ownerId);
+    }
+    await query(sql, params);
     res.json({ message: 'Cliente removido' });
   } catch (err) {
     res.status(500).json({ message: 'Erro ao remover cliente' });

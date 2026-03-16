@@ -5,7 +5,14 @@ const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
-    const clients = await query('SELECT * FROM clients');
+    let sql = 'SELECT * FROM clients WHERE 1=1';
+    const params = [];
+    if (req.ownerId) {
+      sql += ' AND owner_id = ?';
+      params.push(req.ownerId);
+    }
+
+    const clients = await query(sql, params);
     const data = Array.isArray(clients) ? clients.filter(r => r && typeof r === 'object' && 'id' in r) : [];
 
     const today = new Date();
