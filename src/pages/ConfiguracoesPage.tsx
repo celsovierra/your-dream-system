@@ -65,6 +65,7 @@ const ConfiguracoesPage = () => {
     const savedMpToken = localStorage.getItem('mp_access_token') || '';
     const savedAsaasToken = localStorage.getItem('asaas_access_token') || '';
     setPayment({ gateway: savedGateway as any, access_token: savedMpToken, asaas_token: savedAsaasToken });
+    setApiBaseUrl(localStorage.getItem('api_base_url') || '');
 
     // Carregar config WhatsApp salva (mantendo instance_name padronizado pela VPS)
     const savedWa = localStorage.getItem('whatsapp_config');
@@ -110,6 +111,16 @@ const ConfiguracoesPage = () => {
 
   const toggleSection = (key: string) => {
     setOpenSection(prev => prev === key ? null : key);
+  };
+
+  const normalizeApiBaseUrl = (value: string) => {
+    let normalized = value.trim();
+    if (!normalized) return '';
+    if (!/^https?:\/\//i.test(normalized)) normalized = `https://${normalized}`;
+    normalized = normalized.replace(/\/+$/, '');
+
+    const parsed = new URL(normalized);
+    return parsed.pathname === '/' ? `${normalized}/api` : normalized;
   };
 
   useEffect(() => {
