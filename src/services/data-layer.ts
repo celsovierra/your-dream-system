@@ -430,7 +430,7 @@ export async function updateQueueItemStatus(id: number, status: string): Promise
       const { error } = await supabase.from('billing_queue').update(update).eq('id', id);
       if (error) throw error;
     } else {
-      await fetch(`/api/queue/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status, sent_at: status === 'sent' ? new Date().toISOString() : null }) });
+      await apiFetch(`/queue/${id}`, { method: 'PATCH', body: JSON.stringify({ status, sent_at: status === 'sent' ? new Date().toISOString() : null }) });
     }
     addOperationLog(backend, 'Fila', 'UPDATE', `Atualizou item #${id} para "${status}"`);
   } catch (err: any) {
