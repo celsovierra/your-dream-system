@@ -110,8 +110,16 @@ router.post('/', async (req, res) => {
       ]
     );
 
-    const inserted = await query('SELECT * FROM bills_payable WHERE id = ?', [Number(result.insertId)]);
-    return res.status(201).json({ success: true, data: normalizeBillRow(inserted[0]) });
+    const insertId = Number(result.insertId ?? result[0]?.insertId ?? 0);
+    console.log('POST /bills insertId:', insertId, 'raw:', result.insertId);
+
+    if (!insertId) {
+      return res.status(201).json({ success: true, data: { id: 0, ...bill } });
+    }
+
+    const inserted = await query('SELECT * FROM bills_payable WHERE id = ?', [insertId]);
+    console.log('POST /bills SELECT after insert:', inserted?.length, 'rows');
+    return res.status(201).json({ success: true, data: normalizeBillRow(inserted[0] || { id: insertId, ...bill }) });
   } catch (err) {
     console.error('POST /bills error:', err);
     return res.status(500).json({ success: false, error: `Erro ao criar conta: ${err.message || err}` });
