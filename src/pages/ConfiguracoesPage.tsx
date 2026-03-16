@@ -278,7 +278,7 @@ const ConfiguracoesPage = () => {
                 </div>
               )}
 
-
+              <div className="space-y-3 rounded-lg border border-border/70 bg-muted/20 p-4">
                 <div>
                   <h4 className="text-sm font-semibold">Tutoriais de configuração</h4>
                   <p className="text-xs text-muted-foreground">Esses vídeos vão junto no código e aparecerão também em novas instalações na VPS.</p>
