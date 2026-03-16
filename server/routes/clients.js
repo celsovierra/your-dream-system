@@ -138,13 +138,13 @@ router.post('/', async (req, res) => {
       run: async ({ useOwnerScope, ownerId }) => {
         if (useOwnerScope) {
           return query(
-            'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null, ownerId || null]
+            'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, traccar_email, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null, traccar_email || null, ownerId || null]
           );
         }
         return query(
-          'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null]
+          'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, traccar_email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null, traccar_email || null]
         );
       },
     });
