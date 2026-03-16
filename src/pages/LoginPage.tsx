@@ -18,6 +18,8 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   const [regName, setRegName] = useState('');
   const [regPassword, setRegPassword] = useState('');
 
+  const companyName = localStorage.getItem('layout_company_name') || 'CobrançaPro';
+  const customLogo = localStorage.getItem('layout_logo');
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
