@@ -30,24 +30,37 @@ router.post('/login', async (req, res) => {
 
     const loginValue = email.toLowerCase().trim();
     const rows = await query(
-      'SELECT * FROM users WHERE LOWER(email) = ? OR LOWER(name) = ?',
-      [loginValue, loginValue]
+      `SELECT * FROM users
+       WHERE LOWER(email) = ? OR LOWER(name) = ?
+       ORDER BY CASE WHEN LOWER(email) = ? THEN 0 ELSE 1 END, id ASC`,
+      [loginValue, loginValue, loginValue]
     );
 
-    const user = rows.find(u => u && typeof u === 'object' && 'id' in u);
-    if (!user) {
+    const matchingUsers = rows.filter((u) => {
+      if (!u || typeof u !== 'object' || !('id' in u)) return false;
+      if (u.is_active === false || Number(u.is_active) === 0) return false;
+      const hashed = hashPassword(password);
+      return u.password_hash === hashed || u.password_hash === password;
+    });
+
+    if (matchingUsers.length === 0) {
       return res.status(401).json({ success: false, error: 'Usuário ou senha incorretos' });
     }
 
-    const hashed = hashPassword(password);
-    if (user.password_hash !== hashed && user.password_hash !== password) {
-      return res.status(401).json({ success: false, error: 'Usuário ou senha incorretos' });
+    const isEmailLogin = loginValue.includes('@');
+    if (!isEmailLogin && matchingUsers.length > 1) {
+      return res.status(409).json({
+        success: false,
+        error: 'Existe mais de um usuário com esse nome. Entre usando o email para acessar a conta correta.',
+      });
     }
+
+    const user = matchingUsers[0];
 
     // Determine role: first user is admin, rest are 'user'
     const allUsers = await query('SELECT id FROM users ORDER BY id ASC');
     const validUsers = allUsers.filter(r => r && typeof r === 'object' && 'id' in r);
-    const role = validUsers.length > 0 && validUsers[0].id === user.id ? 'admin' : 'user';
+    const role = validUsers.length > 0 && String(validUsers[0].id) === String(user.id) ? 'admin' : 'user';
 
     const token = generateToken({ ...user, role });
 
