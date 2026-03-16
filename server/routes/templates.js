@@ -77,6 +77,68 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Atualizar template pelo tipo
+router.put('/by-type/:type', async (req, res) => {
+  try {
+    const { content, is_active, name } = req.body;
+    const fields = [];
+    const values = [];
+    if (content !== undefined) { fields.push('content = ?'); values.push(content); }
+    if (is_active !== undefined) { fields.push('is_active = ?'); values.push(is_active); }
+    if (name !== undefined) { fields.push('name = ?'); values.push(name); }
+    if (fields.length === 0) return res.status(400).json({ message: 'Nenhum campo' });
+
+    const ownerId = req.ownerId;
+    const rows = await queryWithOptionalOwnerScope({
+      tableName: 'message_templates',
+      ownerId,
+      run: async ({ useOwnerScope, ownerId: scopedOwnerId }) => {
+        let sql = 'SELECT * FROM message_templates WHERE type = ?';
+        const params = [req.params.type];
+        if (useOwnerScope && scopedOwnerId) {
+          sql += ' AND (owner_id = ? OR owner_id IS NULL)';
+          params.push(scopedOwnerId);
+        }
+        sql += ' ORDER BY id DESC';
+        return query(sql, params);
+      },
+    });
+
+    const validRows = Array.isArray(rows) ? rows.filter(isTemplateRow) : [];
+    const targetTemplate = validRows.sort((a, b) => sortTemplatesByPriority(a, b, ownerId))[0];
+
+    if (!targetTemplate) {
+      return res.status(404).json({ message: 'Template não encontrado' });
+    }
+
+    await queryWithOptionalOwnerScope({
+      tableName: 'message_templates',
+      ownerId,
+      run: async ({ useOwnerScope, ownerId: scopedOwnerId }) => {
+        const scopedFields = [...fields];
+        const scopedValues = [...values];
+        const params = [...scopedValues, targetTemplate.id];
+        let sql = `UPDATE message_templates SET ${scopedFields.join(', ')} WHERE id = ?`;
+
+        if (useOwnerScope && scopedOwnerId) {
+          scopedFields.push('owner_id = ?');
+          scopedValues.push(scopedOwnerId);
+          params.length = 0;
+          params.push(...scopedValues, targetTemplate.id, scopedOwnerId);
+          sql = `UPDATE message_templates SET ${scopedFields.join(', ')} WHERE id = ? AND (owner_id = ? OR owner_id IS NULL)`;
+        }
+
+        return query(sql, params);
+      },
+    });
+
+    const updatedRows = await query('SELECT * FROM message_templates WHERE id = ?', [targetTemplate.id]);
+    res.json(Array.isArray(updatedRows) ? updatedRows.find(isTemplateRow) || targetTemplate : targetTemplate);
+  } catch (err) {
+    res.status(500).json({ message: 'Erro ao atualizar template' });
+  }
+});
+
 // Atualizar template
 router.put('/:id', async (req, res) => {
   try {
