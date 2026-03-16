@@ -53,14 +53,14 @@ const ConfiguracoesPage = () => {
   }, [qrCode, whatsapp.api_url, whatsapp.api_key, whatsapp.instance_name]);
 
   useEffect(() => {
-    const savedGateway = localStorage.getItem('payment_gateway') || 'mercadopago';
-    const savedMpToken = localStorage.getItem('mp_access_token') || '';
-    const savedAsaasToken = localStorage.getItem('asaas_access_token') || '';
+    const savedGateway = userStorageGet('payment_gateway') || 'mercadopago';
+    const savedMpToken = userStorageGet('mp_access_token') || '';
+    const savedAsaasToken = userStorageGet('asaas_access_token') || '';
     setPayment({ gateway: savedGateway as any, access_token: savedMpToken, asaas_token: savedAsaasToken });
     
 
     // Carregar config WhatsApp salva (mantendo instance_name padronizado pela VPS)
-    const savedWa = localStorage.getItem('whatsapp_config');
+    const savedWa = userStorageGet('whatsapp_config');
     if (!savedWa) return;
 
     try {
