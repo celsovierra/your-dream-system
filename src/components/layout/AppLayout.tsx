@@ -94,7 +94,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
     if (!apiUrl) {
       setHasUpdate(false);
       setDeployCheckError(null);
-      return;
+      return null;
     }
 
     try {
@@ -110,58 +110,46 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           localStorage.setItem('last_deploy_at', data.lastCommitDate);
           setLastDeployAt(data.lastCommitDate);
         }
-        return;
+        return data;
       }
 
       setHasUpdate(false);
       setDeployCheckError(data.error || 'Não foi possível verificar atualizações');
+      return null;
     } catch (error) {
       setHasUpdate(false);
       setDeployCheckError(error instanceof Error ? error.message : 'Não foi possível verificar atualizações');
+      return null;
     }
   };
 
-  const waitForDeployCompletion = async (apiUrl: string) => {
+  const waitForDeployCompletion = async (apiUrl: string, previousRemoteCommit?: string) => {
     for (let attempt = 0; attempt < 90; attempt += 1) {
-      await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 1500 : 2000));
+      await new Promise((resolve) => setTimeout(resolve, attempt < 3 ? 2000 : 3000));
 
-      try {
-        const res = await fetch(`${apiUrl}/deploy-status?t=${Date.now()}`, {
-          cache: 'no-store',
-        });
-        const data = await parseApiResponse(res);
+      const checkData = await checkForUpdates();
+      if (!checkData) {
+        continue;
+      }
 
-        if (!res.ok || !data.success) {
-          continue;
-        }
+      const localCommit = checkData.localCommit;
+      const remoteCommit = checkData.remoteCommit;
+      const updated = !checkData.hasUpdate && Boolean(localCommit) && localCommit === remoteCommit;
+      const remoteChanged = Boolean(previousRemoteCommit && remoteCommit && remoteCommit !== previousRemoteCommit);
 
-        if (data.status === 'running' || data.status === 'idle') {
-          continue;
-        }
-
-        if (data.status === 'error') {
-          const errorMessage = data.error || 'Falha ao atualizar a VPS';
-          setDeployCheckError(errorMessage);
-          toast.error(errorMessage);
-          return false;
-        }
-
-        if (data.status === 'success') {
-          const completedAt = data.finishedAt || new Date().toISOString();
-          localStorage.setItem('last_deploy_at', completedAt);
-          setLastDeployAt(completedAt);
-          setHasUpdate(false);
-          setDeployCheckError(null);
-          toast.success('Atualização concluída com sucesso. Recarregando...');
-          setTimeout(() => window.location.reload(), 1200);
-          return true;
-        }
-      } catch {
-        // durante o restart da API a conexão pode cair por alguns segundos
+      if (updated || remoteChanged) {
+        const completedAt = checkData.lastCommitDate || new Date().toISOString();
+        localStorage.setItem('last_deploy_at', completedAt);
+        setLastDeployAt(completedAt);
+        setHasUpdate(false);
+        setDeployCheckError(null);
+        toast.success('Atualização concluída com sucesso. Recarregando...');
+        setTimeout(() => window.location.reload(), 1200);
+        return true;
       }
     }
 
-    toast.warning('O deploy foi iniciado, mas não foi possível confirmar a conclusão automaticamente.');
+    toast.warning('O deploy foi iniciado, mas ainda não consegui confirmar a atualização no Git da VPS.');
     return false;
   };
 
@@ -195,6 +183,11 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       return;
     }
 
+    const beforeDeploy = await checkForUpdates();
+    const previousRemoteCommit = beforeDeploy?.remoteCommit;
+
+    setDeploying(true);
+
     try {
       const res = await fetch(`${apiUrl}/deploy`, {
         method: 'POST',
@@ -212,7 +205,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       }
 
       toast.success(data.message || 'Atualização iniciada com sucesso.');
-      await waitForDeployCompletion(apiUrl);
+      await waitForDeployCompletion(apiUrl, previousRemoteCommit);
     } catch {
       toast.error('Não foi possível conectar à API da VPS');
     } finally {
