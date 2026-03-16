@@ -158,9 +158,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
                 type="text" 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
-                placeholder="Nome ou email" 
+                placeholder="Email do usuário" 
                 className="h-11"
               />
+              <p className="text-xs text-muted-foreground">Se existir mais de um usuário com o mesmo nome, entre usando o email.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
