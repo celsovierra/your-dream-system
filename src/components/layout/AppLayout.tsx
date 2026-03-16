@@ -204,7 +204,11 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
               </button>
             </div>
             <p className="text-[11px] text-sidebar-foreground/50 text-center">
-              {hasUpdate ? '🔴 Nova versão disponível' : '✅ Nenhuma atualização disponível'}
+              {hasUpdate
+                ? '🔴 Nova versão disponível'
+                : lastDeployAt
+                  ? `✅ Atualizado em ${new Date(lastDeployAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
+                  : '✅ Nenhuma atualização disponível'}
             </p>
           </div>
         )}
