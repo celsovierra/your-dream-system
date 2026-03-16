@@ -14,7 +14,7 @@ import MensagensPage from "./pages/MensagensPage";
 import ContratosPage from "./pages/ContratosPage";
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import NotFound from "./pages/NotFound";
-import { clearCurrentUser, isAdmin } from '@/services/auth';
+import { clearCurrentUser, getCurrentUser, isAdmin } from '@/services/auth';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -56,7 +56,13 @@ const App = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
-    if (token) setIsAuthenticated(true);
+    const currentUser = getCurrentUser();
+
+    if (token && currentUser) {
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
+    }
 
     const savedHSL = localStorage.getItem('layout_primary_hsl');
     if (savedHSL) {
