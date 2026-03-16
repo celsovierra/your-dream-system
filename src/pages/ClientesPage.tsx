@@ -297,9 +297,33 @@ const ClientesPage = () => {
       toast.loading('Enviando cobrança...', { id: `billing-${client.id}` });
       await ensureWhatsAppConnected(waConfig);
 
-      const formattedDueDate = formatDatePtBr(client.due_date);
-      const dueDateText = formattedDueDate !== '-' ? ` com vencimento em ${formattedDueDate}` : '';
-      const message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${dueDateText}. Qualquer dúvida estamos à disposição!`;
+      // Determinar tipo: se vencido = overdue, senão = due
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const dueDate = client.due_date ? new Date(client.due_date + 'T00:00:00') : null;
+      const isOverdue = dueDate && dueDate < today;
+      const templateType = isOverdue ? 'overdue' : 'due';
+      const template = await getTemplateByType(templateType);
+
+      let message: string;
+      if (template) {
+        const formattedDueDate = formatDatePtBr(client.due_date);
+        const daysOverdue = isOverdue && dueDate ? Math.abs(Math.round((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))) : 0;
+        message = replaceTemplateVars(template.content, {
+          nome: client.name,
+          valor: Number(client.amount).toFixed(2),
+          data_vencimento: formattedDueDate !== '-' ? formattedDueDate : '',
+          dias_atraso: String(daysOverdue),
+          link_pagamento: '',
+          multa: '0,00',
+          juros: '0,00',
+          valor_atualizado: `R$ ${Number(client.amount).toFixed(2)}`,
+        });
+      } else {
+        const formattedDueDate = formatDatePtBr(client.due_date);
+        const dueDateText = formattedDueDate !== '-' ? ` com vencimento em ${formattedDueDate}` : '';
+        message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${dueDateText}.`;
+      }
+
       const { error } = await invokeEvolutionProxy({ action: 'send-text', to: client.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name });
       if (error) throw new Error(error);
       toast.success('Cobrança enviada via WhatsApp!', { id: `billing-${client.id}` });
