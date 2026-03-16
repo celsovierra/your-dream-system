@@ -101,8 +101,18 @@ async function processQueue(type) {
 
     // Buscar template de mensagem
     const typeMap = { reminder: 'reminder', due: 'due', overdue: 'overdue' };
-    const templates = await query('SELECT * FROM message_templates WHERE type = ? AND is_active = 1 LIMIT 1', [typeMap[type]]);
-    const template = templates?.[0];
+    const ownerIds = Array.from(new Set(items.map(item => item?.owner_id).filter(Boolean)));
+    const ownerId = ownerIds.length === 1 ? ownerIds[0] : null;
+    const templateRows = ownerId
+      ? await query(
+          'SELECT * FROM message_templates WHERE type = ? AND is_active = 1 AND (owner_id = ? OR owner_id IS NULL) ORDER BY (owner_id = ?) DESC, id DESC LIMIT 1',
+          [typeMap[type], ownerId, ownerId]
+        )
+      : await query(
+          'SELECT * FROM message_templates WHERE type = ? AND is_active = 1 ORDER BY id DESC LIMIT 1',
+          [typeMap[type]]
+        );
+    const template = Array.isArray(templateRows) ? templateRows.find(row => row && typeof row === 'object' && "id" in row) : null;
 
     if (!template) {
       console.log(`[Scheduler] Template do tipo ${type} não encontrado ou desativado`);

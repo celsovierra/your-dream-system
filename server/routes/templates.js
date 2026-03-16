@@ -89,6 +89,11 @@ router.put('/:id', async (req, res) => {
     if (fields.length === 0) return res.status(400).json({ message: 'Nenhum campo' });
 
     const ownerId = req.ownerId;
+    const targetTemplate = await findPreferredTemplateTarget(req.params.id, ownerId);
+
+    if (!targetTemplate) {
+      return res.status(404).json({ message: 'Template não encontrado' });
+    }
 
     await queryWithOptionalOwnerScope({
       tableName: 'message_templates',
@@ -96,13 +101,14 @@ router.put('/:id', async (req, res) => {
       run: async ({ useOwnerScope, ownerId: scopedOwnerId }) => {
         const scopedFields = [...fields];
         const scopedValues = [...values];
+        const targetId = targetTemplate.id;
 
         if (useOwnerScope && scopedOwnerId) {
           scopedFields.push('owner_id = ?');
           scopedValues.push(scopedOwnerId);
         }
 
-        const params = [...scopedValues, req.params.id];
+        const params = [...scopedValues, targetId];
         let sql = `UPDATE message_templates SET ${scopedFields.join(', ')} WHERE id = ?`;
         if (useOwnerScope && scopedOwnerId) {
           sql += ' AND (owner_id = ? OR owner_id IS NULL)';
@@ -112,8 +118,8 @@ router.put('/:id', async (req, res) => {
       },
     });
 
-    const updated = await query('SELECT * FROM message_templates WHERE id = ?', [req.params.id]);
-    res.json(updated[0]);
+    const refreshedTarget = await findPreferredTemplateTarget(targetTemplate.id, ownerId);
+    res.json(refreshedTarget || targetTemplate);
   } catch (err) {
     res.status(500).json({ message: 'Erro ao atualizar template' });
   }

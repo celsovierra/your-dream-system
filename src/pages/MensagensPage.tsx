@@ -58,9 +58,9 @@ const MensagensPage = () => {
   const handleSaveAll = async () => {
     setSaving(true);
     try {
-      // Salvar templates no banco
+      // Salvar templates no banco pelo tipo correto
       for (const t of templates) {
-        await updateMessageTemplate(t.id, { content: t.content, is_active: t.is_active, name: t.name });
+        await updateMessageTemplateByType(t.type, { content: t.content, is_active: t.is_active, name: t.name });
       }
 
       await saveSettings({
