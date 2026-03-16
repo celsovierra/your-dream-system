@@ -465,6 +465,62 @@ const ConfiguracoesPage = () => {
         </Card>
       </Collapsible>
 
+      {/* API Traccar */}
+      <Collapsible open={openSection === 'traccar'} onOpenChange={() => toggleSection('traccar')}>
+        <Card>
+          <CollapsibleTrigger className="w-full">
+            <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
+              <div className="flex items-center gap-2 text-base font-semibold">
+                <MapPin className="h-5 w-5 text-primary" />
+                API Traccar
+              </div>
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'traccar' ? 'rotate-180' : ''}`} />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-4 pt-0">
+              <div>
+                <Label>URL do Servidor Traccar</Label>
+                <Input
+                  value={traccarUrl}
+                  onChange={(e) => setTraccarUrl(e.target.value)}
+                  placeholder="https://traccar.seudominio.com.br"
+                />
+              </div>
+              <div>
+                <Label>Usuário / Email</Label>
+                <Input
+                  value={traccarUser}
+                  onChange={(e) => setTraccarUser(e.target.value)}
+                  placeholder="admin@exemplo.com"
+                />
+              </div>
+              <div>
+                <Label>Senha</Label>
+                <Input
+                  type="password"
+                  value={traccarPassword}
+                  onChange={(e) => setTraccarPassword(e.target.value)}
+                  placeholder="Senha do Traccar"
+                />
+              </div>
+              <Button size="sm" onClick={() => {
+                if (!traccarUrl || !traccarUser || !traccarPassword) {
+                  toast.error('Preencha todos os campos do Traccar');
+                  return;
+                }
+                localStorage.setItem('traccar_url', traccarUrl);
+                localStorage.setItem('traccar_user', traccarUser);
+                localStorage.setItem('traccar_password', traccarPassword);
+                toast.success('Configuração do Traccar salva!');
+              }}>
+                <Save className="mr-2 h-3 w-3" /> Salvar
+              </Button>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
       {/* Layout */}
       <Collapsible open={openSection === 'layout'} onOpenChange={() => toggleSection('layout')}>
         <Card>
