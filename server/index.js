@@ -38,11 +38,15 @@ app.get('/api/health', async (_req, res) => {
   const { hasColumn } = await import('./db.js');
   const schema = {};
   for (const table of ['clients', 'billing_queue', 'bills_payable', 'message_templates', 'billing_settings']) {
-    schema[table] = { owner_id: await hasColumn(table, 'owner_id') };
+    try {
+      schema[table] = { owner_id: await hasColumn(table, 'owner_id') };
+    } catch {
+      schema[table] = { owner_id: false };
+    }
   }
   res.json({
     status: 'ok',
-    code_version: 'v2-owner-scope-fallback',
+    code_version: 'v3-bootstrap-tolerant',
     has_reconcile: true,
     schema,
   });
