@@ -16,7 +16,7 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeft,
-  DollarSign,
+  
   ScrollText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
