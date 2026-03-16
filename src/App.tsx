@@ -1,6 +1,6 @@
 import { useState, useEffect, Component, type ReactNode, type ErrorInfo } from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,13 +9,12 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import ClientesPage from "./pages/ClientesPage";
 import LogsPage from "./pages/LogsPage";
-
 import FilaPage from "./pages/FilaPage";
 import MensagensPage from "./pages/MensagensPage";
 import ContratosPage from "./pages/ContratosPage";
-
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import NotFound from "./pages/NotFound";
+import { clearCurrentUser, isAdmin } from '@/services/auth';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: ReactNode }) {
@@ -59,7 +58,6 @@ const App = () => {
     const token = localStorage.getItem('auth_token');
     if (token) setIsAuthenticated(true);
 
-    // Apply saved primary color
     const savedHSL = localStorage.getItem('layout_primary_hsl');
     if (savedHSL) {
       document.documentElement.style.setProperty('--primary', savedHSL);
@@ -72,6 +70,7 @@ const App = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
+    clearCurrentUser();
     setIsAuthenticated(false);
   };
 
@@ -87,6 +86,8 @@ const App = () => {
     );
   }
 
+  const userIsAdmin = isAdmin();
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -99,13 +100,11 @@ const App = () => {
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/financeiro" element={<DashboardPage />} />
                 <Route path="/clientes" element={<ClientesPage />} />
-                
                 <Route path="/logs" element={<LogsPage />} />
                 <Route path="/fila" element={<FilaPage />} />
                 <Route path="/mensagens" element={<MensagensPage />} />
                 <Route path="/contratos" element={<ContratosPage />} />
-                
-                <Route path="/configuracoes" element={<ConfiguracoesPage />} />
+                <Route path="/configuracoes" element={userIsAdmin ? <ConfiguracoesPage /> : <Navigate to="/" replace />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </ErrorBoundary>

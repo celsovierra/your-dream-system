@@ -36,9 +36,9 @@ const navItems = [
   { path: '/contratos', label: 'Contratos', icon: FileText, color: 'text-orange-400' },
 ];
 
-const bottomNavItems = [
+const allBottomNavItems = [
   { path: '/logs', label: 'Logs', icon: ScrollText, color: 'text-cyan-400' },
-  { path: '/configuracoes', label: 'Configurações', icon: Settings, color: 'text-rose-400' },
+  { path: '/configuracoes', label: 'Configurações', icon: Settings, color: 'text-rose-400', adminOnly: true },
 ];
 
 const AppLayout = ({ children, onLogout }: LayoutProps) => {
