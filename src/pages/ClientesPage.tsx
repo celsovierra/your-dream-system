@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle, Loader2, MapPin } from 'lucide-react';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
-import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, invokeEvolutionProxy } from '@/services/data-layer';
+import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, invokeEvolutionProxy, upsertClientFromTraccar } from '@/services/data-layer';
 import { supabase } from '@/integrations/supabase/client';
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
