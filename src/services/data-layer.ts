@@ -166,83 +166,77 @@ export async function deleteClient(id: number): Promise<void> {
 // ===== TEMPLATES DE MENSAGEM =====
 
 export async function fetchMessageTemplates(): Promise<MessageTemplate[]> {
-  if (isLovableEnv()) {
-    const { data, error } = await supabase
-      .from('message_templates')
-      .select('*')
-      .order('id');
-    if (error) throw error;
-    return (data || []) as MessageTemplate[];
-  } else {
-    const res = await api.getMessageTemplates();
-    if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar templates');
-    return res.data;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    let result: MessageTemplate[];
+    if (isLovableEnv()) {
+      const { data, error } = await supabase.from('message_templates').select('*').order('id');
+      if (error) throw error;
+      result = (data || []) as MessageTemplate[];
+    } else {
+      const res = await api.getMessageTemplates();
+      if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar templates');
+      result = res.data;
+    }
+    addOperationLog(backend, 'Templates', 'SELECT', `Listou ${result.length} templates`);
+    return result;
+  } catch (err: any) {
+    addOperationLog(backend, 'Templates', 'SELECT', 'Erro ao listar templates', 'error', err?.message);
+    throw err;
   }
 }
 
 export async function getReceiptTemplate(): Promise<MessageTemplate | null> {
-  if (isLovableEnv()) {
-    const { data } = await supabase
-      .from('message_templates')
-      .select('*')
-      .eq('type', 'receipt')
-      .eq('is_active', true)
-      .limit(1);
-    return (data?.[0] as MessageTemplate) || null;
-  } else {
-    const res = await api.getMessageTemplates();
-    if (!res.success || !res.data) return null;
-    return res.data.find(t => t.type === 'receipt' && t.is_active) || null;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    let result: MessageTemplate | null;
+    if (isLovableEnv()) {
+      const { data } = await supabase.from('message_templates').select('*').eq('type', 'receipt').eq('is_active', true).limit(1);
+      result = (data?.[0] as MessageTemplate) || null;
+    } else {
+      const res = await api.getMessageTemplates();
+      if (!res.success || !res.data) return null;
+      result = res.data.find(t => t.type === 'receipt' && t.is_active) || null;
+    }
+    addOperationLog(backend, 'Templates', 'SELECT', 'Buscou template de recibo');
+    return result;
+  } catch (err: any) {
+    addOperationLog(backend, 'Templates', 'SELECT', 'Erro ao buscar template de recibo', 'error', err?.message);
+    throw err;
   }
 }
 
 // ===== DASHBOARD =====
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
-  if (isLovableEnv()) {
-    const { data: clients, error } = await supabase.from('clients').select('*');
-    if (error) throw error;
-
-    const allClients = clients || [];
-    const activeClients = allClients.filter((c: any) => c.is_active);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    let overdueCount = 0, totalOverdue = 0, pendingCount = 0, totalPending = 0;
-
-    allClients.forEach((c: any) => {
-      if (!c.due_date || !c.amount) return;
-      const due = new Date(c.due_date + 'T00:00:00');
-      if (due < today) {
-        overdueCount++;
-        totalOverdue += Number(c.amount);
-      } else {
-        pendingCount++;
-        totalPending += Number(c.amount);
-      }
-    });
-
-    const totalRevenue = allClients.reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0);
-
-    return {
-      total_clients: allClients.length,
-      active_clients: activeClients.length,
-      total_revenue_month: totalRevenue,
-      total_pending: totalPending,
-      total_overdue: totalOverdue,
-      overdue_count: overdueCount,
-      paid_count: 0,
-      pending_count: pendingCount,
-      revenue_by_month: [],
-      status_distribution: [
-        { status: 'Pendente', count: pendingCount },
-        { status: 'Atrasado', count: overdueCount },
-      ],
-    };
-  } else {
-    const res = await api.getDashboardStats();
-    if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar stats');
-    return res.data;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    let stats: DashboardStats;
+    if (isLovableEnv()) {
+      const { data: clients, error } = await supabase.from('clients').select('*');
+      if (error) throw error;
+      const allClients = clients || [];
+      const activeClients = allClients.filter((c: any) => c.is_active);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      let overdueCount = 0, totalOverdue = 0, pendingCount = 0, totalPending = 0;
+      allClients.forEach((c: any) => {
+        if (!c.due_date || !c.amount) return;
+        const due = new Date(c.due_date + 'T00:00:00');
+        if (due < today) { overdueCount++; totalOverdue += Number(c.amount); }
+        else { pendingCount++; totalPending += Number(c.amount); }
+      });
+      const totalRevenue = allClients.reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0);
+      stats = { total_clients: allClients.length, active_clients: activeClients.length, total_revenue_month: totalRevenue, total_pending: totalPending, total_overdue: totalOverdue, overdue_count: overdueCount, paid_count: 0, pending_count: pendingCount, revenue_by_month: [], status_distribution: [{ status: 'Pendente', count: pendingCount }, { status: 'Atrasado', count: overdueCount }] };
+    } else {
+      const res = await api.getDashboardStats();
+      if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar stats');
+      stats = res.data;
+    }
+    addOperationLog(backend, 'Dashboard', 'SELECT', `Carregou stats: ${stats.total_clients} clientes`);
+    return stats;
+  } catch (err: any) {
+    addOperationLog(backend, 'Dashboard', 'SELECT', 'Erro ao carregar stats', 'error', err?.message);
+    throw err;
   }
 }
 
