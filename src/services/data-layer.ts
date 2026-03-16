@@ -454,6 +454,25 @@ export async function updateMessageTemplate(id: number, template: Partial<Messag
   }
 }
 
+export async function updateMessageTemplateByType(type: MessageTemplate['type'], template: Partial<MessageTemplate>): Promise<void> {
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const current = await getTemplateByType(type);
+      if (!current) throw new Error(`Template ${type} não encontrado`);
+      const { error } = await supabase.from('message_templates').update({ content: template.content, is_active: template.is_active, name: template.name }).eq('id', current.id);
+      if (error) throw error;
+    } else {
+      const res = await api.updateMessageTemplateByType(type, template);
+      if (!res.success) throw new Error(res.error || 'Erro ao atualizar template');
+    }
+    addOperationLog(backend, 'Templates', 'UPDATE', `Atualizou template tipo ${type}`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Templates', 'UPDATE', `Erro ao atualizar template tipo ${type}`, 'error', err?.message);
+    throw err;
+  }
+}
+
 // ===== DASHBOARD =====
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {

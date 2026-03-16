@@ -249,6 +249,13 @@ class ApiService {
     });
   }
 
+  async updateMessageTemplateByType(type: MessageTemplate['type'], template: Partial<MessageTemplate>) {
+    return this.request<MessageTemplate>(`/templates/messages/by-type/${type}`, {
+      method: 'PUT',
+      body: JSON.stringify(template),
+    });
+  }
+
   // ===== CONTRATOS =====
   async getContractTemplates() {
     return this.request<ContractTemplate[]>('/contracts/templates');
