@@ -79,6 +79,32 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
     return isLovableHost() ? getConfiguredDeployApiUrl() : `${window.location.origin}/api`;
   }
 
+  // Proxy-aware fetch: routes through edge function when on HTTPS calling HTTP VPS
+  async function proxyFetch(url: string, options: RequestInit = {}): Promise<Response> {
+    const isHttps = window.location.protocol === 'https:';
+    const isTargetHttp = url.startsWith('http://');
+
+    if (isHttps && isTargetHttp) {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'pmnanfzbtimcfyzndeyq';
+      const proxyBase = `https://${projectId}.supabase.co/functions/v1/vps-proxy`;
+      
+      // Extract base and endpoint from URL
+      const apiUrl = resolveDeployApiUrl();
+      const endpoint = url.replace(apiUrl, '');
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+
+      return fetch(`${proxyBase}?vps_url=${encodeURIComponent(apiUrl)}&endpoint=${encodeURIComponent(endpoint)}`, {
+        ...options,
+        headers: {
+          ...(options.headers as Record<string, string> || {}),
+          'apikey': anonKey,
+        },
+      });
+    }
+
+    return fetch(url, options);
+  }
+
   async function parseApiResponse(response: Response) {
     const contentType = response.headers.get('content-type') || '';
 
@@ -103,7 +129,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
     }
 
     try {
-      const res = await fetch(`${apiUrl}/check-update?t=${Date.now()}`, {
+      const res = await proxyFetch(`${apiUrl}/check-update?t=${Date.now()}`, {
         cache: 'no-store',
       });
       const data = await parseApiResponse(res);
@@ -215,7 +241,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
     setDeploying(true);
 
     try {
-      const res = await fetch(`${apiUrl}/deploy`, {
+      const res = await proxyFetch(`${apiUrl}/deploy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
