@@ -46,17 +46,12 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [deploying, setDeploying] = useState(false);
   const [hasUpdate, setHasUpdate] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
-  const [deployApiConfigured, setDeployApiConfigured] = useState(() => Boolean(resolveDeployApiUrl()));
+  const deployApiConfigured = true;
   const [deployCheckError, setDeployCheckError] = useState<string | null>(null);
 
   function resolveDeployApiUrl() {
     if (typeof window === 'undefined') return '';
-
-    const savedUrl = window.localStorage.getItem('api_base_url')?.trim();
-    if (!savedUrl) return '';
-
-    const normalized = savedUrl.replace(/\/+$/, '');
-    return normalized.endsWith('/api') ? normalized : `${normalized}/api`;
+    return `${window.location.origin}/api`;
   }
 
   async function parseApiResponse(response: Response) {
@@ -113,27 +108,14 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
 
   useEffect(() => {
     const syncDeployApi = () => {
-      const apiUrl = resolveDeployApiUrl();
-      setDeployApiConfigured(Boolean(apiUrl));
-
-      if (!apiUrl) {
-        setHasUpdate(false);
-        setDeployCheckError(null);
-        return;
-      }
-
       void checkForUpdates();
     };
 
     syncDeployApi();
     const interval = setInterval(syncDeployApi, 60000);
-    window.addEventListener('storage', syncDeployApi);
-    window.addEventListener('api-base-url-changed', syncDeployApi);
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener('storage', syncDeployApi);
-      window.removeEventListener('api-base-url-changed', syncDeployApi);
     };
   }, []);
 

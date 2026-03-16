@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Users, ChevronDown, Copy, QrCode, Server } from 'lucide-react';
+import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Users, ChevronDown, Copy, QrCode } from 'lucide-react';
 import { toast } from 'sonner';
 import asaasLogo from '@/assets/asaas.png';
 import mercadoPagoLogo from '@/assets/mercado-pago.png';
@@ -24,7 +24,6 @@ const ConfiguracoesPage = () => {
   const autoInstanceName = window.location.hostname.replace(/\./g, '_') + '_cobrancapro';
   const [whatsapp, setWhatsapp] = useState<{ api_url: string; api_key: string; instance_name: string; status: 'connected' | 'disconnected' | 'connecting' }>({ api_url: '', api_key: '', instance_name: autoInstanceName, status: 'disconnected' });
   const [payment, setPayment] = useState({ gateway: 'mercadopago' as 'mercadopago' | 'asaas' | 'pix_manual', access_token: '', asaas_token: '' });
-  const [apiBaseUrl, setApiBaseUrl] = useState('');
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [pollingStatus, setPollingStatus] = useState(false);
@@ -65,7 +64,7 @@ const ConfiguracoesPage = () => {
     const savedMpToken = localStorage.getItem('mp_access_token') || '';
     const savedAsaasToken = localStorage.getItem('asaas_access_token') || '';
     setPayment({ gateway: savedGateway as any, access_token: savedMpToken, asaas_token: savedAsaasToken });
-    setApiBaseUrl(localStorage.getItem('api_base_url') || '');
+    
 
     // Carregar config WhatsApp salva (mantendo instance_name padronizado pela VPS)
     const savedWa = localStorage.getItem('whatsapp_config');
@@ -113,15 +112,6 @@ const ConfiguracoesPage = () => {
     setOpenSection(prev => prev === key ? null : key);
   };
 
-  const normalizeApiBaseUrl = (value: string) => {
-    let normalized = value.trim();
-    if (!normalized) return '';
-    if (!/^https?:\/\//i.test(normalized)) normalized = `https://${normalized}`;
-    normalized = normalized.replace(/\/+$/, '');
-
-    const parsed = new URL(normalized);
-    return parsed.pathname === '/' ? `${normalized}/api` : normalized;
-  };
 
   useEffect(() => {
     const stored = localStorage.getItem('app_users');
@@ -176,46 +166,6 @@ const ConfiguracoesPage = () => {
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <Card>
-        <CardContent className="space-y-4 pt-6">
-          <div className="flex items-center gap-2 text-base font-semibold">
-            <Server className="h-5 w-5 text-primary" />
-            Conexão da VPS
-          </div>
-          <div className="space-y-2">
-            <Label>URL da API</Label>
-            <Input
-              value={apiBaseUrl}
-              onChange={(e) => setApiBaseUrl(e.target.value)}
-              placeholder="https://seudominio.com/api"
-            />
-            <p className="text-xs text-muted-foreground">
-              Essa URL é usada pelo botão lateral de atualização da VPS.
-            </p>
-          </div>
-          <Button
-            size="sm"
-            onClick={() => {
-              try {
-                const normalized = normalizeApiBaseUrl(apiBaseUrl);
-                if (!normalized) {
-                  toast.error('Informe a URL da API da VPS');
-                  return;
-                }
-
-                localStorage.setItem('api_base_url', normalized);
-                setApiBaseUrl(normalized);
-                window.dispatchEvent(new Event('api-base-url-changed'));
-                toast.success('URL da VPS salva com sucesso!');
-              } catch {
-                toast.error('Informe uma URL válida, ex: https://seudominio.com/api');
-              }
-            }}
-          >
-            <Save className="mr-2 h-3 w-3" /> Salvar URL da VPS
-          </Button>
-        </CardContent>
-      </Card>
 
       {/* Gerenciar Usuários */}
       <Collapsible open={openSection === 'users'} onOpenChange={() => toggleSection('users')}>
