@@ -21,6 +21,34 @@ import type { Client, MessageTemplate, DashboardStats } from '@/types/billing';
 import { addOperationLog } from '@/services/operation-logger';
 import { getCurrentOwnerId, isAdmin, userStorageGet, userStorageSet } from '@/services/auth';
 
+// Helper: creates headers with auth token + owner ID for raw fetch calls
+function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...extra };
+  const token = localStorage.getItem('auth_token');
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const ownerId = getCurrentOwnerId();
+  if (ownerId) headers['X-Owner-Id'] = ownerId;
+  return headers;
+}
+
+// Helper: resolves the correct base URL for raw fetch calls
+function apiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const stored = window.localStorage.getItem('api_base_url')?.trim();
+    if (stored) return stored;
+  }
+  const env = String(import.meta.env.VITE_API_BASE_URL || '').trim();
+  return env || '/api';
+}
+
+function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  const base = apiBaseUrl();
+  return fetch(`${base}${endpoint}`, {
+    ...options,
+    headers: authHeaders(options.headers as Record<string, string> || {}),
+  });
+}
+
 type DataBackend = 'cloud' | 'api';
 
 function getConfiguredApiBaseUrl(): string {
@@ -362,7 +390,7 @@ export async function fetchQueue(): Promise<QueueItem[]> {
       if (error) throw error;
       result = (data || []) as QueueItem[];
     } else {
-      const res = await fetch('/api/queue');
+      const res = await apiFetch('/queue');
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Erro ao buscar fila');
       result = json.data || [];
@@ -382,7 +410,7 @@ export async function clearQueue(): Promise<void> {
       const { error } = await supabase.from('billing_queue').delete().gte('id', 0);
       if (error) throw error;
     } else {
-      const res = await fetch('/api/queue', { method: 'DELETE' });
+      const res = await apiFetch('/queue', { method: 'DELETE' });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Erro ao limpar fila');
     }
@@ -402,7 +430,7 @@ export async function updateQueueItemStatus(id: number, status: string): Promise
       const { error } = await supabase.from('billing_queue').update(update).eq('id', id);
       if (error) throw error;
     } else {
-      await fetch(`/api/queue/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status, sent_at: status === 'sent' ? new Date().toISOString() : null }) });
+      await apiFetch(`/queue/${id}`, { method: 'PATCH', body: JSON.stringify({ status, sent_at: status === 'sent' ? new Date().toISOString() : null }) });
     }
     addOperationLog(backend, 'Fila', 'UPDATE', `Atualizou item #${id} para "${status}"`);
   } catch (err: any) {
@@ -439,7 +467,7 @@ export async function fetchSettings(): Promise<BillingSettings> {
       addOperationLog(backend, 'Config', 'SELECT', 'Carregou configurações isoladas por usuário');
       return settings;
     } else {
-      const res = await fetch('/api/settings');
+      const res = await apiFetch('/settings');
       const json = await res.json();
       if (!json.success) return defaults;
       addOperationLog(backend, 'Config', 'SELECT', 'Carregou configurações');
@@ -459,7 +487,7 @@ export async function saveSettings(settings: Partial<BillingSettings>): Promise<
         userStorageSet(`billing_setting_${key}`, String(value));
       }
     } else {
-      await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
+      await apiFetch('/settings', { method: 'PUT', body: JSON.stringify(settings) });
     }
     addOperationLog(backend, 'Config', 'UPDATE', `Salvou ${Object.keys(settings).length} configurações`);
   } catch (err: any) {
@@ -491,7 +519,7 @@ export async function invokeEvolutionProxy(payload: EvolutionPayload): Promise<{
     return { data };
   } else {
     try {
-      const res = await fetch('/api/whatsapp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const res = await apiFetch('/whatsapp', { method: 'POST', body: JSON.stringify(payload) });
       const data = await res.json();
       if (!res.ok) {
         let debugMessage = data?.debug?.response?.message?.[0] || data?.debug?.error || data?.debug?.message;

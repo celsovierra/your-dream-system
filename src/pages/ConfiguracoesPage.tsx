@@ -11,7 +11,7 @@ import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Us
 import { toast } from 'sonner';
 import asaasLogo from '@/assets/asaas.png';
 import mercadoPagoLogo from '@/assets/mercado-pago.png';
-import { type AppUser, getStoredUsers, saveUsers, userStorageGet, userStorageSet, isAdmin } from '@/services/auth';
+import { type AppUser, getStoredUsers, saveUsers, userStorageGet, userStorageSet, isAdmin, isVpsMode, fetchUsersVps, registerVps, deleteUserVps } from '@/services/auth';
 
 const ConfiguracoesPage = () => {
   const userIsAdmin = isAdmin();
@@ -119,10 +119,14 @@ const ConfiguracoesPage = () => {
 
 
   useEffect(() => {
-    setUsers(getStoredUsers());
+    if (isVpsMode()) {
+      fetchUsersVps().then(setUsers).catch(() => setUsers(getStoredUsers()));
+    } else {
+      setUsers(getStoredUsers());
+    }
   }, []);
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (!newUser.email || !newUser.password || !newUser.name) {
       toast.error('Preencha todos os campos');
       return;
@@ -131,30 +135,51 @@ const ConfiguracoesPage = () => {
       toast.error('Este email já está cadastrado');
       return;
     }
-    const user: AppUser = {
-      id: Date.now().toString(),
-      email: newUser.email,
-      password: newUser.password,
-      name: newUser.name,
-      role: 'user',
-      createdAt: new Date().toISOString(),
-    };
-    const updated = [...users, user];
-    setUsers(updated);
-    saveUsers(updated);
-    setNewUser({ email: '', password: '', name: '' });
-    toast.success('Usuário criado com sucesso!');
+
+    try {
+      if (isVpsMode()) {
+        await registerVps(newUser.name, newUser.email, newUser.password);
+        const refreshed = await fetchUsersVps();
+        setUsers(refreshed);
+      } else {
+        const user: AppUser = {
+          id: Date.now().toString(),
+          email: newUser.email,
+          password: newUser.password,
+          name: newUser.name,
+          role: 'user',
+          createdAt: new Date().toISOString(),
+        };
+        const updated = [...users, user];
+        setUsers(updated);
+        saveUsers(updated);
+      }
+      setNewUser({ email: '', password: '', name: '' });
+      toast.success('Usuário criado com sucesso!');
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao criar usuário');
+    }
   };
 
-  const handleDeleteUser = (id: string) => {
+  const handleDeleteUser = async (id: string) => {
     if (users.length <= 1) {
       toast.error('Deve existir pelo menos 1 usuário');
       return;
     }
-    const updated = users.filter(u => u.id !== id);
-    setUsers(updated);
-    saveUsers(updated);
-    toast.success('Usuário removido');
+    try {
+      if (isVpsMode()) {
+        await deleteUserVps(id);
+        const refreshed = await fetchUsersVps();
+        setUsers(refreshed);
+      } else {
+        const updated = users.filter(u => u.id !== id);
+        setUsers(updated);
+        saveUsers(updated);
+      }
+      toast.success('Usuário removido');
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao remover usuário');
+    }
   };
 
   return (

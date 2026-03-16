@@ -105,10 +105,25 @@ class ApiService {
 
   // ===== AUTH =====
   async login(email: string, password: string) {
-    return this.request<{ token: string; user: { id: number; name: string; email: string } }>('/auth/login', {
+    return this.request<{ token: string; user: { id: string; name: string; email: string; role: string } }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+  }
+
+  async register(name: string, email: string, password: string) {
+    return this.request<{ user: { id: string; name: string; email: string; role: string } }>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password }),
+    });
+  }
+
+  async getUsers() {
+    return this.request<{ id: string; name: string; email: string; role: string; createdAt: string }[]>('/auth/users');
+  }
+
+  async deleteUser(id: string) {
+    return this.request<void>(`/auth/users/${id}`, { method: 'DELETE' });
   }
 
   // ===== CLIENTES =====
