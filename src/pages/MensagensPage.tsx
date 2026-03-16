@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { mockTemplates } from '@/services/mock-data';
+import { Save, MessageSquare, Loader2 } from 'lucide-react';
 import { Save, MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { fetchSettings, saveSettings, fetchMessageTemplates, updateMessageTemplateByType } from '@/services/data-layer';
