@@ -33,29 +33,41 @@ export function isDuplicateColumnError(err, columnName = 'owner_id') {
   return message.includes('duplicate column') && message.includes(String(columnName).toLowerCase());
 }
 
+export function isMissingTableError(err, tableName = '') {
+  const message = String(err?.message || err || '').toLowerCase();
+  return message.includes("doesn't exist") && (!tableName || message.includes(String(tableName).toLowerCase()));
+}
+
 export async function hasColumn(tableName, columnName) {
   const cacheKey = `${tableName}:${columnName}`;
   if (columnExistsCache.has(cacheKey)) {
     return columnExistsCache.get(cacheKey);
   }
 
-  const rows = await query(
-    `SELECT COUNT(*) AS total
-     FROM information_schema.COLUMNS
-     WHERE TABLE_SCHEMA = DATABASE()
-       AND LOWER(TABLE_NAME) = LOWER(?)
-       AND LOWER(COLUMN_NAME) = LOWER(?)`,
-    [tableName, columnName]
-  );
+  try {
+    const rows = await query(
+      `SELECT COUNT(*) AS total
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND LOWER(TABLE_NAME) = LOWER(?)
+         AND LOWER(COLUMN_NAME) = LOWER(?)`,
+      [tableName, columnName]
+    );
 
-  const firstRow = Array.isArray(rows)
-    ? rows.find((row) => row && typeof row === 'object' && Object.prototype.hasOwnProperty.call(row, 'total'))
-    : null;
+    const firstRow = Array.isArray(rows)
+      ? rows.find((row) => row && typeof row === 'object' && Object.prototype.hasOwnProperty.call(row, 'total'))
+      : null;
 
-  const exists = Number(firstRow?.total || 0) > 0;
-
-  columnExistsCache.set(cacheKey, exists);
-  return exists;
+    const exists = Number(firstRow?.total || 0) > 0;
+    columnExistsCache.set(cacheKey, exists);
+    return exists;
+  } catch (err) {
+    if (isMissingTableError(err, tableName)) {
+      columnExistsCache.set(cacheKey, false);
+      return false;
+    }
+    throw err;
+  }
 }
 
 export function clearSchemaCache() {
@@ -71,7 +83,7 @@ async function ensureColumn(tableName, columnName, columnDefinition) {
     clearSchemaCache();
     return true;
   } catch (err) {
-    if (isDuplicateColumnError(err, columnName)) {
+    if (isDuplicateColumnError(err, columnName) || isMissingTableError(err, tableName)) {
       clearSchemaCache();
       return false;
     }
