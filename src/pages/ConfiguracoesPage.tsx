@@ -108,9 +108,9 @@ const ConfiguracoesPage = () => {
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Traccar API config state
-  const [traccarUrl, setTraccarUrl] = useState(() => localStorage.getItem('traccar_url') || '');
-  const [traccarUser, setTraccarUser] = useState(() => localStorage.getItem('traccar_user') || '');
-  const [traccarPassword, setTraccarPassword] = useState(() => localStorage.getItem('traccar_password') || '');
+  const [traccarUrl, setTraccarUrl] = useState(() => userStorageGet('traccar_url') || '');
+  const [traccarUser, setTraccarUser] = useState(() => userStorageGet('traccar_user') || '');
+  const [traccarPassword, setTraccarPassword] = useState(() => userStorageGet('traccar_password') || '');
 
   const toggleSection = (key: string) => {
     setOpenSection(prev => prev === key ? null : key);
