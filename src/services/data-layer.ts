@@ -129,6 +129,30 @@ export async function createClient(client: Partial<Client>): Promise<void> {
   }
 }
 
+export async function upsertClientFromTraccar(client: { name: string; phone: string; email?: string }): Promise<'created' | 'skipped'> {
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { data: existing } = await supabase.from('clients').select('id').eq('name', client.name).eq('phone', client.phone).limit(1);
+      if (existing && existing.length > 0) return 'skipped';
+      const { error } = await supabase.from('clients').insert({ name: client.name, phone: client.phone, email: client.email || null, traccar_email: client.email || null });
+      if (error) {
+        if (error.code === '23505') return 'skipped'; // unique violation
+        throw error;
+      }
+    } else {
+      const res = await api.createClient(client);
+      if (!res.success) throw new Error(res.error || 'Erro ao criar cliente');
+    }
+    addOperationLog(backend, 'Clientes', 'INSERT', `Importou cliente Traccar "${client.name}"`);
+    return 'created';
+  } catch (err: any) {
+    if (err?.code === '23505') return 'skipped';
+    addOperationLog(backend, 'Clientes', 'INSERT', `Erro ao importar "${client.name}"`, 'error', err?.message);
+    throw err;
+  }
+}
+
 export async function updateClient(id: number, client: Partial<Client>): Promise<void> {
   const backend = ACTIVE_DATA_BACKEND;
   try {
