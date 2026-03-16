@@ -21,6 +21,37 @@ const DEFAULT_ADMIN: AppUser = {
   createdAt: new Date().toISOString(),
 };
 
+function seedDefaultUsers(): AppUser[] {
+  const users = [DEFAULT_ADMIN];
+  localStorage.setItem('app_users', JSON.stringify(users));
+  return users;
+}
+
+function normalizeStoredUsers(value: unknown): AppUser[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    return seedDefaultUsers();
+  }
+
+  const users = value
+    .filter((item): item is Partial<AppUser> => !!item && typeof item === 'object')
+    .map((user, index) => ({
+      id: String(user.id ?? index + 1),
+      email: String(user.email ?? '').trim().toLowerCase(),
+      password: typeof user.password === 'string' ? user.password : '',
+      name: String(user.name ?? '').trim(),
+      role: index === 0 ? 'admin' as const : 'user' as const,
+      createdAt: typeof user.createdAt === 'string' && user.createdAt ? user.createdAt : new Date().toISOString(),
+    }))
+    .filter(user => user.email && user.password && user.name);
+
+  if (users.length === 0) {
+    return seedDefaultUsers();
+  }
+
+  localStorage.setItem('app_users', JSON.stringify(users));
+  return users;
+}
+
 // ===== Detect if we're on VPS (API mode) =====
 
 function isVpsMode(): boolean {
@@ -53,16 +84,14 @@ function isVpsMode(): boolean {
 export function getStoredUsers(): AppUser[] {
   const stored = localStorage.getItem('app_users');
   if (!stored) {
-    const users = [DEFAULT_ADMIN];
-    localStorage.setItem('app_users', JSON.stringify(users));
-    return users;
+    return seedDefaultUsers();
   }
-  const users: AppUser[] = JSON.parse(stored);
-  // First user is always admin, all others are regular users
-  return users.map((u, index) => ({
-    ...u,
-    role: index === 0 ? 'admin' : 'user',
-  }));
+
+  try {
+    return normalizeStoredUsers(JSON.parse(stored));
+  } catch {
+    return seedDefaultUsers();
+  }
 }
 
 export function saveUsers(users: AppUser[]) {
