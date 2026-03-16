@@ -178,7 +178,7 @@ export async function upsertClientFromTraccar(client: { name: string; phone: str
       }
 
       // Create new client
-      const { error } = await supabase.from('clients').insert({ name: client.name, phone: client.phone, email: client.email || null, traccar_email: client.email || null });
+      const { error } = await supabase.from('clients').insert({ name: client.name, phone: client.phone, email: client.email || null, traccar_email: client.email || null, owner_id: getCurrentOwnerId() } as any);
       if (error) {
         if (error.code === '23505') return 'skipped';
         throw error;
