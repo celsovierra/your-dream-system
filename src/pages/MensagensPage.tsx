@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { mockTemplates } from '@/services/mock-data';
 import { Save, MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { fetchSettings, saveSettings, fetchMessageTemplates, updateMessageTemplate } from '@/services/data-layer';
+import { fetchSettings, saveSettings, fetchMessageTemplates, updateMessageTemplateByType } from '@/services/data-layer';
 import { userStorageSet } from '@/services/auth';
 
 const typeLabels: Record<string, string> = {
