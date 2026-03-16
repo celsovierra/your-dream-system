@@ -46,6 +46,28 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [deploying, setDeploying] = useState(false);
   const [hasUpdate, setHasUpdate] = useState(false);
 
+  const resolveDeployApiUrl = () => {
+    const savedUrl = localStorage.getItem('api_base_url')?.trim();
+    const autoUrl = `${window.location.origin}/api`;
+    return savedUrl || autoUrl;
+  };
+
+  const checkForUpdates = async () => {
+    try {
+      const res = await fetch(`${resolveDeployApiUrl()}/check-update`);
+      const data = await res.json();
+
+      if (data.success) {
+        setHasUpdate(data.hasUpdate);
+        return;
+      }
+
+      setHasUpdate(false);
+    } catch {
+      setHasUpdate(false);
+    }
+  };
+
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
     localStorage.setItem('theme', darkMode ? 'dark' : 'light');
@@ -56,47 +78,33 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   }, [sidebarCollapsed]);
 
   useEffect(() => {
-    const checkForUpdates = async () => {
-      try {
-        const savedUrl = localStorage.getItem('api_base_url');
-        const autoUrl = `${window.location.origin}/api`;
-        const apiUrl = savedUrl || autoUrl;
-        const res = await fetch(`${apiUrl}/check-update`);
-        const data = await res.json();
-        if (data.success) {
-          setHasUpdate(data.hasUpdate);
-        }
-      } catch {
-        // silently fail
-      }
-    };
-
     checkForUpdates();
-    const interval = setInterval(checkForUpdates, 60000); // verifica a cada 1 minuto
+    const interval = setInterval(checkForUpdates, 60000);
     return () => clearInterval(interval);
   }, []);
 
   const handleDeploy = async () => {
-    // Auto-detecta a URL da API baseado no endereço atual do navegador
-    const savedUrl = localStorage.getItem('api_base_url');
-    const autoUrl = `${window.location.origin}/api`;
-    const apiUrl = savedUrl || autoUrl;
-
     setDeploying(true);
+
     try {
-      const res = await fetch(`${apiUrl}/deploy`, {
+      const res = await fetch(`${resolveDeployApiUrl()}/deploy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-deploy-token': 'cobranca-deploy-2024',
         },
       });
+
       const data = await res.json();
-      if (data.success) {
-        toast.success('Deploy iniciado! O sistema será atualizado em instantes.');
-      } else {
-        toast.error(data.error || 'Erro ao iniciar deploy');
+
+      if (!res.ok || !data.success) {
+        toast.error(data.error || 'Erro ao atualizar a VPS');
+        return;
       }
+
+      setHasUpdate(false);
+      toast.success(data.message || 'Atualização concluída com sucesso.');
+      await checkForUpdates();
     } catch {
       toast.error('Não foi possível conectar ao servidor');
     } finally {
