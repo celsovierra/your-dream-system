@@ -30,18 +30,19 @@ export async function hasColumn(tableName, columnName) {
   }
 
   const rows = await query(
-    `SELECT 1 AS exists_flag
+    `SELECT COUNT(*) AS total
      FROM information_schema.COLUMNS
      WHERE TABLE_SCHEMA = DATABASE()
-       AND TABLE_NAME = ?
-       AND COLUMN_NAME = ?
-     LIMIT 1`,
+       AND LOWER(TABLE_NAME) = LOWER(?)
+       AND LOWER(COLUMN_NAME) = LOWER(?)`,
     [tableName, columnName]
   );
 
-  const exists = Array.isArray(rows)
-    ? rows.some((row) => row && typeof row === 'object' && 'exists_flag' in row)
-    : false;
+  const firstRow = Array.isArray(rows)
+    ? rows.find((row) => row && typeof row === 'object' && Object.prototype.hasOwnProperty.call(row, 'total'))
+    : null;
+
+  const exists = Number(firstRow?.total || 0) > 0;
 
   columnExistsCache.set(cacheKey, exists);
   return exists;
