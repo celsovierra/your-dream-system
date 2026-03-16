@@ -104,7 +104,7 @@ const App = () => {
                 <Route path="/fila" element={<FilaPage />} />
                 <Route path="/mensagens" element={<MensagensPage />} />
                 <Route path="/contratos" element={<ContratosPage />} />
-                <Route path="/configuracoes" element={userIsAdmin ? <ConfiguracoesPage /> : <Navigate to="/" replace />} />
+                <Route path="/configuracoes" element={<ConfiguracoesPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </ErrorBoundary>

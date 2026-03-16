@@ -11,9 +11,10 @@ import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Us
 import { toast } from 'sonner';
 import asaasLogo from '@/assets/asaas.png';
 import mercadoPagoLogo from '@/assets/mercado-pago.png';
-import { type AppUser, getStoredUsers, saveUsers, userStorageGet, userStorageSet } from '@/services/auth';
+import { type AppUser, getStoredUsers, saveUsers, userStorageGet, userStorageSet, isAdmin } from '@/services/auth';
 
 const ConfiguracoesPage = () => {
+  const userIsAdmin = isAdmin();
   const autoInstanceName = window.location.hostname.replace(/\./g, '_') + '_cobrancapro';
   const [whatsapp, setWhatsapp] = useState<{ api_url: string; api_key: string; instance_name: string; status: 'connected' | 'disconnected' | 'connecting' }>({ api_url: '', api_key: '', instance_name: autoInstanceName, status: 'disconnected' });
   const [payment, setPayment] = useState({ gateway: 'mercadopago' as 'mercadopago' | 'asaas' | 'pix_manual', access_token: '', asaas_token: '' });
@@ -159,8 +160,8 @@ const ConfiguracoesPage = () => {
   return (
     <div className="space-y-4 max-w-2xl">
 
-      {/* Gerenciar Usuários */}
-      <Collapsible open={openSection === 'users'} onOpenChange={() => toggleSection('users')}>
+      {/* Gerenciar Usuários - apenas admin */}
+      {userIsAdmin && <Collapsible open={openSection === 'users'} onOpenChange={() => toggleSection('users')}>
         <Card>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
@@ -213,7 +214,7 @@ const ConfiguracoesPage = () => {
             </CardContent>
           </CollapsibleContent>
         </Card>
-      </Collapsible>
+      </Collapsible>}
 
       {/* WhatsApp */}
       <Collapsible open={openSection === 'whatsapp'} onOpenChange={() => toggleSection('whatsapp')}>
