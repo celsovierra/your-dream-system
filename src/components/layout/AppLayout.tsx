@@ -183,6 +183,11 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       return;
     }
 
+    const beforeDeploy = await checkForUpdates();
+    const previousRemoteCommit = beforeDeploy?.remoteCommit;
+
+    setDeploying(true);
+
     try {
       const res = await fetch(`${apiUrl}/deploy`, {
         method: 'POST',
@@ -200,7 +205,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       }
 
       toast.success(data.message || 'Atualização iniciada com sucesso.');
-      await waitForDeployCompletion(apiUrl);
+      await waitForDeployCompletion(apiUrl, previousRemoteCommit);
     } catch {
       toast.error('Não foi possível conectar à API da VPS');
     } finally {
