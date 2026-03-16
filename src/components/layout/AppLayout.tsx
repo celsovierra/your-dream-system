@@ -189,7 +189,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
                 </span>
               )}
               <button
-                onClick={() => { handleDeploy(); setHasUpdate(false); }}
+                onClick={handleDeploy}
                 disabled={deploying || !hasUpdate}
                 className={cn(
                   "w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold transition-all duration-200",
