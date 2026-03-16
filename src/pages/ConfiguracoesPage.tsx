@@ -473,6 +473,9 @@ const ConfiguracoesPage = () => {
               <div className="flex items-center gap-2 text-base font-semibold">
                 <MapPin className="h-5 w-5 text-primary" />
                 API Traccar
+                {traccarUrl && traccarUser && traccarPassword && (
+                  <Badge variant="default">Configurado</Badge>
+                )}
               </div>
               <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'traccar' ? 'rotate-180' : ''}`} />
             </div>
