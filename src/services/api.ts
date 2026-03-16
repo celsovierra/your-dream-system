@@ -63,7 +63,7 @@ class ApiService {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const response = await fetch(`${this.resolveBaseUrl()}${endpoint}`, {
         ...options,
         headers,
       });

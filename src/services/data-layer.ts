@@ -22,7 +22,14 @@ import type { Client, MessageTemplate, DashboardStats } from '@/types/billing';
 type DataBackend = 'cloud' | 'api';
 
 function getConfiguredApiBaseUrl(): string {
-  return String(import.meta.env.VITE_API_BASE_URL || '').trim();
+  const envApiBaseUrl = String(import.meta.env.VITE_API_BASE_URL || '').trim();
+
+  if (typeof window !== 'undefined') {
+    const storedApiBaseUrl = window.localStorage.getItem('api_base_url')?.trim();
+    if (storedApiBaseUrl) return storedApiBaseUrl;
+  }
+
+  return envApiBaseUrl;
 }
 
 function hasConfiguredApiBaseUrl(): boolean {
