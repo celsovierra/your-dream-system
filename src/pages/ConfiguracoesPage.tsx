@@ -112,15 +112,6 @@ const ConfiguracoesPage = () => {
     setOpenSection(prev => prev === key ? null : key);
   };
 
-  const normalizeApiBaseUrl = (value: string) => {
-    let normalized = value.trim();
-    if (!normalized) return '';
-    if (!/^https?:\/\//i.test(normalized)) normalized = `https://${normalized}`;
-    normalized = normalized.replace(/\/+$/, '');
-
-    const parsed = new URL(normalized);
-    return parsed.pathname === '/' ? `${normalized}/api` : normalized;
-  };
 
   useEffect(() => {
     const stored = localStorage.getItem('app_users');
