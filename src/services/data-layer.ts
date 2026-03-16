@@ -21,6 +21,34 @@ import type { Client, MessageTemplate, DashboardStats } from '@/types/billing';
 import { addOperationLog } from '@/services/operation-logger';
 import { getCurrentOwnerId, isAdmin, userStorageGet, userStorageSet } from '@/services/auth';
 
+// Helper: creates headers with auth token + owner ID for raw fetch calls
+function authHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...extra };
+  const token = localStorage.getItem('auth_token');
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const ownerId = getCurrentOwnerId();
+  if (ownerId) headers['X-Owner-Id'] = ownerId;
+  return headers;
+}
+
+// Helper: resolves the correct base URL for raw fetch calls
+function apiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const stored = window.localStorage.getItem('api_base_url')?.trim();
+    if (stored) return stored;
+  }
+  const env = String(import.meta.env.VITE_API_BASE_URL || '').trim();
+  return env || '/api';
+}
+
+function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  const base = apiBaseUrl();
+  return fetch(`${base}${endpoint}`, {
+    ...options,
+    headers: authHeaders(options.headers as Record<string, string> || {}),
+  });
+}
+
 type DataBackend = 'cloud' | 'api';
 
 function getConfiguredApiBaseUrl(): string {
