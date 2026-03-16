@@ -185,62 +185,6 @@ const ConfiguracoesPage = () => {
   return (
     <div className="space-y-4 max-w-2xl">
 
-      {/* Gerenciar Usuários - apenas admin */}
-      {userIsAdmin && <Collapsible open={openSection === 'users'} onOpenChange={() => toggleSection('users')}>
-        <Card>
-          <CollapsibleTrigger className="w-full">
-            <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
-              <div className="flex items-center gap-2 text-base font-semibold">
-                <Users className="h-5 w-5 text-primary" />
-                Gerenciar Usuários
-              </div>
-              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'users' ? 'rotate-180' : ''}`} />
-            </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent className="space-y-4 pt-0">
-              <div className="grid gap-3">
-                <div>
-                  <Label>Nome</Label>
-                  <Input value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} placeholder="Nome do usuário" />
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input type="email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} placeholder="email@exemplo.com" />
-                </div>
-                <div>
-                  <Label>Senha</Label>
-                  <Input type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} placeholder="Mínimo 4 caracteres" />
-                </div>
-                <Button size="sm" onClick={handleAddUser}>
-                  <UserPlus className="mr-2 h-3 w-3" /> Criar Usuário
-                </Button>
-              </div>
-
-              {users.length > 0 && (
-                <div className="border-t pt-4 space-y-2">
-                  <Label className="text-muted-foreground text-xs">Usuários cadastrados</Label>
-                  {users.map(user => (
-                    <div key={user.id} className="flex items-center justify-between rounded-md border p-3">
-                      <div>
-                        <p className="text-sm font-medium">
-                          {user.name}
-                          {user.role === 'admin' && <Badge variant="default" className="ml-2 text-[10px]">Admin</Badge>}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{user.email}</p>
-                      </div>
-                      <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteUser(user.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>}
-
       {/* WhatsApp */}
       <Collapsible open={openSection === 'whatsapp'} onOpenChange={() => toggleSection('whatsapp')}>
         <Card>
