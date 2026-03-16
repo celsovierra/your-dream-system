@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle, Loader2, MapPin } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle, Loader2, MapPin, CheckSquare } from 'lucide-react';
 import { userStorageGet } from '@/services/auth';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
