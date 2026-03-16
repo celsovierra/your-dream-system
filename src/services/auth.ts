@@ -39,9 +39,28 @@ export function saveUsers(users: AppUser[]) {
 
 export function getCurrentUser(): AppUser | null {
   const userJson = localStorage.getItem('current_user');
-  if (!userJson) return null;
+  if (!userJson) {
+    // Legacy session recovery: if auth_token exists but no current_user,
+    // default to the first (admin) user to avoid broken state
+    const hasToken = localStorage.getItem('auth_token');
+    if (hasToken) {
+      const users = getStoredUsers();
+      if (users.length > 0) {
+        setCurrentUser(users[0]);
+        return users[0];
+      }
+    }
+    return null;
+  }
   try {
-    return JSON.parse(userJson);
+    const user: AppUser = JSON.parse(userJson);
+    // Ensure role is consistent with stored users list
+    const users = getStoredUsers();
+    const matchedUser = users.find(u => u.id === user.id);
+    if (matchedUser) {
+      return { ...user, role: matchedUser.role };
+    }
+    return user;
   } catch {
     return null;
   }
@@ -57,8 +76,7 @@ export function clearCurrentUser() {
 
 export function isAdmin(): boolean {
   const user = getCurrentUser();
-  // If no current_user is set (legacy session), treat as admin (first user)
-  if (!user) return true;
+  if (!user) return false;
   return user.role === 'admin';
 }
 
