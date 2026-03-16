@@ -186,7 +186,10 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const handleDeploy = async () => {
     const apiUrl = resolveDeployApiUrl();
 
-    setDeploying(true);
+    if (!apiUrl) {
+      toast.error('Abra o sistema na VPS para executar a atualização.');
+      return;
+    }
 
     try {
       const res = await fetch(`${apiUrl}/deploy`, {
