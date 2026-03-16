@@ -135,11 +135,12 @@ const ConfiguracoesPage = () => {
       email: newUser.email,
       password: newUser.password,
       name: newUser.name,
+      role: 'user',
       createdAt: new Date().toISOString(),
     };
     const updated = [...users, user];
     setUsers(updated);
-    localStorage.setItem('app_users', JSON.stringify(updated));
+    saveUsers(updated);
     setNewUser({ email: '', password: '', name: '' });
     toast.success('Usuário criado com sucesso!');
   };
@@ -151,7 +152,7 @@ const ConfiguracoesPage = () => {
     }
     const updated = users.filter(u => u.id !== id);
     setUsers(updated);
-    localStorage.setItem('app_users', JSON.stringify(updated));
+    saveUsers(updated);
     toast.success('Usuário removido');
   };
 
