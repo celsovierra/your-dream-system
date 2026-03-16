@@ -398,7 +398,7 @@ export async function getTemplateByType(type: string): Promise<MessageTemplate |
       const res = await api.getMessageTemplates();
       if (!res.success || !res.data) return null;
       // MariaDB may return is_active as 1/0 instead of true/false
-      result = res.data.find(t => t.type === type && (t.is_active === true || t.is_active === 1 || t.is_active === '1')) || null;
+      result = res.data.find(t => t.type === type && Boolean(t.is_active)) || null;
     }
     addOperationLog(backend, 'Templates', 'SELECT', `Buscou template tipo ${type}${result ? ` (id=${result.id})` : ' (não encontrado)'}`);
     return result;
