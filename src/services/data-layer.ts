@@ -280,7 +280,11 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
   try {
     let stats: DashboardStats;
     if (isLovableEnv()) {
-      const { data: clients, error } = await supabase.from('clients').select('*');
+      let query = supabase.from('clients').select('*');
+      if (!isAdmin()) {
+        query = query.eq('owner_id', getCurrentOwnerId());
+      }
+      const { data: clients, error } = await query;
       if (error) throw error;
       const allClients = clients || [];
       const activeClients = allClients.filter((c: any) => c.is_active);
