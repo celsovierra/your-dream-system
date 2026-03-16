@@ -45,6 +45,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
   const [deploying, setDeploying] = useState(false);
   const [hasUpdate, setHasUpdate] = useState(false);
+  const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
 
   const resolveDeployApiUrl = () => {
     const savedUrl = localStorage.getItem('api_base_url')?.trim();
