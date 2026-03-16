@@ -1,5 +1,5 @@
 import express from 'express';
-import { hasColumn, query } from '../db.js';
+import { clearSchemaCache, hasColumn, isUnknownColumnError, query } from '../db.js';
 
 const router = express.Router();
 
@@ -18,7 +18,16 @@ router.get('/', async (req, res) => {
       params.push(req.ownerId);
     }
     sql += ' ORDER BY created_at DESC';
-    const rows = await query(sql, params);
+
+    let rows;
+    try {
+      rows = await query(sql, params);
+    } catch (err) {
+      if (!isUnknownColumnError(err)) throw err;
+      clearSchemaCache();
+      rows = await query('SELECT * FROM billing_queue WHERE 1=1 ORDER BY created_at DESC', []);
+    }
+
     res.json({ success: true, data: rows });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -35,7 +44,15 @@ router.delete('/', async (req, res) => {
       sql += ' WHERE owner_id = ?';
       params.push(req.ownerId);
     }
-    await query(sql, params);
+
+    try {
+      await query(sql, params);
+    } catch (err) {
+      if (!isUnknownColumnError(err)) throw err;
+      clearSchemaCache();
+      await query('DELETE FROM billing_queue', []);
+    }
+
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -53,7 +70,15 @@ router.patch('/:id', async (req, res) => {
       sql += ' AND owner_id = ?';
       params.push(req.ownerId);
     }
-    await query(sql, params);
+
+    try {
+      await query(sql, params);
+    } catch (err) {
+      if (!isUnknownColumnError(err)) throw err;
+      clearSchemaCache();
+      await query('UPDATE billing_queue SET status = ?, sent_at = ? WHERE id = ?', [status, sent_at || null, req.params.id]);
+    }
+
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
