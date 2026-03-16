@@ -4,20 +4,15 @@
 // REGRA DE OURO (@@):
 // 1) Toda leitura/escrita de dados passa por este arquivo.
 // 2) Nenhuma página/componente pode importar cliente de banco direto.
-// 3) Preview/teste e VPS nunca compartilham escrita.
+// 3) Se existir API VPS configurada, ela tem prioridade total.
 //
 // MAPA DE AMBIENTE:
-// ┌─────────────────────────┬────────────────────────────────────┐
-// │ Host com .lovable.app   │ Cloud de teste                     │
-// │ Host com .lovableproject│ Cloud de teste                     │
-// ├─────────────────────────┼────────────────────────────────────┤
-// │ localhost / VPS / domínio próprio │ API REST -> MariaDB VPS │
-// └─────────────────────────┴────────────────────────────────────┘
-//
-// BLOQUEIO RÍGIDO:
-// - Em host Lovable, SEMPRE usa Cloud de teste.
-// - Fora de host Lovable, padrão SEMPRE API da VPS.
-// - VITE_DATA_BACKEND é aceito apenas fora de host Lovable.
+// ┌──────────────────────────────────────────────┬────────────────────┐
+// │ VITE_DATA_BACKEND=api|cloud                  │ força backend      │
+// │ VITE_API_BASE_URL absoluto/configurado       │ API REST -> VPS    │
+// │ Host com .lovable.app/.lovableproject.com    │ Cloud de teste     │
+// │ localhost / VPS / domínio próprio            │ API REST -> VPS    │
+// └──────────────────────────────────────────────┴────────────────────┘
 // ===================================================================
 
 import { supabase } from '@/integrations/supabase/client';
@@ -26,17 +21,26 @@ import type { Client, MessageTemplate, DashboardStats } from '@/types/billing';
 
 type DataBackend = 'cloud' | 'api';
 
+function getConfiguredApiBaseUrl(): string {
+  return String(import.meta.env.VITE_API_BASE_URL || '').trim();
+}
+
+function hasConfiguredApiBaseUrl(): boolean {
+  const apiBaseUrl = getConfiguredApiBaseUrl();
+  return Boolean(apiBaseUrl && apiBaseUrl !== '/api');
+}
+
 function resolveDataBackend(): DataBackend {
+  const forcedBackend = String(import.meta.env.VITE_DATA_BACKEND || '').toLowerCase();
+  if (forcedBackend === 'cloud' || forcedBackend === 'api') return forcedBackend;
+
+  if (hasConfiguredApiBaseUrl()) return 'api';
+
   const hostname = window.location.hostname.toLowerCase();
   const isLovableHost =
     hostname.endsWith('.lovable.app') || hostname.endsWith('.lovableproject.com');
 
-  // @@ Isolamento absoluto: host Lovable sempre no banco de teste
   if (isLovableHost) return 'cloud';
-
-  // Fora do host Lovable (localhost, VPS, domínio próprio) usa VPS por padrão
-  const forcedBackend = String(import.meta.env.VITE_DATA_BACKEND || '').toLowerCase();
-  if (forcedBackend === 'cloud' || forcedBackend === 'api') return forcedBackend;
 
   return 'api';
 }
