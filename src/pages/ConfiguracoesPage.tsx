@@ -11,14 +11,7 @@ import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Us
 import { toast } from 'sonner';
 import asaasLogo from '@/assets/asaas.png';
 import mercadoPagoLogo from '@/assets/mercado-pago.png';
-
-interface AppUser {
-  id: string;
-  email: string;
-  password: string;
-  name: string;
-  createdAt: string;
-}
+import { type AppUser, getStoredUsers, saveUsers } from '@/services/auth';
 
 const ConfiguracoesPage = () => {
   const autoInstanceName = window.location.hostname.replace(/\./g, '_') + '_cobrancapro';
