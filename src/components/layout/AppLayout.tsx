@@ -103,6 +103,9 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         return;
       }
 
+      const now = new Date().toISOString();
+      localStorage.setItem('last_deploy_at', now);
+      setLastDeployAt(now);
       setHasUpdate(false);
       toast.success(data.message || 'Atualização concluída com sucesso.');
       await checkForUpdates();
