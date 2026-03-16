@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS message_templates (
 CREATE TABLE IF NOT EXISTS billing_settings (
   `key` VARCHAR(100) NOT NULL,
   `value` TEXT NOT NULL,
-  owner_id VARCHAR(100),
+  owner_id VARCHAR(100) NOT NULL DEFAULT '__global__',
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`key`, owner_id)
 );
@@ -223,6 +223,11 @@ ALTER TABLE billing_queue ADD COLUMN IF NOT EXISTS message TEXT AFTER due_date;
 ALTER TABLE billing_queue ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER message;
 
 ALTER TABLE message_templates ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER is_active;
+
+-- Migração: billing_settings — corrigir owner_id NULL para '__global__'
+UPDATE billing_settings SET owner_id = '__global__' WHERE owner_id IS NULL;
+-- Se a tabela já existia com owner_id nullable, corrige para NOT NULL DEFAULT '__global__'
+ALTER TABLE billing_settings MODIFY COLUMN owner_id VARCHAR(100) NOT NULL DEFAULT '__global__';
 
 -- Dados iniciais - admin padrão (senha: admin123 -> SHA256)
 INSERT IGNORE INTO users (name, email, password_hash) VALUES

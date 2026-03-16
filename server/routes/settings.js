@@ -11,16 +11,18 @@ async function supportsOwnerScope() {
 router.get('/', async (req, res) => {
   try {
     const ownerScoped = await supportsOwnerScope();
-    let sql = 'SELECT `key`, `value` FROM billing_settings WHERE 1=1';
-    const params = [];
-    if (ownerScoped && req.ownerId) {
-      sql += ' AND owner_id = ?';
-      params.push(req.ownerId);
-    }
-    const rows = await query(sql, params);
+    const ownerId = ownerScoped ? (req.ownerId || '__global__') : '__global__';
+    const rows = await query(
+      'SELECT `key`, `value` FROM billing_settings WHERE owner_id = ?',
+      [ownerId]
+    );
     const settings = {};
-    for (const row of rows) {
-      settings[row.key] = row.value;
+    if (Array.isArray(rows)) {
+      for (const row of rows) {
+        if (row && typeof row === 'object' && 'key' in row) {
+          settings[row.key] = row.value;
+        }
+      }
     }
     res.json({ success: true, data: settings });
   } catch (err) {
@@ -33,19 +35,12 @@ router.put('/', async (req, res) => {
   try {
     const settings = req.body;
     const ownerScoped = await supportsOwnerScope();
-    const ownerId = ownerScoped ? req.ownerId || null : null;
+    const ownerId = ownerScoped ? (req.ownerId || '__global__') : '__global__';
     for (const [key, value] of Object.entries(settings)) {
-      if (ownerScoped && ownerId) {
-        await query(
-          'INSERT INTO billing_settings (`key`, `value`, `owner_id`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = ?',
-          [key, String(value), ownerId, String(value)]
-        );
-      } else {
-        await query(
-          'INSERT INTO billing_settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?',
-          [key, String(value), String(value)]
-        );
-      }
+      await query(
+        'INSERT INTO billing_settings (`key`, `value`, `owner_id`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = ?',
+        [key, String(value), ownerId, String(value)]
+      );
     }
     res.json({ success: true });
   } catch (err) {
