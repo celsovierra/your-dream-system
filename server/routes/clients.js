@@ -178,6 +178,7 @@ router.put('/:id', async (req, res) => {
     if (zip_code !== undefined) { fields.push('zip_code = ?'); values.push(zip_code || null); }
     if (notes !== undefined) { fields.push('notes = ?'); values.push(notes || null); }
     if (is_active !== undefined) { fields.push('is_active = ?'); values.push(is_active); }
+    if (traccar_email !== undefined) { fields.push('traccar_email = ?'); values.push(traccar_email || null); }
 
     if (fields.length === 0) return res.status(400).json({ message: 'Nenhum campo para atualizar' });
 
