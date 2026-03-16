@@ -29,7 +29,9 @@ CREATE TABLE IF NOT EXISTS clients (
   city VARCHAR(100),
   state VARCHAR(2),
   zip_code VARCHAR(10),
+  traccar_email VARCHAR(255),
   notes TEXT,
+  owner_id VARCHAR(100),
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -37,16 +39,6 @@ CREATE TABLE IF NOT EXISTS clients (
   INDEX idx_document (document),
   INDEX idx_owner (owner_id)
 );
-
--- Adicionar colunas novas caso a tabela já exista (idempotente)
-ALTER TABLE clients ADD COLUMN IF NOT EXISTS phone2 VARCHAR(20) AFTER phone;
-ALTER TABLE clients ADD COLUMN IF NOT EXISTS amount DECIMAL(10,2) AFTER document;
-ALTER TABLE clients ADD COLUMN IF NOT EXISTS due_date DATE AFTER amount;
-ALTER TABLE clients ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER notes;
-ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER notes;
-ALTER TABLE billing_queue ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER created_at;
-ALTER TABLE message_templates ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER is_active;
-ALTER TABLE billing_settings ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER `value`;
 
 -- Contas a pagar (Financeiro)
 CREATE TABLE IF NOT EXISTS bills_payable (
@@ -64,28 +56,15 @@ CREATE TABLE IF NOT EXISTS bills_payable (
   paid_date DATE NULL,
   status ENUM('pending','paid','overdue','cancelled') NOT NULL DEFAULT 'pending',
   notes TEXT,
+  owner_id VARCHAR(100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_bills_due_date (due_date),
   INDEX idx_bills_status (status),
   INDEX idx_bills_parent (parent_bill_id),
+  INDEX idx_bills_owner (owner_id),
   CONSTRAINT fk_bills_parent FOREIGN KEY (parent_bill_id) REFERENCES bills_payable(id) ON DELETE CASCADE
 );
-
--- Migração idempotente para instalações antigas
-ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS supplier VARCHAR(255) AFTER description;
-ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS category VARCHAR(100) AFTER supplier;
-ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS payment_type ENUM('single','installment') NOT NULL DEFAULT 'single' AFTER category;
-ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS total_amount DECIMAL(10,2) NOT NULL AFTER payment_type;
-ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS installments_count INT DEFAULT 1 AFTER total_amount;
-ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS current_installment INT DEFAULT 1 AFTER installments_count;
-ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS parent_bill_id INT NULL AFTER current_installment;
-ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS amount DECIMAL(10,2) NOT NULL AFTER parent_bill_id;
-ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS due_date DATE NOT NULL AFTER amount;
-ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS paid_date DATE NULL AFTER due_date;
-ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS status ENUM('pending','paid','overdue','cancelled') NOT NULL DEFAULT 'pending' AFTER paid_date;
-ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS notes TEXT AFTER status;
-ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at;
 
 -- Configuração de cobrança por cliente
 CREATE TABLE IF NOT EXISTS client_billing_config (
@@ -106,28 +85,42 @@ CREATE TABLE IF NOT EXISTS client_billing_config (
 CREATE TABLE IF NOT EXISTS billing_queue (
   id INT AUTO_INCREMENT PRIMARY KEY,
   client_id INT NOT NULL,
-  message_type ENUM('reminder','due','overdue','receipt','blocked') NOT NULL,
-  status ENUM('pending','sent','failed','cancelled') DEFAULT 'pending',
+  client_name VARCHAR(255) NOT NULL DEFAULT '',
+  client_phone VARCHAR(20) NOT NULL DEFAULT '',
+  type VARCHAR(50) NOT NULL DEFAULT 'reminder',
+  status VARCHAR(20) DEFAULT 'pending',
   days_overdue INT DEFAULT 0,
-  amount DECIMAL(10,2) NOT NULL,
-  due_date DATE NOT NULL,
-  message_content TEXT,
+  amount DECIMAL(10,2),
+  due_date DATE,
+  message TEXT,
+  owner_id VARCHAR(100),
   sent_at TIMESTAMP NULL,
-  error_message TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE,
   INDEX idx_status (status),
-  INDEX idx_due_date (due_date)
+  INDEX idx_due_date (due_date),
+  INDEX idx_queue_owner (owner_id)
 );
 
 -- Templates de mensagem
 CREATE TABLE IF NOT EXISTS message_templates (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
-  type ENUM('reminder','due','overdue','receipt','blocked') NOT NULL,
+  type VARCHAR(50) NOT NULL,
   content TEXT NOT NULL,
   is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  owner_id VARCHAR(100),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_templates_owner (owner_id)
+);
+
+-- Configurações de cobrança (key-value)
+CREATE TABLE IF NOT EXISTS billing_settings (
+  `key` VARCHAR(100) NOT NULL,
+  `value` TEXT NOT NULL,
+  owner_id VARCHAR(100),
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`key`, owner_id)
 );
 
 -- Links de pagamento
@@ -212,14 +205,32 @@ CREATE TABLE IF NOT EXISTS payment_config (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- ===== MIGRAÇÕES IDEMPOTENTES (para instalações existentes) =====
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS phone2 VARCHAR(20) AFTER phone;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS amount DECIMAL(10,2) AFTER document;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS due_date DATE AFTER amount;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS traccar_email VARCHAR(255) AFTER notes;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER traccar_email;
+
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS supplier VARCHAR(255) AFTER description;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS category VARCHAR(100) AFTER supplier;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER notes;
+
+ALTER TABLE billing_queue ADD COLUMN IF NOT EXISTS client_name VARCHAR(255) NOT NULL DEFAULT '' AFTER client_id;
+ALTER TABLE billing_queue ADD COLUMN IF NOT EXISTS client_phone VARCHAR(20) NOT NULL DEFAULT '' AFTER client_name;
+ALTER TABLE billing_queue ADD COLUMN IF NOT EXISTS type VARCHAR(50) NOT NULL DEFAULT 'reminder' AFTER client_phone;
+ALTER TABLE billing_queue ADD COLUMN IF NOT EXISTS message TEXT AFTER due_date;
+ALTER TABLE billing_queue ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER message;
+
+ALTER TABLE message_templates ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER is_active;
+
 -- Dados iniciais - admin padrão (senha: admin123 -> SHA256)
--- O hash abaixo corresponde a sha256('admin123')
 INSERT IGNORE INTO users (name, email, password_hash) VALUES
 ('Administrador', 'admin@cobranca.com', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9');
 
--- Dados iniciais
-INSERT INTO message_templates (name, type, content) VALUES
-('Lembrete', 'reminder', 'Olá {nome}, lembramos que seu boleto de R$ {valor} vence em {data_vencimento}.'),
-('Vencimento', 'due', 'Olá {nome}, seu boleto de R$ {valor} vence hoje. Pague pelo link: {link_pagamento}'),
-('Atraso', 'overdue', 'Olá {nome}, seu boleto de R$ {valor} está em atraso há {dias_atraso} dias. Regularize: {link_pagamento}'),
-('Recibo', 'receipt', 'Olá {nome}, confirmamos o recebimento de R$ {valor}. Obrigado!');
+-- Dados iniciais de templates (ignora se já existirem)
+INSERT IGNORE INTO message_templates (id, name, type, content) VALUES
+(1, 'Lembrete', 'reminder', 'Olá {nome}, lembramos que seu boleto de R$ {valor} vence em {data_vencimento}.'),
+(2, 'Vencimento', 'due', 'Olá {nome}, seu boleto de R$ {valor} vence hoje. Pague pelo link: {link_pagamento}'),
+(3, 'Atraso', 'overdue', 'Olá {nome}, seu boleto de R$ {valor} está em atraso há {dias_atraso} dias. Regularize: {link_pagamento}'),
+(4, 'Recibo', 'receipt', 'Olá {nome}, confirmamos o recebimento de R$ {valor}. Obrigado!');
