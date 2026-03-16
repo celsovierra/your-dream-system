@@ -30,6 +30,18 @@ class ApiService {
     this.token = localStorage.getItem('auth_token');
   }
 
+  private needsProxy(): boolean {
+    if (typeof window === 'undefined') return false;
+    const isHttps = window.location.protocol === 'https:';
+    const vpsUrl = this.resolveBaseUrl();
+    return isHttps && vpsUrl.startsWith('http://');
+  }
+
+  private getProxyBaseUrl(): string {
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'pmnanfzbtimcfyzndeyq';
+    return `https://${projectId}.supabase.co/functions/v1/vps-proxy`;
+  }
+
   private resolveBaseUrl(): string {
     if (typeof window !== 'undefined') {
       const storedBaseUrl = window.localStorage.getItem('api_base_url')?.trim();
@@ -72,9 +84,21 @@ class ApiService {
     } catch { /* ignore */ }
 
     try {
-      const response = await fetch(`${this.resolveBaseUrl()}${endpoint}`, {
+      let fetchUrl: string;
+      const fetchHeaders = { ...headers };
+
+      if (this.needsProxy()) {
+        const vpsUrl = this.resolveBaseUrl();
+        fetchUrl = `${this.getProxyBaseUrl()}?vps_url=${encodeURIComponent(vpsUrl)}&endpoint=${encodeURIComponent(endpoint)}`;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+        fetchHeaders['apikey'] = anonKey;
+      } else {
+        fetchUrl = `${this.resolveBaseUrl()}${endpoint}`;
+      }
+
+      const response = await fetch(fetchUrl, {
         ...options,
-        headers,
+        headers: fetchHeaders,
       });
 
       if (!response.ok) {

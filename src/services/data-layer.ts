@@ -41,6 +41,21 @@ function normalizeApiBaseUrl(value?: string | null): string {
   return normalized;
 }
 
+// Detect if we need to proxy through edge function (HTTPS preview → HTTP VPS)
+function needsProxy(): boolean {
+  if (typeof window === 'undefined') return false;
+  const hostname = window.location.hostname.toLowerCase();
+  const isHttps = window.location.protocol === 'https:';
+  const vpsUrl = window.localStorage.getItem('api_base_url')?.trim() || '';
+  const isVpsHttp = vpsUrl.startsWith('http://');
+  return isHttps && isVpsHttp;
+}
+
+function getProxyBaseUrl(): string {
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'pmnanfzbtimcfyzndeyq';
+  return `https://${projectId}.supabase.co/functions/v1/vps-proxy`;
+}
+
 // Helper: resolves the correct base URL for raw fetch calls
 function apiBaseUrl(): string {
   if (typeof window !== 'undefined') {
@@ -52,10 +67,22 @@ function apiBaseUrl(): string {
 }
 
 function apiFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  const headers = authHeaders(options.headers as Record<string, string> || {});
+
+  if (needsProxy()) {
+    const vpsUrl = apiBaseUrl();
+    const proxyUrl = `${getProxyBaseUrl()}?vps_url=${encodeURIComponent(vpsUrl)}&endpoint=${encodeURIComponent(endpoint)}`;
+    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+    return fetch(proxyUrl, {
+      ...options,
+      headers: { ...headers, apikey: anonKey },
+    });
+  }
+
   const base = apiBaseUrl();
   return fetch(`${base}${endpoint}`, {
     ...options,
-    headers: authHeaders(options.headers as Record<string, string> || {}),
+    headers,
   });
 }
 
