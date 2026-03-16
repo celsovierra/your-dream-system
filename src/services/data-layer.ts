@@ -410,7 +410,7 @@ export async function clearQueue(): Promise<void> {
       const { error } = await supabase.from('billing_queue').delete().gte('id', 0);
       if (error) throw error;
     } else {
-      const res = await fetch('/api/queue', { method: 'DELETE' });
+      const res = await apiFetch('/queue', { method: 'DELETE' });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Erro ao limpar fila');
     }
