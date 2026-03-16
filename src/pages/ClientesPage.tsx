@@ -478,7 +478,7 @@ const ClientesPage = () => {
                   </TableRow>
                 ))}
                 {filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={8} className="py-8 text-center text-muted-foreground">Nenhum cliente encontrado</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="py-8 text-center text-muted-foreground">Nenhum cliente encontrado</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
