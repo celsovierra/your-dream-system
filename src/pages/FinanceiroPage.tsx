@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  fetchBills, createBill, createBillChildren, updateBill, deleteBill, markBillPaid,
+  fetchBills, createBill, createBillChildren, updateBill, deleteBill, markBillPaid, getActiveDataBackend,
   type BillPayable,
 } from '@/services/data-layer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,19 +49,23 @@ const FinanceiroPage = () => {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [saving, setSaving] = useState(false);
+  const activeBackend = getActiveDataBackend();
 
   const loadBills = async () => {
     setLoading(true);
     try {
       const data = await fetchBills();
       setBills(data);
-    } catch {
-      toast.error('Erro ao carregar contas');
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao carregar contas');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  useEffect(() => { loadBills(); }, []);
+  useEffect(() => {
+    loadBills();
+  }, []);
 
   const resetForm = () => {
     setForm(emptyForm);
@@ -104,7 +108,7 @@ const FinanceiroPage = () => {
           due_date: format(form.due_date, 'yyyy-MM-dd'),
           notes: form.notes.trim() || null,
         });
-        toast.success('Conta atualizada!');
+        toast.success(`Conta atualizada no backend ${activeBackend === 'api' ? 'VPS' : 'teste'}!`);
       } else if (form.payment_type === 'installment') {
         const parent = await createBill({
           description: form.description.trim(),
@@ -142,7 +146,7 @@ const FinanceiroPage = () => {
           }
           if (children.length > 0) await createBillChildren(children);
         }
-        toast.success(`Conta parcelada criada em ${installments}x!`);
+        toast.success(`Conta parcelada criada em ${installments}x no backend ${activeBackend === 'api' ? 'VPS' : 'teste'}!`);
       } else {
         await createBill({
           description: form.description.trim(),
@@ -156,35 +160,36 @@ const FinanceiroPage = () => {
           due_date: format(form.due_date, 'yyyy-MM-dd'),
           notes: form.notes.trim() || null,
         });
-        toast.success('Conta criada!');
+        toast.success(`Conta criada no backend ${activeBackend === 'api' ? 'VPS' : 'teste'}!`);
       }
 
       setDialogOpen(false);
       resetForm();
-      loadBills();
+      await loadBills();
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao salvar');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const handleDelete = async (id: number) => {
     try {
       await deleteBill(id);
-      toast.success('Conta excluída');
-      loadBills();
-    } catch {
-      toast.error('Erro ao excluir');
+      toast.success(`Conta excluída do backend ${activeBackend === 'api' ? 'VPS' : 'teste'}`);
+      await loadBills();
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao excluir');
     }
   };
 
   const handleMarkPaid = async (bill: BillPayable) => {
     try {
       await markBillPaid(bill.id);
-      toast.success('Marcada como paga!');
-      loadBills();
-    } catch {
-      toast.error('Erro ao marcar como paga');
+      toast.success(`Marcada como paga no backend ${activeBackend === 'api' ? 'VPS' : 'teste'}!`);
+      await loadBills();
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao marcar como paga');
     }
   };
 

@@ -4,20 +4,15 @@
 // REGRA DE OURO (@@):
 // 1) Toda leitura/escrita de dados passa por este arquivo.
 // 2) Nenhuma página/componente pode importar cliente de banco direto.
-// 3) Preview/teste e VPS nunca compartilham escrita.
+// 3) Se existir API VPS configurada, ela tem prioridade total.
 //
 // MAPA DE AMBIENTE:
-// ┌─────────────────────────┬────────────────────────────────────┐
-// │ Host com .lovable.app   │ Cloud de teste                     │
-// │ Host com .lovableproject│ Cloud de teste                     │
-// ├─────────────────────────┼────────────────────────────────────┤
-// │ localhost / VPS / domínio próprio │ API REST -> MariaDB VPS │
-// └─────────────────────────┴────────────────────────────────────┘
-//
-// BLOQUEIO RÍGIDO:
-// - Em host Lovable, SEMPRE usa Cloud de teste.
-// - Fora de host Lovable, padrão SEMPRE API da VPS.
-// - VITE_DATA_BACKEND é aceito apenas fora de host Lovable.
+// ┌──────────────────────────────────────────────┬────────────────────┐
+// │ VITE_DATA_BACKEND=api|cloud                  │ força backend      │
+// │ VITE_API_BASE_URL absoluto/configurado       │ API REST -> VPS    │
+// │ Host com .lovable.app/.lovableproject.com    │ Cloud de teste     │
+// │ localhost / VPS / domínio próprio            │ API REST -> VPS    │
+// └──────────────────────────────────────────────┴────────────────────┘
 // ===================================================================
 
 import { supabase } from '@/integrations/supabase/client';
@@ -26,17 +21,33 @@ import type { Client, MessageTemplate, DashboardStats } from '@/types/billing';
 
 type DataBackend = 'cloud' | 'api';
 
+function getConfiguredApiBaseUrl(): string {
+  const envApiBaseUrl = String(import.meta.env.VITE_API_BASE_URL || '').trim();
+
+  if (typeof window !== 'undefined') {
+    const storedApiBaseUrl = window.localStorage.getItem('api_base_url')?.trim();
+    if (storedApiBaseUrl) return storedApiBaseUrl;
+  }
+
+  return envApiBaseUrl;
+}
+
+function hasConfiguredApiBaseUrl(): boolean {
+  const apiBaseUrl = getConfiguredApiBaseUrl();
+  return Boolean(apiBaseUrl && apiBaseUrl !== '/api');
+}
+
 function resolveDataBackend(): DataBackend {
+  const forcedBackend = String(import.meta.env.VITE_DATA_BACKEND || '').toLowerCase();
+  if (forcedBackend === 'cloud' || forcedBackend === 'api') return forcedBackend;
+
+  if (hasConfiguredApiBaseUrl()) return 'api';
+
   const hostname = window.location.hostname.toLowerCase();
   const isLovableHost =
     hostname.endsWith('.lovable.app') || hostname.endsWith('.lovableproject.com');
 
-  // @@ Isolamento absoluto: host Lovable sempre no banco de teste
   if (isLovableHost) return 'cloud';
-
-  // Fora do host Lovable (localhost, VPS, domínio próprio) usa VPS por padrão
-  const forcedBackend = String(import.meta.env.VITE_DATA_BACKEND || '').toLowerCase();
-  if (forcedBackend === 'cloud' || forcedBackend === 'api') return forcedBackend;
 
   return 'api';
 }
@@ -406,11 +417,11 @@ export async function fetchBills(): Promise<BillPayable[]> {
       .order('due_date', { ascending: true });
     if (error) throw error;
     return (data as unknown as BillPayable[]) || [];
-  } else {
-    const res = await api.getBills();
-    if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar contas');
-    return res.data;
   }
+
+  const res = await api.getBills();
+  if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar contas');
+  return res.data;
 }
 
 export async function createBill(bill: Partial<BillPayable>): Promise<BillPayable | null> {
@@ -422,21 +433,22 @@ export async function createBill(bill: Partial<BillPayable>): Promise<BillPayabl
       .single();
     if (error) throw error;
     return data as unknown as BillPayable;
-  } else {
-    const res = await api.createBill(bill as any);
-    if (!res.success) throw new Error(res.error || 'Erro ao criar conta');
-    return (res.data as BillPayable) || null;
   }
+
+  const res = await api.createBill(bill as any);
+  if (!res.success) throw new Error(res.error || 'Erro ao criar conta');
+  return (res.data as BillPayable) || null;
 }
 
 export async function createBillChildren(children: Partial<BillPayable>[]): Promise<void> {
   if (isLovableEnv()) {
     const { error } = await supabase.from('bills_payable').insert(children as any);
     if (error) throw error;
-  } else {
-    const res = await api.createBillsBatch(children as any);
-    if (!res.success) throw new Error(res.error || 'Erro ao criar parcelas');
+    return;
   }
+
+  const res = await api.createBillsBatch(children as any);
+  if (!res.success) throw new Error(res.error || 'Erro ao criar parcelas');
 }
 
 export async function updateBill(id: number, bill: Partial<BillPayable>): Promise<void> {
@@ -446,20 +458,22 @@ export async function updateBill(id: number, bill: Partial<BillPayable>): Promis
       .update({ ...bill, updated_at: new Date().toISOString() } as any)
       .eq('id', id);
     if (error) throw error;
-  } else {
-    const res = await api.updateBill(id, bill as any);
-    if (!res.success) throw new Error(res.error || 'Erro ao atualizar conta');
+    return;
   }
+
+  const res = await api.updateBill(id, bill as any);
+  if (!res.success) throw new Error(res.error || 'Erro ao atualizar conta');
 }
 
 export async function deleteBill(id: number): Promise<void> {
   if (isLovableEnv()) {
     const { error } = await supabase.from('bills_payable').delete().eq('id', id);
     if (error) throw error;
-  } else {
-    const res = await api.deleteBill(id);
-    if (!res.success) throw new Error(res.error || 'Erro ao excluir conta');
+    return;
   }
+
+  const res = await api.deleteBill(id);
+  if (!res.success) throw new Error(res.error || 'Erro ao excluir conta');
 }
 
 export async function markBillPaid(id: number): Promise<void> {
@@ -469,8 +483,13 @@ export async function markBillPaid(id: number): Promise<void> {
       .update({ status: 'paid', paid_date: formatLocalDate(new Date()) } as any)
       .eq('id', id);
     if (error) throw error;
-  } else {
-    const res = await api.markBillPaid(id);
-    if (!res.success) throw new Error(res.error || 'Erro ao marcar como paga');
+    return;
   }
+
+  const res = await api.markBillPaid(id);
+  if (!res.success) throw new Error(res.error || 'Erro ao marcar como paga');
+}
+
+export function getActiveDataBackend(): DataBackend {
+  return ACTIVE_DATA_BACKEND;
 }

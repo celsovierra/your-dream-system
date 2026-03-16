@@ -18,7 +18,7 @@ import type {
   DashboardStats,
 } from '@/types/billing';
 
-// Base URL configurável - altere para o endereço da sua VPS
+// Base URL configurável - prioriza URL salva da VPS no navegador
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 class ApiService {
@@ -28,6 +28,15 @@ class ApiService {
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
     this.token = localStorage.getItem('auth_token');
+  }
+
+  private resolveBaseUrl(): string {
+    if (typeof window !== 'undefined') {
+      const storedBaseUrl = window.localStorage.getItem('api_base_url')?.trim();
+      if (storedBaseUrl) return storedBaseUrl;
+    }
+
+    return this.baseUrl;
   }
 
   setToken(token: string) {
@@ -54,7 +63,7 @@ class ApiService {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      const response = await fetch(`${this.resolveBaseUrl()}${endpoint}`, {
         ...options,
         headers,
       });
