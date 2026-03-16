@@ -542,7 +542,7 @@ export async function createBill(bill: Partial<BillPayable>): Promise<BillPayabl
   try {
     let result: BillPayable | null;
     if (isLovableEnv()) {
-      const { data, error } = await supabase.from('bills_payable').insert(bill as any).select().single();
+      const { data, error } = await supabase.from('bills_payable').insert({ ...bill, owner_id: getCurrentOwnerId() } as any).select().single();
       if (error) throw error;
       result = data as unknown as BillPayable;
     } else {
