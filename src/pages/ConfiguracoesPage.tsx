@@ -87,9 +87,9 @@ const ConfiguracoesPage = () => {
         }).then(({ data }) => {
           if (data?.state === 'open' || data?.state === 'connected') {
             setWhatsapp(prev => ({ ...prev, status: 'connected' }));
-            localStorage.setItem('whatsapp_status', 'connected');
+            userStorageSet('whatsapp_status', 'connected');
           } else {
-            localStorage.setItem('whatsapp_status', 'disconnected');
+            userStorageSet('whatsapp_status', 'disconnected');
           }
         }).catch(() => undefined);
       }
