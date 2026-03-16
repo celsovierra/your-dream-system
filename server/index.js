@@ -10,6 +10,7 @@ import dashboardRouter from './routes/dashboard.js';
 import queueRouter from './routes/queue.js';
 import settingsRouter from './routes/settings.js';
 import billsRouter from './routes/bills.js';
+import traccarRouter from './routes/traccar.js';
 import { startScheduler } from './scheduler.js';
 import { extractOwnerId } from './middleware/owner.js';
 import { reconcileTenantSchema } from './db.js';
