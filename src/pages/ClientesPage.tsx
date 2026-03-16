@@ -13,7 +13,7 @@ import { userStorageGet } from '@/services/auth';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
 import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, invokeEvolutionProxy, upsertClientFromTraccar } from '@/services/data-layer';
-import { supabase } from '@/integrations/supabase/client';
+import api from '@/services/api';
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -89,20 +89,17 @@ const ClientesPage = () => {
 
     setTraccarLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('traccar-proxy', {
-        body: {
-          traccar_url: traccarUrl,
-          traccar_user: traccarUser,
-          traccar_password: traccarPassword,
-          endpoint: '/api/users',
-          method: 'GET',
-        },
+      const result = await api.traccarProxy({
+        traccar_url: traccarUrl,
+        traccar_user: traccarUser,
+        traccar_password: traccarPassword,
+        endpoint: '/api/users',
+        method: 'GET',
       });
 
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
-
-      const traccarUsers = data?.data;
+      if (!result.success) throw new Error(result.error || 'Erro ao conectar ao Traccar');
+      
+      const traccarUsers = result.data?.data;
       if (!Array.isArray(traccarUsers) || traccarUsers.length === 0) {
         toast.info('Nenhum usuário encontrado no Traccar');
         setTraccarLoading(false);

@@ -10,6 +10,7 @@ import dashboardRouter from './routes/dashboard.js';
 import queueRouter from './routes/queue.js';
 import settingsRouter from './routes/settings.js';
 import billsRouter from './routes/bills.js';
+import traccarRouter from './routes/traccar.js';
 import { startScheduler } from './scheduler.js';
 import { extractOwnerId } from './middleware/owner.js';
 import { reconcileTenantSchema } from './db.js';
@@ -33,6 +34,7 @@ app.use('/api/whatsapp', whatsappRouter);
 app.use('/api/queue', queueRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/bills', billsRouter);
+app.use('/api/traccar', traccarRouter);
 
 app.get('/api/health', async (_req, res) => {
   const { hasColumn } = await import('./db.js');

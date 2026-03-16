@@ -281,7 +281,40 @@ export async function upsertClientFromTraccar(client: { name: string; phone: str
         throw error;
       }
     } else {
-      const res = await api.createClient(client);
+      // VPS mode: try to find existing client and upsert
+      const allClients = await api.getClients(1, client.email || client.name);
+      const clients = allClients.success ? (allClients.data as any)?.data || [] : [];
+      
+      // Check by traccar_email
+      const byEmail = client.email ? clients.find((c: any) => c.traccar_email === client.email) : null;
+      if (byEmail) {
+        const needsUpdate = byEmail.name !== client.name || byEmail.phone !== client.phone || byEmail.email !== (client.email || null);
+        if (!needsUpdate) return 'skipped';
+        await api.updateClient(byEmail.id, { name: client.name, phone: client.phone, email: client.email || null });
+        addOperationLog(backend, 'Clientes', 'UPDATE', `Atualizou cliente Traccar "${client.name}"`);
+        return 'updated';
+      }
+      
+      // Check by name
+      const byName = clients.find((c: any) => c.name === client.name);
+      if (byName) {
+        await api.updateClient(byName.id, { phone: client.phone, email: client.email || null, traccar_email: client.email || null } as any);
+        addOperationLog(backend, 'Clientes', 'UPDATE', `Vinculou Traccar ao cliente "${client.name}"`);
+        return 'updated';
+      }
+      
+      // Check by phone
+      const allByPhone = await api.getClients(1, client.phone);
+      const phoneClients = allByPhone.success ? (allByPhone.data as any)?.data || [] : [];
+      const byPhone = phoneClients.find((c: any) => c.phone === client.phone);
+      if (byPhone) {
+        await api.updateClient(byPhone.id, { name: client.name, email: client.email || null, traccar_email: client.email || null } as any);
+        addOperationLog(backend, 'Clientes', 'UPDATE', `Vinculou Traccar ao cliente "${client.name}" por telefone`);
+        return 'updated';
+      }
+      
+      // Create new
+      const res = await api.createClient({ name: client.name, phone: client.phone, email: client.email || null, traccar_email: client.email || null } as any);
       if (!res.success) throw new Error(res.error || 'Erro ao criar cliente');
     }
     addOperationLog(backend, 'Clientes', 'INSERT', `Importou cliente Traccar "${client.name}"`);

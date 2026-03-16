@@ -129,7 +129,7 @@ router.get('/:id', async (req, res) => {
 // Criar cliente
 router.post('/', async (req, res) => {
   try {
-    const { name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes } = req.body;
+    const { name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, traccar_email } = req.body;
     if (!name || !phone) return res.status(400).json({ message: 'Nome e telefone são obrigatórios' });
 
     const result = await queryWithOptionalOwnerScope({
@@ -138,13 +138,13 @@ router.post('/', async (req, res) => {
       run: async ({ useOwnerScope, ownerId }) => {
         if (useOwnerScope) {
           return query(
-            'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null, ownerId || null]
+            'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, traccar_email, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null, traccar_email || null, ownerId || null]
           );
         }
         return query(
-          'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null]
+          'INSERT INTO clients (name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, traccar_email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [name, email || null, phone, phone2 || null, document || null, amount || null, due_date || null, address || null, city || null, state || null, zip_code || null, notes || null, traccar_email || null]
         );
       },
     });
@@ -160,7 +160,7 @@ router.post('/', async (req, res) => {
 // Atualizar cliente
 router.put('/:id', async (req, res) => {
   try {
-    const { name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, is_active } = req.body;
+    const { name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, is_active, traccar_email } = req.body;
 
     const fields = [];
     const values = [];
@@ -178,6 +178,7 @@ router.put('/:id', async (req, res) => {
     if (zip_code !== undefined) { fields.push('zip_code = ?'); values.push(zip_code || null); }
     if (notes !== undefined) { fields.push('notes = ?'); values.push(notes || null); }
     if (is_active !== undefined) { fields.push('is_active = ?'); values.push(is_active); }
+    if (traccar_email !== undefined) { fields.push('traccar_email = ?'); values.push(traccar_email || null); }
 
     if (fields.length === 0) return res.status(400).json({ message: 'Nenhum campo para atualizar' });
 

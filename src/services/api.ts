@@ -273,6 +273,11 @@ class ApiService {
     });
   }
 
+  // ===== TRACCAR =====
+  async traccarProxy(params: { traccar_url: string; traccar_user: string; traccar_password: string; endpoint?: string; method?: string; body?: any }) {
+    return this.request<{ data: any }>('/traccar/proxy', { method: 'POST', body: JSON.stringify(params) });
+  }
+
   // ===== CONFIGURAÇÕES =====
   async getWhatsAppConfig() {
     return this.request<WhatsAppConfig>('/config/whatsapp');
