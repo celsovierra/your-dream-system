@@ -84,9 +84,21 @@ class ApiService {
     } catch { /* ignore */ }
 
     try {
-      const response = await fetch(`${this.resolveBaseUrl()}${endpoint}`, {
+      let fetchUrl: string;
+      const fetchHeaders = { ...headers };
+
+      if (this.needsProxy()) {
+        const vpsUrl = this.resolveBaseUrl();
+        fetchUrl = `${this.getProxyBaseUrl()}?vps_url=${encodeURIComponent(vpsUrl)}&endpoint=${encodeURIComponent(endpoint)}`;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+        fetchHeaders['apikey'] = anonKey;
+      } else {
+        fetchUrl = `${this.resolveBaseUrl()}${endpoint}`;
+      }
+
+      const response = await fetch(fetchUrl, {
         ...options,
-        headers,
+        headers: fetchHeaders,
       });
 
       if (!response.ok) {
