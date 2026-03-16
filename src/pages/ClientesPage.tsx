@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { userStorageGet } from '@/services/auth';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
-import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, invokeEvolutionProxy, upsertClientFromTraccar } from '@/services/data-layer';
+import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, getTemplateByType, replaceTemplateVars, invokeEvolutionProxy, upsertClientFromTraccar } from '@/services/data-layer';
 import api from '@/services/api';
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -297,9 +297,33 @@ const ClientesPage = () => {
       toast.loading('Enviando cobrança...', { id: `billing-${client.id}` });
       await ensureWhatsAppConnected(waConfig);
 
-      const formattedDueDate = formatDatePtBr(client.due_date);
-      const dueDateText = formattedDueDate !== '-' ? ` com vencimento em ${formattedDueDate}` : '';
-      const message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${dueDateText}. Qualquer dúvida estamos à disposição!`;
+      // Determinar tipo: se vencido = overdue, senão = due
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const dueDate = client.due_date ? new Date(client.due_date + 'T00:00:00') : null;
+      const isOverdue = dueDate && dueDate < today;
+      const templateType = isOverdue ? 'overdue' : 'due';
+      const template = await getTemplateByType(templateType);
+
+      let message: string;
+      if (template) {
+        const formattedDueDate = formatDatePtBr(client.due_date);
+        const daysOverdue = isOverdue && dueDate ? Math.abs(Math.round((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))) : 0;
+        message = replaceTemplateVars(template.content, {
+          nome: client.name,
+          valor: Number(client.amount).toFixed(2),
+          data_vencimento: formattedDueDate !== '-' ? formattedDueDate : '',
+          dias_atraso: String(daysOverdue),
+          link_pagamento: '',
+          multa: '0,00',
+          juros: '0,00',
+          valor_atualizado: `R$ ${Number(client.amount).toFixed(2)}`,
+        });
+      } else {
+        const formattedDueDate = formatDatePtBr(client.due_date);
+        const dueDateText = formattedDueDate !== '-' ? ` com vencimento em ${formattedDueDate}` : '';
+        message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${dueDateText}.`;
+      }
+
       const { error } = await invokeEvolutionProxy({ action: 'send-text', to: client.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name });
       if (error) throw new Error(error);
       toast.success('Cobrança enviada via WhatsApp!', { id: `billing-${client.id}` });
@@ -338,9 +362,21 @@ const ClientesPage = () => {
     if (baixaClient.phone && baixaClient.phone.length > 2 && waConfig?.api_url) {
       const receiptTemplate = await getReceiptTemplate();
       if (receiptTemplate) {
-        const message = receiptTemplate.content
-          .replace('{nome}', baixaClient.name)
-          .replace('{valor}', `R$ ${totalAmount.toFixed(2)}`);
+        const today = new Date();
+        const nextDueFormatted = newDueDate ? formatDatePtBr(newDueDate) : '-';
+        const todayFormatted = today.toLocaleDateString('pt-BR');
+        const message = replaceTemplateVars(receiptTemplate.content, {
+          nome: baixaClient.name,
+          valor: Number(baixaClient.amount || 0).toFixed(2),
+          data_vencimento: formatDatePtBr(baixaClient.due_date),
+          multa: '0,00',
+          juros: '0,00',
+          valor_atualizado: `R$ ${totalAmount.toFixed(2)}`,
+          data_hoje: todayFormatted,
+          prox_vencimento: nextDueFormatted,
+          link_pagamento: '',
+          dias_atraso: '0',
+        });
         try {
           toast.loading('Enviando recibo...', { id: `receipt-${baixaClient.id}` });
           await ensureWhatsAppConnected(waConfig);
