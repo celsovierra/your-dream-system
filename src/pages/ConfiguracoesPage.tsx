@@ -412,9 +412,9 @@ const ConfiguracoesPage = () => {
               </div>
 
               <Button size="sm" onClick={() => {
-                localStorage.setItem('payment_gateway', payment.gateway);
-                localStorage.setItem('mp_access_token', payment.access_token);
-                localStorage.setItem('asaas_access_token', payment.asaas_token);
+                userStorageSet('payment_gateway', payment.gateway);
+                userStorageSet('mp_access_token', payment.access_token);
+                userStorageSet('asaas_access_token', payment.asaas_token);
                 toast.success('Configuração de pagamento salva!');
               }}>
                 <Save className="mr-2 h-3 w-3" /> Salvar
