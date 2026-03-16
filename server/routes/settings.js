@@ -33,19 +33,12 @@ router.put('/', async (req, res) => {
   try {
     const settings = req.body;
     const ownerScoped = await supportsOwnerScope();
-    const ownerId = ownerScoped ? req.ownerId || null : null;
+    const ownerId = ownerScoped ? (req.ownerId || '__global__') : '__global__';
     for (const [key, value] of Object.entries(settings)) {
-      if (ownerScoped && ownerId) {
-        await query(
-          'INSERT INTO billing_settings (`key`, `value`, `owner_id`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = ?',
-          [key, String(value), ownerId, String(value)]
-        );
-      } else {
-        await query(
-          'INSERT INTO billing_settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?',
-          [key, String(value), String(value)]
-        );
-      }
+      await query(
+        'INSERT INTO billing_settings (`key`, `value`, `owner_id`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `value` = ?',
+        [key, String(value), ownerId, String(value)]
+      );
     }
     res.json({ success: true });
   } catch (err) {
