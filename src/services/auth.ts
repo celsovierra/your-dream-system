@@ -30,10 +30,22 @@ function isVpsMode(): boolean {
 
   const hostname = window.location.hostname.toLowerCase();
   const isLovableHost =
-    hostname.endsWith('.lovable.app') || hostname.endsWith('.lovableproject.com');
+    hostname.endsWith('.lovable.app') ||
+    hostname.endsWith('.lovableproject.com') ||
+    hostname.includes('lovable');
 
   if (isLovableHost) return false;
-  return true;
+
+  // Only VPS if there's an explicit API base URL configured
+  if (typeof window !== 'undefined') {
+    const storedApi = window.localStorage.getItem('api_base_url')?.trim();
+    if (storedApi) return true;
+  }
+  const envApi = String(import.meta.env.VITE_API_BASE_URL || '').trim();
+  if (envApi && envApi !== '/api') return true;
+
+  // localhost without configured API → not VPS
+  return false;
 }
 
 // ===== localStorage-based auth (Lovable/cloud mode) =====
