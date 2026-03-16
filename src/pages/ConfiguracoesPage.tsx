@@ -197,7 +197,10 @@ const ConfiguracoesPage = () => {
                   {users.map(user => (
                     <div key={user.id} className="flex items-center justify-between rounded-md border p-3">
                       <div>
-                        <p className="text-sm font-medium">{user.name}</p>
+                        <p className="text-sm font-medium">
+                          {user.name}
+                          {user.role === 'admin' && <Badge variant="default" className="ml-2 text-[10px]">Admin</Badge>}
+                        </p>
                         <p className="text-xs text-muted-foreground">{user.email}</p>
                       </div>
                       <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteUser(user.id)}>
