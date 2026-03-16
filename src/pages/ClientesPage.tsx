@@ -456,6 +456,12 @@ const ClientesPage = () => {
               <TableBody>
                 {filtered.map((client) => (
                   <TableRow key={client.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(client.id)}
+                        onCheckedChange={() => toggleSelect(client.id)}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{client.name}</TableCell>
                     <TableCell className="hidden md:table-cell">{client.email || '-'}</TableCell>
                     <TableCell>{client.phone}</TableCell>
