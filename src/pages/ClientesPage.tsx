@@ -228,7 +228,7 @@ const ClientesPage = () => {
   };
 
   const getWhatsAppConfig = () => {
-    const saved = localStorage.getItem('whatsapp_config');
+    const saved = userStorageGet('whatsapp_config');
     if (!saved) return null;
     try { return JSON.parse(saved); } catch { return null; }
   };

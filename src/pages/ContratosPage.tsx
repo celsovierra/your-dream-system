@@ -58,9 +58,9 @@ const ContratosPage = () => {
   };
 
   const handleImportTraccar = async () => {
-    const traccarUrl = localStorage.getItem('traccar_url');
-    const traccarUser = localStorage.getItem('traccar_user');
-    const traccarPassword = localStorage.getItem('traccar_password');
+    const traccarUrl = userStorageGet('traccar_url');
+    const traccarUser = userStorageGet('traccar_user');
+    const traccarPassword = userStorageGet('traccar_password');
 
     if (!traccarUrl || !traccarUser || !traccarPassword) {
       toast.error('Configure a API Traccar em Configurações primeiro');
