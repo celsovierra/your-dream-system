@@ -367,6 +367,12 @@ const ClientesPage = () => {
           <Input placeholder="Buscar por nome, CPF ou telefone..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <div className="flex gap-2">
+          {selectedIds.size > 0 && (
+            <Button variant="destructive" onClick={handleMassDelete} disabled={deleting}>
+              {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+              Excluir {selectedIds.size} selecionado(s)
+            </Button>
+          )}
           <Button variant="outline" onClick={handleImportTraccar} disabled={traccarLoading}>
             {traccarLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}
             {traccarLoading ? 'Importando...' : 'Importar Traccar'}
