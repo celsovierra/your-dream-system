@@ -97,7 +97,11 @@ export async function fetchClients(): Promise<Client[]> {
   try {
     let result: Client[];
     if (isLovableEnv()) {
-      const { data, error } = await supabase.from('clients').select('*').order('name');
+      let query = supabase.from('clients').select('*').order('name');
+      if (!isAdmin()) {
+        query = query.eq('owner_id', getCurrentOwnerId());
+      }
+      const { data, error } = await query;
       if (error) throw error;
       result = (data || []).map((c: any) => ({ ...c, due_date: normalizeDateOnly(c.due_date), amount: c.amount ? Number(c.amount) : undefined }));
     } else {
