@@ -160,7 +160,7 @@ router.post('/', async (req, res) => {
 // Atualizar cliente
 router.put('/:id', async (req, res) => {
   try {
-    const { name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, is_active } = req.body;
+    const { name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, is_active, traccar_email } = req.body;
 
     const fields = [];
     const values = [];
