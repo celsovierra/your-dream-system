@@ -21,8 +21,10 @@ function shellQuote(value = '') {
 
 function buildDeployCommand() {
   const projectDir = shellQuote(PROJECT_DIR);
+  const dbHost = shellQuote(process.env.DB_HOST || '127.0.0.1');
+  const dbPort = Number(process.env.DB_PORT || 3306);
   const dbUser = shellQuote(process.env.DB_USER || 'cobranca_admin');
-  const dbPass = shellQuote(process.env.DB_PASS || '');
+  const dbPass = shellQuote(process.env.DB_PASS || 'Xk9mL2vR7pQ4nW');
   const dbName = shellQuote(process.env.DB_NAME || 'cobranca_pro');
 
   return `
@@ -33,7 +35,7 @@ function buildDeployCommand() {
     git pull --rebase origin "$BRANCH" &&
     npm install &&
     npm run build &&
-    mysql -u ${dbUser} -p${dbPass} ${dbName} < database/schema.sql &&
+    MYSQL_PWD=${dbPass} mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} ${dbName} < database/schema.sql &&
     (pm2 restart cobranca-api || pm2 start server/index.js --name cobranca-api) &&
     sudo systemctl restart nginx
   `;
