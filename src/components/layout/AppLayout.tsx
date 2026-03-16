@@ -47,6 +47,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [hasUpdate, setHasUpdate] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
   const [deployApiConfigured, setDeployApiConfigured] = useState(() => Boolean(resolveDeployApiUrl()));
+  const [deployCheckError, setDeployCheckError] = useState<string | null>(null);
 
   function resolveDeployApiUrl() {
     if (typeof window === 'undefined') return '';
@@ -77,21 +78,27 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
 
     if (!apiUrl) {
       setHasUpdate(false);
+      setDeployCheckError(null);
       return;
     }
 
     try {
-      const res = await fetch(`${apiUrl}/check-update`);
+      const res = await fetch(`${apiUrl}/check-update?t=${Date.now()}`, {
+        cache: 'no-store',
+      });
       const data = await parseApiResponse(res);
 
       if (res.ok && data.success) {
         setHasUpdate(Boolean(data.hasUpdate));
+        setDeployCheckError(null);
         return;
       }
 
       setHasUpdate(false);
-    } catch {
+      setDeployCheckError(data.error || 'Não foi possível verificar atualizações');
+    } catch (error) {
       setHasUpdate(false);
+      setDeployCheckError(error instanceof Error ? error.message : 'Não foi possível verificar atualizações');
     }
   };
 
