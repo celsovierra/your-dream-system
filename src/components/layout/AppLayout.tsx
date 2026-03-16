@@ -137,7 +137,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       const remoteChanged = Boolean(previousRemoteCommit && remoteCommit && remoteCommit !== previousRemoteCommit);
 
       if (updated || remoteChanged) {
-        const completedAt = checkData.lastCommitDate || new Date().toISOString();
+        const completedAt = new Date().toISOString();
         localStorage.setItem('last_deploy_at', completedAt);
         setLastDeployAt(completedAt);
         setHasUpdate(false);
