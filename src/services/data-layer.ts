@@ -78,23 +78,13 @@ function hasConfiguredApiBaseUrl(): boolean {
 }
 
 function resolveDataBackend(): DataBackend {
-  const forcedBackend = String(import.meta.env.VITE_DATA_BACKEND || '').toLowerCase();
-  if (forcedBackend === 'cloud' || forcedBackend === 'api') return forcedBackend as DataBackend;
-
-  if (hasConfiguredApiBaseUrl()) return 'api';
-
-  const hostname = window.location.hostname.toLowerCase();
-  const isLovableHost =
-    hostname.endsWith('.lovable.app') || hostname.endsWith('.lovableproject.com');
-
-  if (isLovableHost) return 'cloud';
-
+  // Sempre usar API da VPS — banco cloud desativado
   return 'api';
 }
 
-const ACTIVE_DATA_BACKEND: DataBackend = resolveDataBackend();
+const ACTIVE_DATA_BACKEND: DataBackend = 'api';
 
-const isLovableEnv = () => ACTIVE_DATA_BACKEND === 'cloud';
+const isLovableEnv = () => false;
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 

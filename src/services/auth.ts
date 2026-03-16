@@ -55,29 +55,11 @@ function normalizeStoredUsers(value: unknown): AppUser[] {
 // ===== Detect if we're on VPS (API mode) =====
 
 function isVpsMode(): boolean {
-  const forced = String(import.meta.env.VITE_DATA_BACKEND || '').toLowerCase();
-  if (forced === 'cloud') return false;
-  if (forced === 'api') return true;
-
-  if (typeof window !== 'undefined') {
-    const storedApi = window.localStorage.getItem('api_base_url')?.trim();
-    if (storedApi) return true;
-  }
-
-  const envApi = String(import.meta.env.VITE_API_BASE_URL || '').trim();
-  if (envApi && envApi !== '/api') return true;
-
-  const hostname = window.location.hostname.toLowerCase();
-  const isLovableHost =
-    hostname.endsWith('.lovable.app') ||
-    hostname.endsWith('.lovableproject.com') ||
-    hostname.includes('lovable');
-
-  if (isLovableHost) return false;
-  if (hostname === 'localhost' || hostname === '127.0.0.1') return false;
-
+  // Sempre usar API da VPS
   return true;
 }
+
+export { isVpsMode };
 
 // ===== localStorage-based auth (Lovable/cloud mode) =====
 
