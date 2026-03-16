@@ -92,66 +92,74 @@ function normalizeDateOnly(value: unknown): string | undefined {
 // ===== CLIENTES =====
 
 export async function fetchClients(): Promise<Client[]> {
-  if (isLovableEnv()) {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .order('name');
-    if (error) throw error;
-    return (data || []).map((c: any) => ({
-      ...c,
-      due_date: normalizeDateOnly(c.due_date),
-      amount: c.amount ? Number(c.amount) : undefined,
-    }));
-  } else {
-    const res = await api.getClients();
-    if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar clientes');
-    return (res.data.data || []).map((c: any) => ({
-      ...c,
-      due_date: normalizeDateOnly(c.due_date),
-      amount: c.amount ? Number(c.amount) : undefined,
-    }));
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    let result: Client[];
+    if (isLovableEnv()) {
+      const { data, error } = await supabase.from('clients').select('*').order('name');
+      if (error) throw error;
+      result = (data || []).map((c: any) => ({ ...c, due_date: normalizeDateOnly(c.due_date), amount: c.amount ? Number(c.amount) : undefined }));
+    } else {
+      const res = await api.getClients();
+      if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar clientes');
+      result = (res.data.data || []).map((c: any) => ({ ...c, due_date: normalizeDateOnly(c.due_date), amount: c.amount ? Number(c.amount) : undefined }));
+    }
+    addOperationLog(backend, 'Clientes', 'SELECT', `Listou ${result.length} clientes`);
+    return result;
+  } catch (err: any) {
+    addOperationLog(backend, 'Clientes', 'SELECT', 'Erro ao listar clientes', 'error', err?.message);
+    throw err;
   }
 }
 
 export async function createClient(client: Partial<Client>): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase.from('clients').insert({
-      name: client.name,
-      email: client.email || null,
-      phone: client.phone,
-      phone2: client.phone2 || null,
-      document: client.document || null,
-      amount: client.amount || null,
-      due_date: client.due_date || null,
-    });
-    if (error) throw error;
-  } else {
-    const res = await api.createClient(client);
-    if (!res.success) throw new Error(res.error || 'Erro ao criar cliente');
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('clients').insert({ name: client.name, email: client.email || null, phone: client.phone, phone2: client.phone2 || null, document: client.document || null, amount: client.amount || null, due_date: client.due_date || null });
+      if (error) throw error;
+    } else {
+      const res = await api.createClient(client);
+      if (!res.success) throw new Error(res.error || 'Erro ao criar cliente');
+    }
+    addOperationLog(backend, 'Clientes', 'INSERT', `Criou cliente "${client.name}"`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Clientes', 'INSERT', `Erro ao criar "${client.name}"`, 'error', err?.message);
+    throw err;
   }
 }
 
 export async function updateClient(id: number, client: Partial<Client>): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase
-      .from('clients')
-      .update({ ...client, updated_at: new Date().toISOString() })
-      .eq('id', id);
-    if (error) throw error;
-  } else {
-    const res = await api.updateClient(id, client);
-    if (!res.success) throw new Error(res.error || 'Erro ao atualizar cliente');
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('clients').update({ ...client, updated_at: new Date().toISOString() }).eq('id', id);
+      if (error) throw error;
+    } else {
+      const res = await api.updateClient(id, client);
+      if (!res.success) throw new Error(res.error || 'Erro ao atualizar cliente');
+    }
+    addOperationLog(backend, 'Clientes', 'UPDATE', `Atualizou cliente #${id}`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Clientes', 'UPDATE', `Erro ao atualizar #${id}`, 'error', err?.message);
+    throw err;
   }
 }
 
 export async function deleteClient(id: number): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase.from('clients').delete().eq('id', id);
-    if (error) throw error;
-  } else {
-    const res = await api.deleteClient(id);
-    if (!res.success) throw new Error(res.error || 'Erro ao remover cliente');
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('clients').delete().eq('id', id);
+      if (error) throw error;
+    } else {
+      const res = await api.deleteClient(id);
+      if (!res.success) throw new Error(res.error || 'Erro ao remover cliente');
+    }
+    addOperationLog(backend, 'Clientes', 'DELETE', `Removeu cliente #${id}`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Clientes', 'DELETE', `Erro ao remover #${id}`, 'error', err?.message);
+    throw err;
   }
 }
 
