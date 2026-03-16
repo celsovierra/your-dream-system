@@ -116,69 +116,6 @@ const ConfiguracoesPage = () => {
   };
 
 
-  useEffect(() => {
-    if (isVpsMode()) {
-      fetchUsersVps().then(setUsers).catch(() => setUsers(getStoredUsers()));
-    } else {
-      setUsers(getStoredUsers());
-    }
-  }, []);
-
-  const handleAddUser = async () => {
-    if (!newUser.email || !newUser.password || !newUser.name) {
-      toast.error('Preencha todos os campos');
-      return;
-    }
-    if (users.find(u => u.email === newUser.email)) {
-      toast.error('Este email já está cadastrado');
-      return;
-    }
-
-    try {
-      if (isVpsMode()) {
-        await registerVps(newUser.name, newUser.email, newUser.password);
-        const refreshed = await fetchUsersVps();
-        setUsers(refreshed);
-      } else {
-        const user: AppUser = {
-          id: Date.now().toString(),
-          email: newUser.email,
-          password: newUser.password,
-          name: newUser.name,
-          role: 'user',
-          createdAt: new Date().toISOString(),
-        };
-        const updated = [...users, user];
-        setUsers(updated);
-        saveUsers(updated);
-      }
-      setNewUser({ email: '', password: '', name: '' });
-      toast.success('Usuário criado com sucesso!');
-    } catch (err: any) {
-      toast.error(err?.message || 'Erro ao criar usuário');
-    }
-  };
-
-  const handleDeleteUser = async (id: string) => {
-    if (users.length <= 1) {
-      toast.error('Deve existir pelo menos 1 usuário');
-      return;
-    }
-    try {
-      if (isVpsMode()) {
-        await deleteUserVps(id);
-        const refreshed = await fetchUsersVps();
-        setUsers(refreshed);
-      } else {
-        const updated = users.filter(u => u.id !== id);
-        setUsers(updated);
-        saveUsers(updated);
-      }
-      toast.success('Usuário removido');
-    } catch (err: any) {
-      toast.error(err?.message || 'Erro ao remover usuário');
-    }
-  };
 
   return (
     <div className="space-y-4 max-w-2xl">
