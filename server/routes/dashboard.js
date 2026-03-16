@@ -1,23 +1,27 @@
 import express from 'express';
-import { hasColumn, query } from '../db.js';
+import { query } from '../db.js';
+import { queryWithOptionalOwnerScope } from '../utils/owner-scope.js';
 
 const router = express.Router();
 
-async function supportsOwnerScope() {
-  return hasColumn('clients', 'owner_id');
-}
-
 router.get('/', async (req, res) => {
   try {
-    const ownerScoped = await supportsOwnerScope();
-    let sql = 'SELECT * FROM clients WHERE 1=1';
-    const params = [];
-    if (ownerScoped && req.ownerId) {
-      sql += ' AND owner_id = ?';
-      params.push(req.ownerId);
-    }
+    const clients = await queryWithOptionalOwnerScope({
+      tableName: 'clients',
+      ownerId: req.ownerId,
+      run: async ({ useOwnerScope, ownerId }) => {
+        let sql = 'SELECT * FROM clients WHERE 1=1';
+        const params = [];
 
-    const clients = await query(sql, params);
+        if (useOwnerScope && ownerId) {
+          sql += ' AND owner_id = ?';
+          params.push(ownerId);
+        }
+
+        return query(sql, params);
+      },
+    });
+
     const data = Array.isArray(clients) ? clients.filter(r => r && typeof r === 'object' && 'id' in r) : [];
 
     const today = new Date();
