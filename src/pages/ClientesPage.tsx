@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle, Loader2, MapPin } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle, Loader2, MapPin, CheckSquare } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { userStorageGet } from '@/services/auth';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
@@ -73,6 +74,8 @@ const ClientesPage = () => {
   const [baixaClient, setBaixaClient] = useState<Client | null>(null);
   const [baixaMonths, setBaixaMonths] = useState('1');
   const [traccarLoading, setTraccarLoading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   const handleImportTraccar = async () => {
     const traccarUrl = userStorageGet('traccar_url');
@@ -221,9 +224,46 @@ const ClientesPage = () => {
     try {
       await deleteClient(id);
       toast.success('Cliente removido');
+      setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
       loadClients();
     } catch {
       toast.error('Erro ao remover');
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map(c => c.id)));
+    }
+  };
+
+  const handleMassDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
+    if (!window.confirm(`Tem certeza que deseja excluir ${count} cliente(s)?`)) return;
+    setDeleting(true);
+    try {
+      for (const id of selectedIds) {
+        await deleteClient(id);
+      }
+      toast.success(`${count} cliente(s) removido(s)`);
+      setSelectedIds(new Set());
+      loadClients();
+    } catch {
+      toast.error('Erro ao remover alguns clientes');
+      loadClients();
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -327,6 +367,12 @@ const ClientesPage = () => {
           <Input placeholder="Buscar por nome, CPF ou telefone..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <div className="flex gap-2">
+          {selectedIds.size > 0 && (
+            <Button variant="destructive" onClick={handleMassDelete} disabled={deleting}>
+              {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+              Excluir {selectedIds.size} selecionado(s)
+            </Button>
+          )}
           <Button variant="outline" onClick={handleImportTraccar} disabled={traccarLoading}>
             {traccarLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}
             {traccarLoading ? 'Importando...' : 'Importar Traccar'}
@@ -391,6 +437,12 @@ const ClientesPage = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead className="hidden md:table-cell">Email</TableHead>
                   <TableHead>Telefone</TableHead>
@@ -404,6 +456,12 @@ const ClientesPage = () => {
               <TableBody>
                 {filtered.map((client) => (
                   <TableRow key={client.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(client.id)}
+                        onCheckedChange={() => toggleSelect(client.id)}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{client.name}</TableCell>
                     <TableCell className="hidden md:table-cell">{client.email || '-'}</TableCell>
                     <TableCell>{client.phone}</TableCell>
@@ -420,7 +478,7 @@ const ClientesPage = () => {
                   </TableRow>
                 ))}
                 {filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={8} className="py-8 text-center text-muted-foreground">Nenhum cliente encontrado</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="py-8 text-center text-muted-foreground">Nenhum cliente encontrado</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
