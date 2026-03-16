@@ -18,6 +18,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import api from '@/services/api';
 import type { Client, MessageTemplate, DashboardStats } from '@/types/billing';
+import { addOperationLog } from '@/services/operation-logger';
 
 type DataBackend = 'cloud' | 'api';
 
@@ -91,149 +92,151 @@ function normalizeDateOnly(value: unknown): string | undefined {
 // ===== CLIENTES =====
 
 export async function fetchClients(): Promise<Client[]> {
-  if (isLovableEnv()) {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .order('name');
-    if (error) throw error;
-    return (data || []).map((c: any) => ({
-      ...c,
-      due_date: normalizeDateOnly(c.due_date),
-      amount: c.amount ? Number(c.amount) : undefined,
-    }));
-  } else {
-    const res = await api.getClients();
-    if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar clientes');
-    return (res.data.data || []).map((c: any) => ({
-      ...c,
-      due_date: normalizeDateOnly(c.due_date),
-      amount: c.amount ? Number(c.amount) : undefined,
-    }));
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    let result: Client[];
+    if (isLovableEnv()) {
+      const { data, error } = await supabase.from('clients').select('*').order('name');
+      if (error) throw error;
+      result = (data || []).map((c: any) => ({ ...c, due_date: normalizeDateOnly(c.due_date), amount: c.amount ? Number(c.amount) : undefined }));
+    } else {
+      const res = await api.getClients();
+      if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar clientes');
+      result = (res.data.data || []).map((c: any) => ({ ...c, due_date: normalizeDateOnly(c.due_date), amount: c.amount ? Number(c.amount) : undefined }));
+    }
+    addOperationLog(backend, 'Clientes', 'SELECT', `Listou ${result.length} clientes`);
+    return result;
+  } catch (err: any) {
+    addOperationLog(backend, 'Clientes', 'SELECT', 'Erro ao listar clientes', 'error', err?.message);
+    throw err;
   }
 }
 
 export async function createClient(client: Partial<Client>): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase.from('clients').insert({
-      name: client.name,
-      email: client.email || null,
-      phone: client.phone,
-      phone2: client.phone2 || null,
-      document: client.document || null,
-      amount: client.amount || null,
-      due_date: client.due_date || null,
-    });
-    if (error) throw error;
-  } else {
-    const res = await api.createClient(client);
-    if (!res.success) throw new Error(res.error || 'Erro ao criar cliente');
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('clients').insert({ name: client.name, email: client.email || null, phone: client.phone, phone2: client.phone2 || null, document: client.document || null, amount: client.amount || null, due_date: client.due_date || null });
+      if (error) throw error;
+    } else {
+      const res = await api.createClient(client);
+      if (!res.success) throw new Error(res.error || 'Erro ao criar cliente');
+    }
+    addOperationLog(backend, 'Clientes', 'INSERT', `Criou cliente "${client.name}"`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Clientes', 'INSERT', `Erro ao criar "${client.name}"`, 'error', err?.message);
+    throw err;
   }
 }
 
 export async function updateClient(id: number, client: Partial<Client>): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase
-      .from('clients')
-      .update({ ...client, updated_at: new Date().toISOString() })
-      .eq('id', id);
-    if (error) throw error;
-  } else {
-    const res = await api.updateClient(id, client);
-    if (!res.success) throw new Error(res.error || 'Erro ao atualizar cliente');
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('clients').update({ ...client, updated_at: new Date().toISOString() }).eq('id', id);
+      if (error) throw error;
+    } else {
+      const res = await api.updateClient(id, client);
+      if (!res.success) throw new Error(res.error || 'Erro ao atualizar cliente');
+    }
+    addOperationLog(backend, 'Clientes', 'UPDATE', `Atualizou cliente #${id}`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Clientes', 'UPDATE', `Erro ao atualizar #${id}`, 'error', err?.message);
+    throw err;
   }
 }
 
 export async function deleteClient(id: number): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase.from('clients').delete().eq('id', id);
-    if (error) throw error;
-  } else {
-    const res = await api.deleteClient(id);
-    if (!res.success) throw new Error(res.error || 'Erro ao remover cliente');
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('clients').delete().eq('id', id);
+      if (error) throw error;
+    } else {
+      const res = await api.deleteClient(id);
+      if (!res.success) throw new Error(res.error || 'Erro ao remover cliente');
+    }
+    addOperationLog(backend, 'Clientes', 'DELETE', `Removeu cliente #${id}`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Clientes', 'DELETE', `Erro ao remover #${id}`, 'error', err?.message);
+    throw err;
   }
 }
 
 // ===== TEMPLATES DE MENSAGEM =====
 
 export async function fetchMessageTemplates(): Promise<MessageTemplate[]> {
-  if (isLovableEnv()) {
-    const { data, error } = await supabase
-      .from('message_templates')
-      .select('*')
-      .order('id');
-    if (error) throw error;
-    return (data || []) as MessageTemplate[];
-  } else {
-    const res = await api.getMessageTemplates();
-    if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar templates');
-    return res.data;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    let result: MessageTemplate[];
+    if (isLovableEnv()) {
+      const { data, error } = await supabase.from('message_templates').select('*').order('id');
+      if (error) throw error;
+      result = (data || []) as MessageTemplate[];
+    } else {
+      const res = await api.getMessageTemplates();
+      if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar templates');
+      result = res.data;
+    }
+    addOperationLog(backend, 'Templates', 'SELECT', `Listou ${result.length} templates`);
+    return result;
+  } catch (err: any) {
+    addOperationLog(backend, 'Templates', 'SELECT', 'Erro ao listar templates', 'error', err?.message);
+    throw err;
   }
 }
 
 export async function getReceiptTemplate(): Promise<MessageTemplate | null> {
-  if (isLovableEnv()) {
-    const { data } = await supabase
-      .from('message_templates')
-      .select('*')
-      .eq('type', 'receipt')
-      .eq('is_active', true)
-      .limit(1);
-    return (data?.[0] as MessageTemplate) || null;
-  } else {
-    const res = await api.getMessageTemplates();
-    if (!res.success || !res.data) return null;
-    return res.data.find(t => t.type === 'receipt' && t.is_active) || null;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    let result: MessageTemplate | null;
+    if (isLovableEnv()) {
+      const { data } = await supabase.from('message_templates').select('*').eq('type', 'receipt').eq('is_active', true).limit(1);
+      result = (data?.[0] as MessageTemplate) || null;
+    } else {
+      const res = await api.getMessageTemplates();
+      if (!res.success || !res.data) return null;
+      result = res.data.find(t => t.type === 'receipt' && t.is_active) || null;
+    }
+    addOperationLog(backend, 'Templates', 'SELECT', 'Buscou template de recibo');
+    return result;
+  } catch (err: any) {
+    addOperationLog(backend, 'Templates', 'SELECT', 'Erro ao buscar template de recibo', 'error', err?.message);
+    throw err;
   }
 }
 
 // ===== DASHBOARD =====
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
-  if (isLovableEnv()) {
-    const { data: clients, error } = await supabase.from('clients').select('*');
-    if (error) throw error;
-
-    const allClients = clients || [];
-    const activeClients = allClients.filter((c: any) => c.is_active);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    let overdueCount = 0, totalOverdue = 0, pendingCount = 0, totalPending = 0;
-
-    allClients.forEach((c: any) => {
-      if (!c.due_date || !c.amount) return;
-      const due = new Date(c.due_date + 'T00:00:00');
-      if (due < today) {
-        overdueCount++;
-        totalOverdue += Number(c.amount);
-      } else {
-        pendingCount++;
-        totalPending += Number(c.amount);
-      }
-    });
-
-    const totalRevenue = allClients.reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0);
-
-    return {
-      total_clients: allClients.length,
-      active_clients: activeClients.length,
-      total_revenue_month: totalRevenue,
-      total_pending: totalPending,
-      total_overdue: totalOverdue,
-      overdue_count: overdueCount,
-      paid_count: 0,
-      pending_count: pendingCount,
-      revenue_by_month: [],
-      status_distribution: [
-        { status: 'Pendente', count: pendingCount },
-        { status: 'Atrasado', count: overdueCount },
-      ],
-    };
-  } else {
-    const res = await api.getDashboardStats();
-    if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar stats');
-    return res.data;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    let stats: DashboardStats;
+    if (isLovableEnv()) {
+      const { data: clients, error } = await supabase.from('clients').select('*');
+      if (error) throw error;
+      const allClients = clients || [];
+      const activeClients = allClients.filter((c: any) => c.is_active);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      let overdueCount = 0, totalOverdue = 0, pendingCount = 0, totalPending = 0;
+      allClients.forEach((c: any) => {
+        if (!c.due_date || !c.amount) return;
+        const due = new Date(c.due_date + 'T00:00:00');
+        if (due < today) { overdueCount++; totalOverdue += Number(c.amount); }
+        else { pendingCount++; totalPending += Number(c.amount); }
+      });
+      const totalRevenue = allClients.reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0);
+      stats = { total_clients: allClients.length, active_clients: activeClients.length, total_revenue_month: totalRevenue, total_pending: totalPending, total_overdue: totalOverdue, overdue_count: overdueCount, paid_count: 0, pending_count: pendingCount, revenue_by_month: [], status_distribution: [{ status: 'Pendente', count: pendingCount }, { status: 'Atrasado', count: overdueCount }] };
+    } else {
+      const res = await api.getDashboardStats();
+      if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar stats');
+      stats = res.data;
+    }
+    addOperationLog(backend, 'Dashboard', 'SELECT', `Carregou stats: ${stats.total_clients} clientes`);
+    return stats;
+  } catch (err: any) {
+    addOperationLog(backend, 'Dashboard', 'SELECT', 'Erro ao carregar stats', 'error', err?.message);
+    throw err;
   }
 }
 
@@ -255,44 +258,60 @@ export interface QueueItem {
 }
 
 export async function fetchQueue(): Promise<QueueItem[]> {
-  if (isLovableEnv()) {
-    const { data, error } = await supabase
-      .from('billing_queue')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return (data || []) as QueueItem[];
-  } else {
-    const res = await fetch('/api/queue');
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Erro ao buscar fila');
-    return json.data || [];
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    let result: QueueItem[];
+    if (isLovableEnv()) {
+      const { data, error } = await supabase.from('billing_queue').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      result = (data || []) as QueueItem[];
+    } else {
+      const res = await fetch('/api/queue');
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Erro ao buscar fila');
+      result = json.data || [];
+    }
+    addOperationLog(backend, 'Fila', 'SELECT', `Listou ${result.length} itens na fila`);
+    return result;
+  } catch (err: any) {
+    addOperationLog(backend, 'Fila', 'SELECT', 'Erro ao listar fila', 'error', err?.message);
+    throw err;
   }
 }
 
 export async function clearQueue(): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase.from('billing_queue').delete().gte('id', 0);
-    if (error) throw error;
-  } else {
-    const res = await fetch('/api/queue', { method: 'DELETE' });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Erro ao limpar fila');
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('billing_queue').delete().gte('id', 0);
+      if (error) throw error;
+    } else {
+      const res = await fetch('/api/queue', { method: 'DELETE' });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Erro ao limpar fila');
+    }
+    addOperationLog(backend, 'Fila', 'DELETE', 'Limpou toda a fila');
+  } catch (err: any) {
+    addOperationLog(backend, 'Fila', 'DELETE', 'Erro ao limpar fila', 'error', err?.message);
+    throw err;
   }
 }
 
 export async function updateQueueItemStatus(id: number, status: string): Promise<void> {
-  if (isLovableEnv()) {
-    const update: any = { status };
-    if (status === 'sent') update.sent_at = new Date().toISOString();
-    const { error } = await supabase.from('billing_queue').update(update).eq('id', id);
-    if (error) throw error;
-  } else {
-    await fetch(`/api/queue/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, sent_at: status === 'sent' ? new Date().toISOString() : null }),
-    });
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const update: any = { status };
+      if (status === 'sent') update.sent_at = new Date().toISOString();
+      const { error } = await supabase.from('billing_queue').update(update).eq('id', id);
+      if (error) throw error;
+    } else {
+      await fetch(`/api/queue/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status, sent_at: status === 'sent' ? new Date().toISOString() : null }) });
+    }
+    addOperationLog(backend, 'Fila', 'UPDATE', `Atualizou item #${id} para "${status}"`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Fila', 'UPDATE', `Erro ao atualizar item #${id}`, 'error', err?.message);
+    throw err;
   }
 }
 
@@ -308,43 +327,43 @@ export interface BillingSettings {
 }
 
 export async function fetchSettings(): Promise<BillingSettings> {
-  const defaults: BillingSettings = {
-    reminder_days: '3',
-    send_time_reminder: '08:00',
-    send_time_due: '08:00',
-    send_time_overdue: '09:00',
-    overdue_frequency: '3',
-  };
-
-  if (isLovableEnv()) {
-    const { data, error } = await supabase.from('billing_settings').select('*');
-    if (error) return defaults;
-    const settings = { ...defaults };
-    (data || []).forEach((row: any) => { settings[row.key] = row.value; });
-    return settings;
-  } else {
-    try {
+  const backend = ACTIVE_DATA_BACKEND;
+  const defaults: BillingSettings = { reminder_days: '3', send_time_reminder: '08:00', send_time_due: '08:00', send_time_overdue: '09:00', overdue_frequency: '3' };
+  try {
+    if (isLovableEnv()) {
+      const { data, error } = await supabase.from('billing_settings').select('*');
+      if (error) return defaults;
+      const settings = { ...defaults };
+      (data || []).forEach((row: any) => { settings[row.key] = row.value; });
+      addOperationLog(backend, 'Config', 'SELECT', 'Carregou configurações');
+      return settings;
+    } else {
       const res = await fetch('/api/settings');
       const json = await res.json();
       if (!json.success) return defaults;
+      addOperationLog(backend, 'Config', 'SELECT', 'Carregou configurações');
       return { ...defaults, ...json.data };
-    } catch {
-      return defaults;
     }
+  } catch (err: any) {
+    addOperationLog(backend, 'Config', 'SELECT', 'Erro ao carregar configurações', 'error', err?.message);
+    return defaults;
   }
 }
 
 export async function saveSettings(settings: Partial<BillingSettings>): Promise<void> {
-  if (isLovableEnv()) {
-    for (const [key, value] of Object.entries(settings)) {
-      await supabase.from('billing_settings').upsert({ key, value: String(value), updated_at: new Date().toISOString() });
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      for (const [key, value] of Object.entries(settings)) {
+        await supabase.from('billing_settings').upsert({ key, value: String(value), updated_at: new Date().toISOString() });
+      }
+    } else {
+      await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
     }
-  } else {
-    await fetch('/api/settings', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(settings),
-    });
+    addOperationLog(backend, 'Config', 'UPDATE', `Salvou ${Object.keys(settings).length} configurações`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Config', 'UPDATE', 'Erro ao salvar configurações', 'error', err?.message);
+    throw err;
   }
 }
 
@@ -360,17 +379,18 @@ interface EvolutionPayload {
 }
 
 export async function invokeEvolutionProxy(payload: EvolutionPayload): Promise<{ data?: any; error?: string }> {
+  const backend = ACTIVE_DATA_BACKEND;
   if (isLovableEnv()) {
     const { data, error } = await supabase.functions.invoke('evolution-proxy', { body: payload });
-    if (error) return { error: error.message || 'Erro na Edge Function' };
+    if (error) {
+      addOperationLog(backend, 'WhatsApp', payload.action, `Erro: ${error.message}`, 'error', error.message);
+      return { error: error.message || 'Erro na Edge Function' };
+    }
+    addOperationLog(backend, 'WhatsApp', payload.action, `Ação "${payload.action}" executada`);
     return { data };
   } else {
     try {
-      const res = await fetch('/api/whatsapp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch('/api/whatsapp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const data = await res.json();
       if (!res.ok) {
         let debugMessage = data?.debug?.response?.message?.[0] || data?.debug?.error || data?.debug?.message;
@@ -378,10 +398,13 @@ export async function invokeEvolutionProxy(payload: EvolutionPayload): Promise<{
         let mainError = data?.error;
         if (mainError && typeof mainError === 'object') mainError = JSON.stringify(mainError);
         const errorMessage = [mainError, debugMessage].filter(Boolean).join(' - ');
+        addOperationLog(backend, 'WhatsApp', payload.action, `Erro: ${errorMessage}`, 'error', errorMessage);
         return { error: errorMessage || `Erro ${res.status}` };
       }
+      addOperationLog(backend, 'WhatsApp', payload.action, `Ação "${payload.action}" executada`);
       return { data };
     } catch (err: any) {
+      addOperationLog(backend, 'WhatsApp', payload.action, `Erro de conexão`, 'error', err?.message);
       return { error: err?.message || 'Erro de conexão com o servidor' };
     }
   }
@@ -409,85 +432,113 @@ export interface BillPayable {
 }
 
 export async function fetchBills(): Promise<BillPayable[]> {
-  if (isLovableEnv()) {
-    const { data, error } = await supabase
-      .from('bills_payable')
-      .select('*')
-      .is('parent_bill_id', null)
-      .order('due_date', { ascending: true });
-    if (error) throw error;
-    return (data as unknown as BillPayable[]) || [];
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    let result: BillPayable[];
+    if (isLovableEnv()) {
+      const { data, error } = await supabase.from('bills_payable').select('*').is('parent_bill_id', null).order('due_date', { ascending: true });
+      if (error) throw error;
+      result = (data as unknown as BillPayable[]) || [];
+    } else {
+      const res = await api.getBills();
+      if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar contas');
+      result = res.data;
+    }
+    addOperationLog(backend, 'Financeiro', 'SELECT', `Listou ${result.length} contas`);
+    return result;
+  } catch (err: any) {
+    addOperationLog(backend, 'Financeiro', 'SELECT', 'Erro ao listar contas', 'error', err?.message);
+    throw err;
   }
-
-  const res = await api.getBills();
-  if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar contas');
-  return res.data;
 }
 
 export async function createBill(bill: Partial<BillPayable>): Promise<BillPayable | null> {
-  if (isLovableEnv()) {
-    const { data, error } = await supabase
-      .from('bills_payable')
-      .insert(bill as any)
-      .select()
-      .single();
-    if (error) throw error;
-    return data as unknown as BillPayable;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    let result: BillPayable | null;
+    if (isLovableEnv()) {
+      const { data, error } = await supabase.from('bills_payable').insert(bill as any).select().single();
+      if (error) throw error;
+      result = data as unknown as BillPayable;
+    } else {
+      const res = await api.createBill(bill as any);
+      if (!res.success) throw new Error(res.error || 'Erro ao criar conta');
+      result = (res.data as BillPayable) || null;
+    }
+    addOperationLog(backend, 'Financeiro', 'INSERT', `Criou conta "${bill.description}"`);
+    return result;
+  } catch (err: any) {
+    addOperationLog(backend, 'Financeiro', 'INSERT', `Erro ao criar "${bill.description}"`, 'error', err?.message);
+    throw err;
   }
-
-  const res = await api.createBill(bill as any);
-  if (!res.success) throw new Error(res.error || 'Erro ao criar conta');
-  return (res.data as BillPayable) || null;
 }
 
 export async function createBillChildren(children: Partial<BillPayable>[]): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase.from('bills_payable').insert(children as any);
-    if (error) throw error;
-    return;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('bills_payable').insert(children as any);
+      if (error) throw error;
+    } else {
+      const res = await api.createBillsBatch(children as any);
+      if (!res.success) throw new Error(res.error || 'Erro ao criar parcelas');
+    }
+    addOperationLog(backend, 'Financeiro', 'INSERT', `Criou ${children.length} parcelas filhas`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Financeiro', 'INSERT', `Erro ao criar parcelas`, 'error', err?.message);
+    throw err;
   }
-
-  const res = await api.createBillsBatch(children as any);
-  if (!res.success) throw new Error(res.error || 'Erro ao criar parcelas');
 }
 
 export async function updateBill(id: number, bill: Partial<BillPayable>): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase
-      .from('bills_payable')
-      .update({ ...bill, updated_at: new Date().toISOString() } as any)
-      .eq('id', id);
-    if (error) throw error;
-    return;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('bills_payable').update({ ...bill, updated_at: new Date().toISOString() } as any).eq('id', id);
+      if (error) throw error;
+    } else {
+      const res = await api.updateBill(id, bill as any);
+      if (!res.success) throw new Error(res.error || 'Erro ao atualizar conta');
+    }
+    addOperationLog(backend, 'Financeiro', 'UPDATE', `Atualizou conta #${id}`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Financeiro', 'UPDATE', `Erro ao atualizar #${id}`, 'error', err?.message);
+    throw err;
   }
-
-  const res = await api.updateBill(id, bill as any);
-  if (!res.success) throw new Error(res.error || 'Erro ao atualizar conta');
 }
 
 export async function deleteBill(id: number): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase.from('bills_payable').delete().eq('id', id);
-    if (error) throw error;
-    return;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('bills_payable').delete().eq('id', id);
+      if (error) throw error;
+    } else {
+      const res = await api.deleteBill(id);
+      if (!res.success) throw new Error(res.error || 'Erro ao excluir conta');
+    }
+    addOperationLog(backend, 'Financeiro', 'DELETE', `Excluiu conta #${id}`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Financeiro', 'DELETE', `Erro ao excluir #${id}`, 'error', err?.message);
+    throw err;
   }
-
-  const res = await api.deleteBill(id);
-  if (!res.success) throw new Error(res.error || 'Erro ao excluir conta');
 }
 
 export async function markBillPaid(id: number): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase
-      .from('bills_payable')
-      .update({ status: 'paid', paid_date: formatLocalDate(new Date()) } as any)
-      .eq('id', id);
-    if (error) throw error;
-    return;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('bills_payable').update({ status: 'paid', paid_date: formatLocalDate(new Date()) } as any).eq('id', id);
+      if (error) throw error;
+    } else {
+      const res = await api.markBillPaid(id);
+      if (!res.success) throw new Error(res.error || 'Erro ao marcar como paga');
+    }
+    addOperationLog(backend, 'Financeiro', 'UPDATE', `Marcou conta #${id} como paga`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Financeiro', 'UPDATE', `Erro ao marcar #${id} como paga`, 'error', err?.message);
+    throw err;
   }
-
-  const res = await api.markBillPaid(id);
-  if (!res.success) throw new Error(res.error || 'Erro ao marcar como paga');
 }
 
 export function getActiveDataBackend(): DataBackend {
