@@ -51,21 +51,20 @@ const ContratosPage = () => {
         return;
       }
 
-      // Fetch existing clients to avoid duplicates
-      const existingClients = await fetchClients();
+      // Import with duplicate protection
       let imported = 0;
-
       for (const user of traccarUsers) {
         const name = user.name || user.email || 'Sem nome';
         const phone = user.phone ? user.phone.replace(/\D/g, '') : '';
         const email = user.email || '';
 
-        const exists = existingClients.find(c => c.name.toLowerCase() === name.toLowerCase());
-        if (exists) continue;
-
         try {
-          await createClient({ name, phone: phone.length > 2 ? phone : '55', email });
-          imported++;
+          const result = await upsertClientFromTraccar({
+            name,
+            phone: phone.length > 2 ? phone : '55',
+            email,
+          });
+          if (result === 'created') imported++;
         } catch (err) {
           console.error(`Erro ao importar ${name}:`, err);
         }
