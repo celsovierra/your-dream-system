@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { FileText, Plus, Send, MapPin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchClients, createClient } from '@/services/data-layer';
 
 const mockContracts = [
   { id: 1, client_name: 'João Silva', template: 'Contrato Padrão', status: 'signed', signed_at: '2024-03-10', created_at: '2024-03-08' },
