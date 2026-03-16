@@ -23,6 +23,11 @@ export async function query(sql, params) {
   }
 }
 
+export function isUnknownColumnError(err, columnName = 'owner_id') {
+  const message = String(err?.message || err || '').toLowerCase();
+  return message.includes('unknown column') && message.includes(String(columnName).toLowerCase());
+}
+
 export async function hasColumn(tableName, columnName) {
   const cacheKey = `${tableName}:${columnName}`;
   if (columnExistsCache.has(cacheKey)) {
