@@ -137,9 +137,10 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       const remoteChanged = Boolean(previousRemoteCommit && remoteCommit && remoteCommit !== previousRemoteCommit);
 
       if (updated || remoteChanged) {
-        const completedAt = new Date().toISOString();
-        localStorage.setItem('last_deploy_at', completedAt);
-        setLastDeployAt(completedAt);
+        // Salva flag pendente — o timestamp real será registrado após o reload confirmar
+        localStorage.setItem('deploy_pending', 'true');
+        localStorage.removeItem('last_deploy_at');
+        setLastDeployAt(null);
         setHasUpdate(false);
         setDeployCheckError(null);
         toast.success('Atualização concluída com sucesso. Recarregando...');
