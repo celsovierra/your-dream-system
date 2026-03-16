@@ -4,6 +4,31 @@ import { queryWithOptionalOwnerScope } from '../utils/owner-scope.js';
 
 const router = express.Router();
 
+function isTemplateActive(template) {
+  return Boolean(template?.is_active);
+}
+
+function sortTemplatesByPriority(a, b, ownerId) {
+  const aOwned = ownerId && a?.owner_id === ownerId ? 1 : 0;
+  const bOwned = ownerId && b?.owner_id === ownerId ? 1 : 0;
+  if (aOwned !== bOwned) return bOwned - aOwned;
+  return Number(b?.id || 0) - Number(a?.id || 0);
+}
+
+function dedupeTemplatesByType(rows, ownerId) {
+  const map = new Map();
+
+  for (const row of rows) {
+    if (!row || typeof row !== 'object' || !('id' in row) || !row.type) continue;
+    const current = map.get(row.type);
+    if (!current || sortTemplatesByPriority(row, current, ownerId) < 0) {
+      map.set(row.type, row);
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => Number(a.id) - Number(b.id));
+}
+
 // Listar templates
 router.get('/', async (req, res) => {
   try {
@@ -14,15 +39,16 @@ router.get('/', async (req, res) => {
         let sql = 'SELECT * FROM message_templates WHERE 1=1';
         const params = [];
         if (useOwnerScope && ownerId) {
-          // Return templates belonging to this owner OR global templates (NULL owner_id)
           sql += ' AND (owner_id = ? OR owner_id IS NULL)';
           params.push(ownerId);
         }
-        sql += ' ORDER BY id';
+        sql += ' ORDER BY id DESC';
         return query(sql, params);
       },
     });
-    const data = Array.isArray(rows) ? rows.filter(r => r && typeof r === 'object' && 'id' in r) : [];
+
+    const validRows = Array.isArray(rows) ? rows.filter(r => r && typeof r === 'object' && 'id' in r) : [];
+    const data = dedupeTemplatesByType(validRows, req.ownerId);
     res.json(data);
   } catch (err) {
     res.status(500).json({ message: 'Erro ao buscar templates' });
@@ -40,22 +66,23 @@ router.put('/:id', async (req, res) => {
     if (name !== undefined) { fields.push('name = ?'); values.push(name); }
     if (fields.length === 0) return res.status(400).json({ message: 'Nenhum campo' });
 
-    // Also set owner_id if the template has NULL owner_id (global template being claimed by user)
     const ownerId = req.ownerId;
 
     await queryWithOptionalOwnerScope({
       tableName: 'message_templates',
       ownerId,
       run: async ({ useOwnerScope, ownerId: scopedOwnerId }) => {
+        const scopedFields = [...fields];
+        const scopedValues = [...values];
+
         if (useOwnerScope && scopedOwnerId) {
-          // Set owner_id on templates that don't have one yet
-          fields.push('owner_id = ?');
-          values.push(scopedOwnerId);
+          scopedFields.push('owner_id = ?');
+          scopedValues.push(scopedOwnerId);
         }
-        const params = [...values, req.params.id];
-        let sql = `UPDATE message_templates SET ${fields.join(', ')} WHERE id = ?`;
+
+        const params = [...scopedValues, req.params.id];
+        let sql = `UPDATE message_templates SET ${scopedFields.join(', ')} WHERE id = ?`;
         if (useOwnerScope && scopedOwnerId) {
-          // Allow updating own templates OR global (NULL) templates
           sql += ' AND (owner_id = ? OR owner_id IS NULL)';
           params.push(scopedOwnerId);
         }
