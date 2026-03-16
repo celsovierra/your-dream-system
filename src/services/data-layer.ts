@@ -129,15 +129,53 @@ export async function createClient(client: Partial<Client>): Promise<void> {
   }
 }
 
-export async function upsertClientFromTraccar(client: { name: string; phone: string; email?: string }): Promise<'created' | 'skipped'> {
+export async function upsertClientFromTraccar(client: { name: string; phone: string; email?: string }): Promise<'created' | 'updated' | 'skipped'> {
   const backend = ACTIVE_DATA_BACKEND;
   try {
     if (isLovableEnv()) {
-      const { data: existing } = await supabase.from('clients').select('id').eq('name', client.name).eq('phone', client.phone).limit(1);
-      if (existing && existing.length > 0) return 'skipped';
+      // Try to find existing client by traccar_email (most stable Traccar identifier)
+      let existing: any[] | null = null;
+      if (client.email) {
+        const { data } = await supabase.from('clients').select('id, name, phone, email').eq('traccar_email', client.email).limit(1);
+        existing = data;
+      }
+
+      if (existing && existing.length > 0) {
+        // Update existing client with latest Traccar data
+        const current = existing[0];
+        const needsUpdate = current.name !== client.name || current.phone !== client.phone || current.email !== (client.email || null);
+        if (!needsUpdate) return 'skipped';
+
+        const { error } = await supabase.from('clients').update({
+          name: client.name,
+          phone: client.phone,
+          email: client.email || null,
+          updated_at: new Date().toISOString(),
+        }).eq('id', current.id);
+        if (error) throw error;
+        addOperationLog(backend, 'Clientes', 'UPDATE', `Atualizou cliente Traccar "${client.name}"`);
+        return 'updated';
+      }
+
+      // Also check by name to avoid duplicates
+      const { data: byName } = await supabase.from('clients').select('id').eq('name', client.name).limit(1);
+      if (byName && byName.length > 0) {
+        // Update traccar_email on existing record and sync data
+        const { error } = await supabase.from('clients').update({
+          phone: client.phone,
+          email: client.email || null,
+          traccar_email: client.email || null,
+          updated_at: new Date().toISOString(),
+        }).eq('id', byName[0].id);
+        if (error) throw error;
+        addOperationLog(backend, 'Clientes', 'UPDATE', `Vinculou Traccar ao cliente "${client.name}"`);
+        return 'updated';
+      }
+
+      // Create new client
       const { error } = await supabase.from('clients').insert({ name: client.name, phone: client.phone, email: client.email || null, traccar_email: client.email || null });
       if (error) {
-        if (error.code === '23505') return 'skipped'; // unique violation
+        if (error.code === '23505') return 'skipped';
         throw error;
       }
     } else {
