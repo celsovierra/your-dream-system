@@ -322,6 +322,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           })}
         </div>
 
+        {!sidebarCollapsed && (
           <div className="border-t border-sidebar-border p-4 space-y-3">
             <div className="relative">
               {hasUpdate && (
