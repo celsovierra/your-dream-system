@@ -51,8 +51,31 @@ const ContratosPage = () => {
         return;
       }
 
-      toast.success(`${traccarUsers.length} usuário(s) encontrado(s) no Traccar!`);
-      console.log('Traccar users:', traccarUsers);
+      // Fetch existing clients to avoid duplicates
+      const existingClients = await fetchClients();
+      let imported = 0;
+
+      for (const user of traccarUsers) {
+        const name = user.name || user.email || 'Sem nome';
+        const phone = user.phone ? user.phone.replace(/\D/g, '') : '';
+        const email = user.email || '';
+
+        const exists = existingClients.find(c => c.name.toLowerCase() === name.toLowerCase());
+        if (exists) continue;
+
+        try {
+          await createClient({ name, phone: phone.length > 2 ? phone : '55', email });
+          imported++;
+        } catch (err) {
+          console.error(`Erro ao importar ${name}:`, err);
+        }
+      }
+
+      if (imported > 0) {
+        toast.success(`${imported} usuário(s) importado(s) do Traccar e salvo(s) no banco!`);
+      } else {
+        toast.info('Todos os usuários do Traccar já estão cadastrados');
+      }
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao buscar usuários do Traccar');
     } finally {
