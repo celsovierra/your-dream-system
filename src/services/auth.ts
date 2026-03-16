@@ -55,13 +55,7 @@ function normalizeStoredUsers(value: unknown): AppUser[] {
 // ===== Detect if we're on VPS (API mode) =====
 
 function isVpsMode(): boolean {
-  // No preview do Lovable sem api_base_url configurada, usar modo local
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname.toLowerCase();
-    const isLovable = hostname.includes('lovable.app') || hostname.includes('lovableproject.com');
-    const hasApiUrl = Boolean(window.localStorage.getItem('api_base_url')?.trim());
-    if (isLovable && !hasApiUrl) return false;
-  }
+  // Sempre usar API da VPS — preview do Lovable conecta via proxy
   return true;
 }
 
