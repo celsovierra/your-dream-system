@@ -425,8 +425,8 @@ const ConfiguracoesPage = () => {
         </Card>
       </Collapsible>
 
-      {/* Backup */}
-      <Collapsible open={openSection === 'backup'} onOpenChange={() => toggleSection('backup')}>
+      {/* Backup - apenas admin */}
+      {userIsAdmin && <Collapsible open={openSection === 'backup'} onOpenChange={() => toggleSection('backup')}>
         <Card>
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
@@ -448,7 +448,7 @@ const ConfiguracoesPage = () => {
             </CardContent>
           </CollapsibleContent>
         </Card>
-      </Collapsible>
+      </Collapsible>}
 
       {/* API Traccar */}
       <Collapsible open={openSection === 'traccar'} onOpenChange={() => toggleSection('traccar')}>

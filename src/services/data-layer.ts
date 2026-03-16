@@ -427,11 +427,16 @@ export async function fetchSettings(): Promise<BillingSettings> {
   const defaults: BillingSettings = { reminder_days: '3', send_time_reminder: '08:00', send_time_due: '08:00', send_time_overdue: '09:00', overdue_frequency: '3' };
   try {
     if (isLovableEnv()) {
-      const { data, error } = await supabase.from('billing_settings').select('*');
-      if (error) return defaults;
       const settings = { ...defaults };
-      (data || []).forEach((row: any) => { settings[row.key] = row.value; });
-      addOperationLog(backend, 'Config', 'SELECT', 'Carregou configurações');
+
+      for (const key of Object.keys(defaults)) {
+        const storedValue = userStorageGet(`billing_setting_${key}`);
+        if (storedValue !== null) {
+          settings[key] = storedValue;
+        }
+      }
+
+      addOperationLog(backend, 'Config', 'SELECT', 'Carregou configurações isoladas por usuário');
       return settings;
     } else {
       const res = await fetch('/api/settings');
