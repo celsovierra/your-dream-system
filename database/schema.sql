@@ -224,6 +224,11 @@ ALTER TABLE billing_queue ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER m
 
 ALTER TABLE message_templates ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER is_active;
 
+-- Migração: billing_settings — corrigir owner_id NULL para '__global__'
+UPDATE billing_settings SET owner_id = '__global__' WHERE owner_id IS NULL;
+-- Se a tabela já existia com owner_id nullable, corrige para NOT NULL DEFAULT '__global__'
+ALTER TABLE billing_settings MODIFY COLUMN owner_id VARCHAR(100) NOT NULL DEFAULT '__global__';
+
 -- Dados iniciais - admin padrão (senha: admin123 -> SHA256)
 INSERT IGNORE INTO users (name, email, password_hash) VALUES
 ('Administrador', 'admin@cobranca.com', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9');
