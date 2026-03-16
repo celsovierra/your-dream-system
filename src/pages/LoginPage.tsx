@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Receipt, Eye, EyeOff, LogIn, Shield, Zap, BarChart3, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { getStoredUsers, setCurrentUser, loginVps, isVpsMode } from '@/services/auth';
+import { getStoredUsers, setCurrentUser } from '@/services/auth';
 
 interface LoginPageProps {
   onLogin: (token: string) => void;
