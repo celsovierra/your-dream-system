@@ -8,7 +8,6 @@ import AppLayout from "@/components/layout/AppLayout";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import ClientesPage from "./pages/ClientesPage";
-import FinanceiroPage from "./pages/FinanceiroPage";
 import LogsPage from "./pages/LogsPage";
 
 import FilaPage from "./pages/FilaPage";
@@ -92,8 +91,9 @@ const App = () => {
             <ErrorBoundary>
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
+                <Route path="/financeiro" element={<DashboardPage />} />
                 <Route path="/clientes" element={<ClientesPage />} />
-                <Route path="/financeiro" element={<FinanceiroPage />} />
+                
                 <Route path="/logs" element={<LogsPage />} />
                 <Route path="/fila" element={<FilaPage />} />
                 <Route path="/mensagens" element={<MensagensPage />} />
