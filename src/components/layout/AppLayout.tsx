@@ -46,12 +46,32 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [deploying, setDeploying] = useState(false);
   const [hasUpdate, setHasUpdate] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
-  const deployApiConfigured = true;
   const [deployCheckError, setDeployCheckError] = useState<string | null>(null);
+
+  function isLovableHost() {
+    if (typeof window === 'undefined') return false;
+    const hostname = window.location.hostname.toLowerCase();
+    return hostname.endsWith('.lovable.app') || hostname.endsWith('.lovableproject.com');
+  }
+
+  function getConfiguredDeployApiUrl() {
+    if (typeof window === 'undefined') return '';
+
+    const envApiBaseUrl = String(import.meta.env.VITE_API_BASE_URL || '').trim();
+    const storedApiBaseUrl = window.localStorage.getItem('api_base_url')?.trim();
+    const configuredApiBaseUrl = storedApiBaseUrl || envApiBaseUrl;
+
+    if (!configuredApiBaseUrl) return '';
+
+    const normalized = configuredApiBaseUrl.replace(/\/+$/, '');
+    return normalized.endsWith('/api') ? normalized : `${normalized}/api`;
+  }
+
+  const deployApiConfigured = !isLovableHost() || Boolean(getConfiguredDeployApiUrl());
 
   function resolveDeployApiUrl() {
     if (typeof window === 'undefined') return '';
-    return `${window.location.origin}/api`;
+    return isLovableHost() ? getConfiguredDeployApiUrl() : `${window.location.origin}/api`;
   }
 
   async function parseApiResponse(response: Response) {
