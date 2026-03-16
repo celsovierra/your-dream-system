@@ -7,7 +7,7 @@ import { FileText, Plus, Send, MapPin, Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { upsertClientFromTraccar } from '@/services/data-layer';
-import { userStorageGet } from '@/services/auth';
+import { userStorageGet, userStorageSet } from '@/services/auth';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Rascunho', variant: 'secondary' },
