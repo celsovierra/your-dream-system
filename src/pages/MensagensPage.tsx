@@ -31,6 +31,17 @@ const MensagensPage = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    // Buscar templates do banco de dados
+    fetchMessageTemplates()
+      .then((dbTemplates) => {
+        if (dbTemplates && dbTemplates.length > 0) {
+          setTemplates(dbTemplates);
+        }
+      })
+      .catch((err) => {
+        console.error('Erro ao buscar templates, usando mock:', err);
+      });
+
     fetchSettings().then((s) => {
       setReminderDays(Number(s.reminder_days) || 3);
       setSendTimeReminder(s.send_time_reminder || '08:00');
