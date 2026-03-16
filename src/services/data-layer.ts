@@ -441,8 +441,8 @@ export async function fetchBills(): Promise<BillPayable[]> {
       result = (data as unknown as BillPayable[]) || [];
     } else {
       const res = await api.getBills();
-      if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar contas');
-      result = res.data;
+      if (!res.success) throw new Error(res.error || 'Erro ao buscar contas');
+      result = Array.isArray(res.data) ? res.data : [];
     }
     addOperationLog(backend, 'Financeiro', 'SELECT', `Listou ${result.length} contas`);
     return result;
