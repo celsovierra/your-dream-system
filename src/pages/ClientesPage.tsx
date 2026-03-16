@@ -437,6 +437,12 @@ const ClientesPage = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead className="hidden md:table-cell">Email</TableHead>
                   <TableHead>Telefone</TableHead>
