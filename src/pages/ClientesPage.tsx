@@ -224,9 +224,46 @@ const ClientesPage = () => {
     try {
       await deleteClient(id);
       toast.success('Cliente removido');
+      setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; });
       loadClients();
     } catch {
       toast.error('Erro ao remover');
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map(c => c.id)));
+    }
+  };
+
+  const handleMassDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
+    if (!window.confirm(`Tem certeza que deseja excluir ${count} cliente(s)?`)) return;
+    setDeleting(true);
+    try {
+      for (const id of selectedIds) {
+        await deleteClient(id);
+      }
+      toast.success(`${count} cliente(s) removido(s)`);
+      setSelectedIds(new Set());
+      loadClients();
+    } catch {
+      toast.error('Erro ao remover alguns clientes');
+      loadClients();
+    } finally {
+      setDeleting(false);
     }
   };
 
