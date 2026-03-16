@@ -311,12 +311,17 @@ const ClientesPage = () => {
         message = replaceTemplateVars(template.content, {
           nome: client.name,
           valor: Number(client.amount).toFixed(2),
-          data_vencimento: formattedDueDate !== '-' ? formattedDueDate : '',
+          vencimento: formattedDueDate !== '-' ? formattedDueDate : '',
           dias_atraso: String(daysOverdue),
-          link_pagamento: '',
+          link_boleto: '',
+          pix_copia_cola: '',
           multa: '0,00',
           juros: '0,00',
+          desconto: '0,00',
           valor_atualizado: `R$ ${Number(client.amount).toFixed(2)}`,
+          mes: dueDate ? dueDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '',
+          data_hoje: new Date().toLocaleDateString('pt-BR'),
+          prox_vencimento: '',
         });
       } else {
         const formattedDueDate = formatDatePtBr(client.due_date);
