@@ -1,18 +1,12 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Plus, Send, MapPin, Loader2 } from 'lucide-react';
+import { FileText, Plus, Send, MapPin, Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchClients, createClient, upsertClientFromTraccar } from '@/services/data-layer';
-
-const mockContracts = [
-  { id: 1, client_name: 'João Silva', template: 'Contrato Padrão', status: 'signed', signed_at: '2024-03-10', created_at: '2024-03-08' },
-  { id: 2, client_name: 'Maria Santos', template: 'Contrato Padrão', status: 'sent', signed_at: null, created_at: '2024-03-15' },
-  { id: 3, client_name: 'Carlos Oliveira', template: 'Contrato Padrão', status: 'draft', signed_at: null, created_at: '2024-03-18' },
-];
+import { upsertClientFromTraccar } from '@/services/data-layer';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Rascunho', variant: 'secondary' },
@@ -21,10 +15,35 @@ const statusLabels: Record<string, { label: string; variant: 'default' | 'second
   cancelled: { label: 'Cancelado', variant: 'destructive' },
 };
 
+interface Contract {
+  id: number;
+  client_name: string;
+  template: string;
+  status: string;
+  signed_at: string | null;
+  created_at: string;
+}
+
 const ContratosPage = () => {
   const [traccarLoading, setTraccarLoading] = useState(false);
+  const [traccarConfigured, setTraccarConfigured] = useState(false);
+  const [contracts, setContracts] = useState<Contract[]>([
+    { id: 1, client_name: 'João Silva', template: 'Contrato Padrão', status: 'signed', signed_at: '2024-03-10', created_at: '2024-03-08' },
+    { id: 2, client_name: 'Maria Santos', template: 'Contrato Padrão', status: 'sent', signed_at: null, created_at: '2024-03-15' },
+    { id: 3, client_name: 'Carlos Oliveira', template: 'Contrato Padrão', status: 'draft', signed_at: null, created_at: '2024-03-18' },
+  ]);
 
-  const traccarConfigured = !!(localStorage.getItem('traccar_url') && localStorage.getItem('traccar_user') && localStorage.getItem('traccar_password'));
+  useEffect(() => {
+    const url = localStorage.getItem('traccar_url');
+    const user = localStorage.getItem('traccar_user');
+    const pass = localStorage.getItem('traccar_password');
+    setTraccarConfigured(!!(url && user && pass));
+  }, []);
+
+  const handleDeleteContract = (id: number) => {
+    setContracts(prev => prev.filter(c => c.id !== id));
+    toast.success('Contrato removido!');
+  };
 
   const handleImportTraccar = async () => {
     const traccarUrl = localStorage.getItem('traccar_url');
@@ -116,7 +135,7 @@ const ContratosPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockContracts.map((contract) => (
+              {contracts.map((contract) => (
                 <TableRow key={contract.id}>
                   <TableCell className="font-medium">{contract.client_name}</TableCell>
                   <TableCell>
@@ -126,21 +145,29 @@ const ContratosPage = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={statusLabels[contract.status].variant}>
-                      {statusLabels[contract.status].label}
+                    <Badge variant={statusLabels[contract.status]?.variant || 'secondary'}>
+                      {statusLabels[contract.status]?.label || contract.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">{contract.signed_at || '-'}</TableCell>
                   <TableCell className="hidden md:table-cell">{contract.created_at}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-1">
                     {contract.status === 'draft' && (
                       <Button size="sm" variant="outline" onClick={() => toast.success('Contrato enviado!')}>
                         <Send className="mr-1 h-3 w-3" /> Enviar
                       </Button>
                     )}
+                    <Button size="icon" variant="ghost" onClick={() => handleDeleteContract(contract.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
+              {contracts.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">Nenhum contrato encontrado</TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
