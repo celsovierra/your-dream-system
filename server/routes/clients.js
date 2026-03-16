@@ -129,7 +129,7 @@ router.get('/:id', async (req, res) => {
 // Criar cliente
 router.post('/', async (req, res) => {
   try {
-    const { name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes } = req.body;
+    const { name, email, phone, phone2, document, amount, due_date, address, city, state, zip_code, notes, traccar_email } = req.body;
     if (!name || !phone) return res.status(400).json({ message: 'Nome e telefone são obrigatórios' });
 
     const result = await queryWithOptionalOwnerScope({
