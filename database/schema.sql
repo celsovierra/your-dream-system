@@ -212,6 +212,11 @@ CREATE TABLE IF NOT EXISTS payment_config (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- Dados iniciais - admin padrão (senha: admin123 -> SHA256)
+-- O hash abaixo corresponde a sha256('admin123')
+INSERT IGNORE INTO users (name, email, password_hash) VALUES
+('Administrador', 'admin@cobranca.com', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9');
+
 -- Dados iniciais
 INSERT INTO message_templates (name, type, content) VALUES
 ('Lembrete', 'reminder', 'Olá {nome}, lembramos que seu boleto de R$ {valor} vence em {data_vencimento}.'),
