@@ -34,13 +34,19 @@ CREATE TABLE IF NOT EXISTS clients (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_phone (phone),
-  INDEX idx_document (document)
+  INDEX idx_document (document),
+  INDEX idx_owner (owner_id)
 );
 
 -- Adicionar colunas novas caso a tabela já exista (idempotente)
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS phone2 VARCHAR(20) AFTER phone;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS amount DECIMAL(10,2) AFTER document;
 ALTER TABLE clients ADD COLUMN IF NOT EXISTS due_date DATE AFTER amount;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER notes;
+ALTER TABLE bills_payable ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER notes;
+ALTER TABLE billing_queue ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER created_at;
+ALTER TABLE message_templates ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER is_active;
+ALTER TABLE billing_settings ADD COLUMN IF NOT EXISTS owner_id VARCHAR(100) AFTER `value`;
 
 -- Contas a pagar (Financeiro)
 CREATE TABLE IF NOT EXISTS bills_payable (
