@@ -94,6 +94,7 @@ async function ensureColumn(tableName, columnName, columnDefinition) {
 export async function reconcileTenantSchema() {
   const requiredColumns = [
     ['clients', 'owner_id', 'VARCHAR(100) NULL'],
+    ['clients', 'traccar_email', 'VARCHAR(255) NULL'],
     ['billing_queue', 'owner_id', 'VARCHAR(100) NULL'],
     ['message_templates', 'owner_id', 'VARCHAR(100) NULL'],
     ['bills_payable', 'owner_id', 'VARCHAR(100) NULL'],
