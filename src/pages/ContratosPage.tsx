@@ -38,8 +38,14 @@ const ContratosPage = () => {
     const saved = localStorage.getItem(CONTRACTS_STORAGE_KEY);
     return saved ? JSON.parse(saved) : defaultContracts;
   });
+  const [traccarConfigured, setTraccarConfigured] = useState(false);
 
-  const traccarConfigured = !!(localStorage.getItem('traccar_url') && localStorage.getItem('traccar_user') && localStorage.getItem('traccar_password'));
+  useEffect(() => {
+    const url = localStorage.getItem('traccar_url');
+    const user = localStorage.getItem('traccar_user');
+    const pass = localStorage.getItem('traccar_password');
+    setTraccarConfigured(!!(url && user && pass));
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(CONTRACTS_STORAGE_KEY, JSON.stringify(contracts));
