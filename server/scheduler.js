@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import { query } from './db.js';
+import { resolveTemplateByType } from './utils/template-resolution.js';
 
 // Busca configuração do banco
 async function getSetting(key, fallback) {
