@@ -242,6 +242,11 @@ class ApiService {
     return this.request<MessageTemplate[]>('/templates/messages');
   }
 
+  async getMessageTemplateByType(type: string, activeOnly = false) {
+    const query = activeOnly ? '?active=true' : '';
+    return this.request<MessageTemplate>(`/templates/messages/by-type/${encodeURIComponent(type)}${query}`);
+  }
+
   async updateMessageTemplate(id: number, template: Partial<MessageTemplate>) {
     return this.request<MessageTemplate>(`/templates/messages/${id}`, {
       method: 'PUT',
