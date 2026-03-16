@@ -136,17 +136,20 @@ export async function createClient(client: Partial<Client>): Promise<void> {
 
 export async function upsertClientFromTraccar(client: { name: string; phone: string; email?: string }): Promise<'created' | 'updated' | 'skipped'> {
   const backend = ACTIVE_DATA_BACKEND;
+  const ownerId = getCurrentOwnerId();
   try {
     if (isLovableEnv()) {
-      // Try to find existing client by traccar_email (most stable Traccar identifier)
+      // Try to find existing client by traccar_email within the same owner
       let existing: any[] | null = null;
       if (client.email) {
-        const { data } = await supabase.from('clients').select('id, name, phone, email').eq('traccar_email', client.email).limit(1);
+        const { data } = await supabase.from('clients').select('id, name, phone, email, traccar_email')
+          .eq('traccar_email', client.email)
+          .eq('owner_id', ownerId)
+          .limit(1);
         existing = data;
       }
 
       if (existing && existing.length > 0) {
-        // Update existing client with latest Traccar data
         const current = existing[0];
         const needsUpdate = current.name !== client.name || current.phone !== client.phone || current.email !== (client.email || null);
         if (!needsUpdate) return 'skipped';
@@ -162,10 +165,12 @@ export async function upsertClientFromTraccar(client: { name: string; phone: str
         return 'updated';
       }
 
-      // Also check by name to avoid duplicates
-      const { data: byName } = await supabase.from('clients').select('id').eq('name', client.name).limit(1);
+      // Also check by name within same owner to avoid duplicates
+      const { data: byName } = await supabase.from('clients').select('id')
+        .eq('name', client.name)
+        .eq('owner_id', ownerId)
+        .limit(1);
       if (byName && byName.length > 0) {
-        // Update traccar_email on existing record and sync data
         const { error } = await supabase.from('clients').update({
           phone: client.phone,
           email: client.email || null,
@@ -177,8 +182,25 @@ export async function upsertClientFromTraccar(client: { name: string; phone: str
         return 'updated';
       }
 
+      // Also check by phone within same owner
+      const { data: byPhone } = await supabase.from('clients').select('id')
+        .eq('phone', client.phone)
+        .eq('owner_id', ownerId)
+        .limit(1);
+      if (byPhone && byPhone.length > 0) {
+        const { error } = await supabase.from('clients').update({
+          name: client.name,
+          email: client.email || null,
+          traccar_email: client.email || null,
+          updated_at: new Date().toISOString(),
+        }).eq('id', byPhone[0].id);
+        if (error) throw error;
+        addOperationLog(backend, 'Clientes', 'UPDATE', `Vinculou Traccar ao cliente "${client.name}" por telefone`);
+        return 'updated';
+      }
+
       // Create new client
-      const { error } = await supabase.from('clients').insert({ name: client.name, phone: client.phone, email: client.email || null, traccar_email: client.email || null, owner_id: getCurrentOwnerId() } as any);
+      const { error } = await supabase.from('clients').insert({ name: client.name, phone: client.phone, email: client.email || null, traccar_email: client.email || null, owner_id: ownerId } as any);
       if (error) {
         if (error.code === '23505') return 'skipped';
         throw error;
