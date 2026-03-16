@@ -46,20 +46,46 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [deploying, setDeploying] = useState(false);
   const [hasUpdate, setHasUpdate] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
+  const [deployApiConfigured, setDeployApiConfigured] = useState(() => Boolean(resolveDeployApiUrl()));
 
-  const resolveDeployApiUrl = () => {
-    const savedUrl = localStorage.getItem('api_base_url')?.trim();
-    const autoUrl = `${window.location.origin}/api`;
-    return savedUrl || autoUrl;
-  };
+  function resolveDeployApiUrl() {
+    if (typeof window === 'undefined') return '';
+
+    const savedUrl = window.localStorage.getItem('api_base_url')?.trim();
+    if (!savedUrl) return '';
+
+    const normalized = savedUrl.replace(/\/+$/, '');
+    return normalized.endsWith('/api') ? normalized : `${normalized}/api`;
+  }
+
+  async function parseApiResponse(response: Response) {
+    const contentType = response.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      return response.json();
+    }
+
+    const text = await response.text().catch(() => '');
+    return {
+      success: false,
+      error: text ? text.slice(0, 160) : `Erro ${response.status}`,
+    };
+  }
 
   const checkForUpdates = async () => {
-    try {
-      const res = await fetch(`${resolveDeployApiUrl()}/check-update`);
-      const data = await res.json();
+    const apiUrl = resolveDeployApiUrl();
 
-      if (data.success) {
-        setHasUpdate(data.hasUpdate);
+    if (!apiUrl) {
+      setHasUpdate(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${apiUrl}/check-update`);
+      const data = await parseApiResponse(res);
+
+      if (res.ok && data.success) {
+        setHasUpdate(Boolean(data.hasUpdate));
         return;
       }
 
@@ -79,16 +105,42 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   }, [sidebarCollapsed]);
 
   useEffect(() => {
-    checkForUpdates();
-    const interval = setInterval(checkForUpdates, 60000);
-    return () => clearInterval(interval);
+    const syncDeployApi = () => {
+      const apiUrl = resolveDeployApiUrl();
+      setDeployApiConfigured(Boolean(apiUrl));
+
+      if (!apiUrl) {
+        setHasUpdate(false);
+        return;
+      }
+
+      void checkForUpdates();
+    };
+
+    syncDeployApi();
+    const interval = setInterval(syncDeployApi, 60000);
+    window.addEventListener('storage', syncDeployApi);
+    window.addEventListener('api-base-url-changed', syncDeployApi);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', syncDeployApi);
+      window.removeEventListener('api-base-url-changed', syncDeployApi);
+    };
   }, []);
 
   const handleDeploy = async () => {
+    const apiUrl = resolveDeployApiUrl();
+
+    if (!apiUrl) {
+      toast.error('Configure a URL da API da VPS em Configurações.');
+      return;
+    }
+
     setDeploying(true);
 
     try {
-      const res = await fetch(`${resolveDeployApiUrl()}/deploy`, {
+      const res = await fetch(`${apiUrl}/deploy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -96,7 +148,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         },
       });
 
-      const data = await res.json();
+      const data = await parseApiResponse(res);
 
       if (!res.ok || !data.success) {
         toast.error(data.error || 'Erro ao atualizar a VPS');
@@ -110,7 +162,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       toast.success(data.message || 'Atualização concluída com sucesso.');
       await checkForUpdates();
     } catch {
-      toast.error('Não foi possível conectar ao servidor');
+      toast.error('Não foi possível conectar à API da VPS');
     } finally {
       setDeploying(false);
     }
