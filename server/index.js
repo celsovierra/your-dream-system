@@ -34,6 +34,7 @@ app.use('/api/whatsapp', whatsappRouter);
 app.use('/api/queue', queueRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/bills', billsRouter);
+app.use('/api/traccar', traccarRouter);
 
 app.get('/api/health', async (_req, res) => {
   const { hasColumn } = await import('./db.js');
