@@ -69,6 +69,8 @@ router.get('/', async (_req, res) => {
       'SELECT * FROM bills_payable WHERE parent_bill_id IS NULL ORDER BY due_date ASC, id ASC'
     );
 
+    console.log('GET /bills raw type:', typeof rows, 'isArray:', Array.isArray(rows), 'length:', rows?.length);
+
     const data = Array.isArray(rows)
       ? rows.filter(r => r && typeof r === 'object' && 'id' in r).map(normalizeBillRow)
       : [];
