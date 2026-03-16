@@ -242,25 +242,35 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
               )}
               <button
                 onClick={handleDeploy}
-                disabled={deploying || !hasUpdate}
+                disabled={deploying || !hasUpdate || !deployApiConfigured}
                 className={cn(
                   "w-full flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold transition-all duration-200",
-                  hasUpdate
+                  hasUpdate && deployApiConfigured
                     ? "bg-gradient-to-r from-warning to-destructive text-destructive-foreground shadow-lg hover:scale-[1.02] active:scale-[0.98]"
                     : "bg-muted text-muted-foreground cursor-not-allowed",
                   "disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
                 )}
               >
                 <RefreshCw className={cn("h-4 w-4 shrink-0", deploying && "animate-spin")} />
-                <span>{deploying ? 'Atualizando...' : hasUpdate ? 'Atualização disponível!' : 'VPS atualizada'}</span>
+                <span>
+                  {deploying
+                    ? 'Atualizando...'
+                    : !deployApiConfigured
+                      ? 'Configurar VPS'
+                      : hasUpdate
+                        ? 'Atualização disponível!'
+                        : 'VPS atualizada'}
+                </span>
               </button>
             </div>
             <p className="text-[11px] text-sidebar-foreground/50 text-center">
-              {hasUpdate
-                ? '🔴 Nova versão disponível'
-                : lastDeployAt
-                  ? `✅ Atualizado em ${new Date(lastDeployAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
-                  : '✅ Nenhuma atualização disponível'}
+              {!deployApiConfigured
+                ? '⚙️ Configure a URL da API da VPS em Configurações'
+                : hasUpdate
+                  ? '🔴 Nova versão disponível'
+                  : lastDeployAt
+                    ? `✅ Atualizado em ${new Date(lastDeployAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
+                    : '✅ Nenhuma atualização disponível'}
             </p>
           </div>
         )}
