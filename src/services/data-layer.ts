@@ -459,7 +459,7 @@ export async function clearQueue(): Promise<void> {
       if (error) throw error;
     } else {
       const res = await apiFetch('/queue', { method: 'DELETE' });
-      const json = await res.json();
+      const json = await safeJsonParse(res);
       if (!json.success) throw new Error(json.error || 'Erro ao limpar fila');
     }
     addOperationLog(backend, 'Fila', 'DELETE', 'Limpou toda a fila');
