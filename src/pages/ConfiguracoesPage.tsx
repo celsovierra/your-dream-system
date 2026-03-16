@@ -40,7 +40,7 @@ const ConfiguracoesPage = () => {
           setQrCode(null);
           setPollingStatus(false);
           setWhatsapp(prev => ({ ...prev, status: 'connected' }));
-          localStorage.setItem('whatsapp_status', 'connected');
+          userStorageSet('whatsapp_status', 'connected');
           toast.success('WhatsApp conectado com sucesso!');
           return;
         }
