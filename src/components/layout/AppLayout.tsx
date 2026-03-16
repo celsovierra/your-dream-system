@@ -118,13 +118,9 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
 
     syncDeployApi();
     const interval = setInterval(syncDeployApi, 60000);
-    window.addEventListener('storage', syncDeployApi);
-    window.addEventListener('api-base-url-changed', syncDeployApi);
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener('storage', syncDeployApi);
-      window.removeEventListener('api-base-url-changed', syncDeployApi);
     };
   }, []);
 
