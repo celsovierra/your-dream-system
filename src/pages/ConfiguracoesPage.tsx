@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Wifi, WifiOff, CreditCard, Save, Download, Upload, ChevronDown, Copy, QrCode, Palette, ImageIcon, MapPin } from 'lucide-react';
+import { Wifi, WifiOff, CreditCard, Save, Download, Upload, ChevronDown, Copy, QrCode, Palette, ImageIcon, MapPin, Server } from 'lucide-react';
 import { toast } from 'sonner';
 import asaasLogo from '@/assets/asaas.png';
 import mercadoPagoLogo from '@/assets/mercado-pago.png';
@@ -26,6 +26,7 @@ const ConfiguracoesPage = () => {
   const [layoutCompanyName, setLayoutCompanyName] = useState(() => localStorage.getItem('layout_company_name') || 'CobrançaPro');
   const [layoutPrimaryColor, setLayoutPrimaryColor] = useState(() => localStorage.getItem('layout_primary_color') || '#3b82f6');
   const [layoutLogo, setLayoutLogo] = useState<string | null>(() => localStorage.getItem('layout_logo'));
+  const [apiBaseUrl, setApiBaseUrl] = useState(() => localStorage.getItem('api_base_url') || '');
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [traccarUrl, setTraccarUrl] = useState(() => userStorageGet('traccar_url') || '');
