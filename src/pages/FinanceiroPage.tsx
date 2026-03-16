@@ -176,20 +176,20 @@ const FinanceiroPage = () => {
   const handleDelete = async (id: number) => {
     try {
       await deleteBill(id);
-      toast.success('Conta excluída');
-      loadBills();
-    } catch {
-      toast.error('Erro ao excluir');
+      toast.success(`Conta excluída do backend ${activeBackend === 'api' ? 'VPS' : 'teste'}`);
+      await loadBills();
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao excluir');
     }
   };
 
   const handleMarkPaid = async (bill: BillPayable) => {
     try {
       await markBillPaid(bill.id);
-      toast.success('Marcada como paga!');
-      loadBills();
-    } catch {
-      toast.error('Erro ao marcar como paga');
+      toast.success(`Marcada como paga no backend ${activeBackend === 'api' ? 'VPS' : 'teste'}!`);
+      await loadBills();
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao marcar como paga');
     }
   };
 

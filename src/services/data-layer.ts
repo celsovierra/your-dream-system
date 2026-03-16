@@ -410,11 +410,11 @@ export async function fetchBills(): Promise<BillPayable[]> {
       .order('due_date', { ascending: true });
     if (error) throw error;
     return (data as unknown as BillPayable[]) || [];
-  } else {
-    const res = await api.getBills();
-    if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar contas');
-    return res.data;
   }
+
+  const res = await api.getBills();
+  if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar contas');
+  return res.data;
 }
 
 export async function createBill(bill: Partial<BillPayable>): Promise<BillPayable | null> {
@@ -426,21 +426,22 @@ export async function createBill(bill: Partial<BillPayable>): Promise<BillPayabl
       .single();
     if (error) throw error;
     return data as unknown as BillPayable;
-  } else {
-    const res = await api.createBill(bill as any);
-    if (!res.success) throw new Error(res.error || 'Erro ao criar conta');
-    return (res.data as BillPayable) || null;
   }
+
+  const res = await api.createBill(bill as any);
+  if (!res.success) throw new Error(res.error || 'Erro ao criar conta');
+  return (res.data as BillPayable) || null;
 }
 
 export async function createBillChildren(children: Partial<BillPayable>[]): Promise<void> {
   if (isLovableEnv()) {
     const { error } = await supabase.from('bills_payable').insert(children as any);
     if (error) throw error;
-  } else {
-    const res = await api.createBillsBatch(children as any);
-    if (!res.success) throw new Error(res.error || 'Erro ao criar parcelas');
+    return;
   }
+
+  const res = await api.createBillsBatch(children as any);
+  if (!res.success) throw new Error(res.error || 'Erro ao criar parcelas');
 }
 
 export async function updateBill(id: number, bill: Partial<BillPayable>): Promise<void> {
@@ -450,20 +451,22 @@ export async function updateBill(id: number, bill: Partial<BillPayable>): Promis
       .update({ ...bill, updated_at: new Date().toISOString() } as any)
       .eq('id', id);
     if (error) throw error;
-  } else {
-    const res = await api.updateBill(id, bill as any);
-    if (!res.success) throw new Error(res.error || 'Erro ao atualizar conta');
+    return;
   }
+
+  const res = await api.updateBill(id, bill as any);
+  if (!res.success) throw new Error(res.error || 'Erro ao atualizar conta');
 }
 
 export async function deleteBill(id: number): Promise<void> {
   if (isLovableEnv()) {
     const { error } = await supabase.from('bills_payable').delete().eq('id', id);
     if (error) throw error;
-  } else {
-    const res = await api.deleteBill(id);
-    if (!res.success) throw new Error(res.error || 'Erro ao excluir conta');
+    return;
   }
+
+  const res = await api.deleteBill(id);
+  if (!res.success) throw new Error(res.error || 'Erro ao excluir conta');
 }
 
 export async function markBillPaid(id: number): Promise<void> {
@@ -473,8 +476,13 @@ export async function markBillPaid(id: number): Promise<void> {
       .update({ status: 'paid', paid_date: formatLocalDate(new Date()) } as any)
       .eq('id', id);
     if (error) throw error;
-  } else {
-    const res = await api.markBillPaid(id);
-    if (!res.success) throw new Error(res.error || 'Erro ao marcar como paga');
+    return;
   }
+
+  const res = await api.markBillPaid(id);
+  if (!res.success) throw new Error(res.error || 'Erro ao marcar como paga');
+}
+
+export function getActiveDataBackend(): DataBackend {
+  return ACTIVE_DATA_BACKEND;
 }
