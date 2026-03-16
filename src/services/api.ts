@@ -30,6 +30,18 @@ class ApiService {
     this.token = localStorage.getItem('auth_token');
   }
 
+  private needsProxy(): boolean {
+    if (typeof window === 'undefined') return false;
+    const isHttps = window.location.protocol === 'https:';
+    const vpsUrl = this.resolveBaseUrl();
+    return isHttps && vpsUrl.startsWith('http://');
+  }
+
+  private getProxyBaseUrl(): string {
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'pmnanfzbtimcfyzndeyq';
+    return `https://${projectId}.supabase.co/functions/v1/vps-proxy`;
+  }
+
   private resolveBaseUrl(): string {
     if (typeof window !== 'undefined') {
       const storedBaseUrl = window.localStorage.getItem('api_base_url')?.trim();
