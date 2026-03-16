@@ -58,6 +58,11 @@ const MensagensPage = () => {
   const handleSaveAll = async () => {
     setSaving(true);
     try {
+      // Salvar templates no banco
+      for (const t of templates) {
+        await updateMessageTemplate(t.id, { content: t.content, is_active: t.is_active, name: t.name });
+      }
+
       await saveSettings({
         reminder_days: String(reminderDays),
         send_time_reminder: sendTimeReminder,
@@ -70,7 +75,7 @@ const MensagensPage = () => {
       userStorageSet('cobranca_send_time_due', sendTimeDue);
       userStorageSet('cobranca_send_time_overdue', sendTimeOverdue);
       userStorageSet('cobranca_overdue_frequency', String(overdueFrequency));
-      toast.success('Todas as configurações salvas!');
+      toast.success('Todas as configurações e templates salvos!');
     } catch (err: any) {
       toast.error('Erro ao salvar: ' + (err.message || ''));
     } finally {
