@@ -12,6 +12,7 @@ import settingsRouter from './routes/settings.js';
 import billsRouter from './routes/bills.js';
 import { startScheduler } from './scheduler.js';
 import { extractOwnerId } from './middleware/owner.js';
+import { reconcileTenantSchema } from './db.js';
 
 const envPath = new URL('../.env', import.meta.url);
 dotenv.config({ path: envPath.pathname });
@@ -40,12 +41,23 @@ app.get('/api/health', (_req, res) => {
 const PORT = Number(process.env.PORT || 3001);
 const HOST = '0.0.0.0';
 
-const server = app.listen(PORT, HOST, () => {
-  console.log(`API rodando em http://${HOST}:${PORT}`);
-  startScheduler();
-});
+async function bootstrap() {
+  try {
+    await reconcileTenantSchema();
 
-server.on('error', (err) => {
-  console.error('Falha ao subir API:', err);
-  process.exit(1);
-});
+    const server = app.listen(PORT, HOST, () => {
+      console.log(`API rodando em http://${HOST}:${PORT}`);
+      startScheduler();
+    });
+
+    server.on('error', (err) => {
+      console.error('Falha ao subir API:', err);
+      process.exit(1);
+    });
+  } catch (err) {
+    console.error('Falha ao reconciliar schema:', err);
+    process.exit(1);
+  }
+}
+
+bootstrap();

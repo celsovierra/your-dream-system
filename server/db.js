@@ -28,6 +28,11 @@ export function isUnknownColumnError(err, columnName = 'owner_id') {
   return message.includes('unknown column') && message.includes(String(columnName).toLowerCase());
 }
 
+export function isDuplicateColumnError(err, columnName = 'owner_id') {
+  const message = String(err?.message || err || '').toLowerCase();
+  return message.includes('duplicate column') && message.includes(String(columnName).toLowerCase());
+}
+
 export async function hasColumn(tableName, columnName) {
   const cacheKey = `${tableName}:${columnName}`;
   if (columnExistsCache.has(cacheKey)) {
@@ -55,6 +60,37 @@ export async function hasColumn(tableName, columnName) {
 
 export function clearSchemaCache() {
   columnExistsCache.clear();
+}
+
+async function ensureColumn(tableName, columnName, columnDefinition) {
+  const exists = await hasColumn(tableName, columnName);
+  if (exists) return false;
+
+  try {
+    await query(`ALTER TABLE \`${tableName}\` ADD COLUMN \`${columnName}\` ${columnDefinition}`);
+    clearSchemaCache();
+    return true;
+  } catch (err) {
+    if (isDuplicateColumnError(err, columnName)) {
+      clearSchemaCache();
+      return false;
+    }
+    throw err;
+  }
+}
+
+export async function reconcileTenantSchema() {
+  const requiredColumns = [
+    ['clients', 'owner_id', 'VARCHAR(100) NULL'],
+    ['billing_queue', 'owner_id', 'VARCHAR(100) NULL'],
+    ['message_templates', 'owner_id', 'VARCHAR(100) NULL'],
+    ['bills_payable', 'owner_id', 'VARCHAR(100) NULL'],
+    ['billing_settings', 'owner_id', "VARCHAR(100) NOT NULL DEFAULT '__global__'"],
+  ];
+
+  for (const [tableName, columnName, columnDefinition] of requiredColumns) {
+    await ensureColumn(tableName, columnName, columnDefinition);
+  }
 }
 
 export default pool;
