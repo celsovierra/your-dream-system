@@ -108,6 +108,12 @@ const ConfiguracoesPage = () => {
 
   const [openSection, setOpenSection] = useState<string | null>(null);
 
+  // Layout config state
+  const [layoutCompanyName, setLayoutCompanyName] = useState(() => localStorage.getItem('layout_company_name') || 'CobrançaPro');
+  const [layoutPrimaryColor, setLayoutPrimaryColor] = useState(() => localStorage.getItem('layout_primary_color') || '#3b82f6');
+  const [layoutLogo, setLayoutLogo] = useState<string | null>(() => localStorage.getItem('layout_logo'));
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
   const toggleSection = (key: string) => {
     setOpenSection(prev => prev === key ? null : key);
   };
