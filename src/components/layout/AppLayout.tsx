@@ -306,7 +306,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
                   {deploying
                     ? 'Atualizando...'
                     : !deployApiConfigured
-                      ? 'Configurar VPS'
+                      ? 'Use na VPS'
                       : hasUpdate
                         ? 'Atualização disponível!'
                         : 'Atualizar VPS'}
