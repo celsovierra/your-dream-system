@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { isAdmin } from '@/services/auth';
 import {
   LogOut,
   LayoutDashboard,
@@ -35,12 +36,14 @@ const navItems = [
   { path: '/contratos', label: 'Contratos', icon: FileText, color: 'text-orange-400' },
 ];
 
-const bottomNavItems = [
+const allBottomNavItems = [
   { path: '/logs', label: 'Logs', icon: ScrollText, color: 'text-cyan-400' },
-  { path: '/configuracoes', label: 'Configurações', icon: Settings, color: 'text-rose-400' },
+  { path: '/configuracoes', label: 'Configurações', icon: Settings, color: 'text-rose-400', adminOnly: true },
 ];
 
 const AppLayout = ({ children, onLogout }: LayoutProps) => {
+  const userIsAdmin = isAdmin();
+  const bottomNavItems = allBottomNavItems.filter(item => !item.adminOnly || userIsAdmin);
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');

@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Receipt, Eye, EyeOff, UserPlus, LogIn, Shield, Zap, BarChart3, FileText } from 'lucide-react';
+import { Receipt, Eye, EyeOff, LogIn, Shield, Zap, BarChart3, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { getStoredUsers, setCurrentUser } from '@/services/auth';
 
 interface LoginPageProps {
   onLogin: (token: string) => void;
@@ -14,12 +15,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [regName, setRegName] = useState('');
-  const [regPassword, setRegPassword] = useState('');
 
   const companyName = localStorage.getItem('layout_company_name') || 'CobrançaPro';
   const customLogo = localStorage.getItem('layout_logo');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -29,19 +28,15 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
 
     setLoading(true);
     try {
-      const storedUsers = localStorage.getItem('app_users');
-      const users = storedUsers ? JSON.parse(storedUsers) : [
-        { id: '1', email: 'admin', password: 'admin123', name: 'Administrador' }
-      ];
-      if (!storedUsers) localStorage.setItem('app_users', JSON.stringify(users));
-
+      const users = getStoredUsers();
       const loginValue = email.toLowerCase().trim();
-      const user = users.find((u: { email: string; name: string; password: string }) => 
+      const user = users.find(u => 
         (u.email.toLowerCase() === loginValue || u.name.toLowerCase() === loginValue) && u.password === password
       );
       if (user) {
         const token = 'token-' + Date.now();
         localStorage.setItem('auth_token', token);
+        setCurrentUser(user);
         onLogin(token);
         toast.success('Login realizado com sucesso!');
       } else {
@@ -54,50 +49,12 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!regName || !regPassword) {
-      toast.error('Preencha nome e senha');
-      return;
-    }
-    if (regPassword.length < 4) {
-      toast.error('A senha deve ter pelo menos 4 caracteres');
-      return;
-    }
-
-    const storedUsers = localStorage.getItem('app_users');
-    const users = storedUsers ? JSON.parse(storedUsers) : [
-      { id: '1', email: 'admin', password: 'admin123', name: 'Administrador' }
-    ];
-
-    if (users.find((u: { name: string }) => u.name.toLowerCase() === regName.toLowerCase().trim())) {
-      toast.error('Este nome já está cadastrado');
-      return;
-    }
-
-    const newUser = {
-      id: Date.now().toString(),
-      email: regName.toLowerCase().trim().replace(/\s+/g, '.'),
-      password: regPassword,
-      name: regName,
-      createdAt: new Date().toISOString(),
-    };
-    users.push(newUser);
-    localStorage.setItem('app_users', JSON.stringify(users));
-    toast.success('Conta criada! Faça login com seu nome e senha.');
-    setRegName('');
-    setRegPassword('');
-    setMode('login');
-  };
-
   return (
     <div className="flex min-h-screen">
       {/* Left panel - branding */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(59,130,246,0.15),transparent_70%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(99,102,241,0.1),transparent_60%)]" />
-        
-        {/* Geometric decorations */}
         <div className="absolute top-20 left-10 w-32 h-32 border border-blue-500/20 rounded-2xl rotate-12" />
         <div className="absolute bottom-32 right-16 w-24 h-24 border border-indigo-500/20 rounded-full" />
         <div className="absolute top-1/3 right-20 w-16 h-16 bg-blue-500/10 rounded-lg rotate-45" />
@@ -182,85 +139,47 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
           </div>
 
           <div className="space-y-2 lg:text-left text-center">
-            <h2 className="text-2xl font-bold tracking-tight">
-              {mode === 'login' ? 'Bem-vindo de volta' : 'Criar nova conta'}
-            </h2>
-             <p className="text-muted-foreground">
-              {mode === 'login' ? 'Entre com seu usuário e senha' : 'Crie sua conta com nome e senha'}
-            </p>
+            <h2 className="text-2xl font-bold tracking-tight">Bem-vindo de volta</h2>
+            <p className="text-muted-foreground">Entre com seu usuário e senha</p>
           </div>
 
-          {mode === 'login' ? (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">Usuário</Label>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium">Usuário</Label>
+              <Input 
+                id="email" 
+                type="text" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                placeholder="Nome ou email" 
+                className="h-11"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
+              <div className="relative">
                 <Input 
-                  id="email" 
-                  type="text" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  placeholder="Nome ou email" 
-                  className="h-11"
+                  id="password" 
+                  type={showPassword ? 'text' : 'password'} 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  placeholder="••••••••" 
+                  className="h-11 pr-11"
                 />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)} 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
-                <div className="relative">
-                  <Input 
-                    id="password" 
-                    type={showPassword ? 'text' : 'password'} 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)} 
-                    placeholder="••••••••" 
-                    className="h-11 pr-11"
-                  />
-                  <button 
-                    type="button" 
-                    onClick={() => setShowPassword(!showPassword)} 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-              <Button type="submit" className="w-full h-11 text-sm font-semibold" disabled={loading}>
-                <LogIn className="mr-2 h-4 w-4" />
-                {loading ? 'Entrando...' : 'Entrar'}
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleRegister} className="space-y-5">
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Nome de Usuário</Label>
-                <Input value={regName} onChange={(e) => setRegName(e.target.value)} placeholder="Seu nome" className="h-11" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Senha</Label>
-                <Input type="password" value={regPassword} onChange={(e) => setRegPassword(e.target.value)} placeholder="Mínimo 4 caracteres" className="h-11" />
-              </div>
-              <Button type="submit" className="w-full h-11 text-sm font-semibold">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Criar Conta
-              </Button>
-            </form>
-          )}
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">ou</span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-            className="w-full text-center text-sm text-primary hover:text-primary/80 font-medium transition-colors"
-          >
-            {mode === 'login' ? 'Não tem conta? Criar conta' : 'Já tem conta? Fazer login'}
-          </button>
+            <Button type="submit" className="w-full h-11 text-sm font-semibold" disabled={loading}>
+              <LogIn className="mr-2 h-4 w-4" />
+              {loading ? 'Entrando...' : 'Entrar'}
+            </Button>
+          </form>
 
           <p className="text-center text-xs text-muted-foreground pt-4">
             © {new Date().getFullYear()} {companyName}. Todos os direitos reservados.

@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import api from '@/services/api';
 import type { Client, MessageTemplate, DashboardStats } from '@/types/billing';
 import { addOperationLog } from '@/services/operation-logger';
+import { getCurrentOwnerId, isAdmin } from '@/services/auth';
 
 type DataBackend = 'cloud' | 'api';
 
@@ -96,7 +97,11 @@ export async function fetchClients(): Promise<Client[]> {
   try {
     let result: Client[];
     if (isLovableEnv()) {
-      const { data, error } = await supabase.from('clients').select('*').order('name');
+      let query = supabase.from('clients').select('*').order('name');
+      if (!isAdmin()) {
+        query = query.eq('owner_id', getCurrentOwnerId());
+      }
+      const { data, error } = await query;
       if (error) throw error;
       result = (data || []).map((c: any) => ({ ...c, due_date: normalizeDateOnly(c.due_date), amount: c.amount ? Number(c.amount) : undefined }));
     } else {
@@ -116,7 +121,7 @@ export async function createClient(client: Partial<Client>): Promise<void> {
   const backend = ACTIVE_DATA_BACKEND;
   try {
     if (isLovableEnv()) {
-      const { error } = await supabase.from('clients').insert({ name: client.name, email: client.email || null, phone: client.phone, phone2: client.phone2 || null, document: client.document || null, amount: client.amount || null, due_date: client.due_date || null });
+      const { error } = await supabase.from('clients').insert({ name: client.name, email: client.email || null, phone: client.phone, phone2: client.phone2 || null, document: client.document || null, amount: client.amount || null, due_date: client.due_date || null, owner_id: getCurrentOwnerId() } as any);
       if (error) throw error;
     } else {
       const res = await api.createClient(client);
@@ -173,7 +178,7 @@ export async function upsertClientFromTraccar(client: { name: string; phone: str
       }
 
       // Create new client
-      const { error } = await supabase.from('clients').insert({ name: client.name, phone: client.phone, email: client.email || null, traccar_email: client.email || null });
+      const { error } = await supabase.from('clients').insert({ name: client.name, phone: client.phone, email: client.email || null, traccar_email: client.email || null, owner_id: getCurrentOwnerId() } as any);
       if (error) {
         if (error.code === '23505') return 'skipped';
         throw error;
@@ -275,7 +280,11 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
   try {
     let stats: DashboardStats;
     if (isLovableEnv()) {
-      const { data: clients, error } = await supabase.from('clients').select('*');
+      let query = supabase.from('clients').select('*');
+      if (!isAdmin()) {
+        query = query.eq('owner_id', getCurrentOwnerId());
+      }
+      const { data: clients, error } = await query;
       if (error) throw error;
       const allClients = clients || [];
       const activeClients = allClients.filter((c: any) => c.is_active);
@@ -324,7 +333,11 @@ export async function fetchQueue(): Promise<QueueItem[]> {
   try {
     let result: QueueItem[];
     if (isLovableEnv()) {
-      const { data, error } = await supabase.from('billing_queue').select('*').order('created_at', { ascending: false });
+      let query = supabase.from('billing_queue').select('*').order('created_at', { ascending: false });
+      if (!isAdmin()) {
+        query = query.eq('owner_id', getCurrentOwnerId());
+      }
+      const { data, error } = await query;
       if (error) throw error;
       result = (data || []) as QueueItem[];
     } else {
@@ -498,7 +511,11 @@ export async function fetchBills(): Promise<BillPayable[]> {
   try {
     let result: BillPayable[];
     if (isLovableEnv()) {
-      const { data, error } = await supabase.from('bills_payable').select('*').is('parent_bill_id', null).order('due_date', { ascending: true });
+      let query = supabase.from('bills_payable').select('*').is('parent_bill_id', null).order('due_date', { ascending: true });
+      if (!isAdmin()) {
+        query = query.eq('owner_id', getCurrentOwnerId());
+      }
+      const { data, error } = await query;
       if (error) throw error;
       result = (data as unknown as BillPayable[]) || [];
     } else {
@@ -525,7 +542,7 @@ export async function createBill(bill: Partial<BillPayable>): Promise<BillPayabl
   try {
     let result: BillPayable | null;
     if (isLovableEnv()) {
-      const { data, error } = await supabase.from('bills_payable').insert(bill as any).select().single();
+      const { data, error } = await supabase.from('bills_payable').insert({ ...bill, owner_id: getCurrentOwnerId() } as any).select().single();
       if (error) throw error;
       result = data as unknown as BillPayable;
     } else {

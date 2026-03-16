@@ -25,6 +25,7 @@ export type Database = {
           due_date: string | null
           id: number
           message: string | null
+          owner_id: string | null
           sent_at: string | null
           status: string
           type: string
@@ -39,6 +40,7 @@ export type Database = {
           due_date?: string | null
           id?: number
           message?: string | null
+          owner_id?: string | null
           sent_at?: string | null
           status?: string
           type: string
@@ -53,6 +55,7 @@ export type Database = {
           due_date?: string | null
           id?: number
           message?: string | null
+          owner_id?: string | null
           sent_at?: string | null
           status?: string
           type?: string
@@ -70,16 +73,19 @@ export type Database = {
       billing_settings: {
         Row: {
           key: string
+          owner_id: string | null
           updated_at: string | null
           value: string
         }
         Insert: {
           key: string
+          owner_id?: string | null
           updated_at?: string | null
           value: string
         }
         Update: {
           key?: string
+          owner_id?: string | null
           updated_at?: string | null
           value?: string
         }
@@ -96,6 +102,7 @@ export type Database = {
           id: number
           installments_count: number | null
           notes: string | null
+          owner_id: string | null
           paid_date: string | null
           parent_bill_id: number | null
           payment_type: string
@@ -114,6 +121,7 @@ export type Database = {
           id?: number
           installments_count?: number | null
           notes?: string | null
+          owner_id?: string | null
           paid_date?: string | null
           parent_bill_id?: number | null
           payment_type?: string
@@ -132,6 +140,7 @@ export type Database = {
           id?: number
           installments_count?: number | null
           notes?: string | null
+          owner_id?: string | null
           paid_date?: string | null
           parent_bill_id?: number | null
           payment_type?: string
@@ -163,6 +172,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           notes: string | null
+          owner_id: string | null
           phone: string
           phone2: string | null
           state: string | null
@@ -182,6 +192,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           notes?: string | null
+          owner_id?: string | null
           phone: string
           phone2?: string | null
           state?: string | null
@@ -201,6 +212,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           notes?: string | null
+          owner_id?: string | null
           phone?: string
           phone2?: string | null
           state?: string | null
@@ -217,6 +229,7 @@ export type Database = {
           id: number
           is_active: boolean | null
           name: string
+          owner_id: string | null
           type: string
         }
         Insert: {
@@ -225,6 +238,7 @@ export type Database = {
           id?: number
           is_active?: boolean | null
           name: string
+          owner_id?: string | null
           type: string
         }
         Update: {
@@ -233,6 +247,7 @@ export type Database = {
           id?: number
           is_active?: boolean | null
           name?: string
+          owner_id?: string | null
           type?: string
         }
         Relationships: []

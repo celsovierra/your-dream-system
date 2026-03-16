@@ -11,14 +11,7 @@ import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Us
 import { toast } from 'sonner';
 import asaasLogo from '@/assets/asaas.png';
 import mercadoPagoLogo from '@/assets/mercado-pago.png';
-
-interface AppUser {
-  id: string;
-  email: string;
-  password: string;
-  name: string;
-  createdAt: string;
-}
+import { type AppUser, getStoredUsers, saveUsers } from '@/services/auth';
 
 const ConfiguracoesPage = () => {
   const autoInstanceName = window.location.hostname.replace(/\./g, '_') + '_cobrancapro';
@@ -125,20 +118,7 @@ const ConfiguracoesPage = () => {
 
 
   useEffect(() => {
-    const stored = localStorage.getItem('app_users');
-    if (stored) {
-      setUsers(JSON.parse(stored));
-    } else {
-      const defaultUser: AppUser = {
-        id: '1',
-        email: 'admin@cobranca.com',
-        password: 'admin123',
-        name: 'Administrador',
-        createdAt: new Date().toISOString(),
-      };
-      setUsers([defaultUser]);
-      localStorage.setItem('app_users', JSON.stringify([defaultUser]));
-    }
+    setUsers(getStoredUsers());
   }, []);
 
   const handleAddUser = () => {
@@ -155,11 +135,12 @@ const ConfiguracoesPage = () => {
       email: newUser.email,
       password: newUser.password,
       name: newUser.name,
+      role: 'user',
       createdAt: new Date().toISOString(),
     };
     const updated = [...users, user];
     setUsers(updated);
-    localStorage.setItem('app_users', JSON.stringify(updated));
+    saveUsers(updated);
     setNewUser({ email: '', password: '', name: '' });
     toast.success('Usuário criado com sucesso!');
   };
@@ -171,7 +152,7 @@ const ConfiguracoesPage = () => {
     }
     const updated = users.filter(u => u.id !== id);
     setUsers(updated);
-    localStorage.setItem('app_users', JSON.stringify(updated));
+    saveUsers(updated);
     toast.success('Usuário removido');
   };
 
@@ -216,7 +197,10 @@ const ConfiguracoesPage = () => {
                   {users.map(user => (
                     <div key={user.id} className="flex items-center justify-between rounded-md border p-3">
                       <div>
-                        <p className="text-sm font-medium">{user.name}</p>
+                        <p className="text-sm font-medium">
+                          {user.name}
+                          {user.role === 'admin' && <Badge variant="default" className="ml-2 text-[10px]">Admin</Badge>}
+                        </p>
                         <p className="text-xs text-muted-foreground">{user.email}</p>
                       </div>
                       <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => handleDeleteUser(user.id)}>
