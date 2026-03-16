@@ -415,6 +415,23 @@ export function replaceTemplateVars(content: string, vars: Record<string, string
   return msg;
 }
 
+export async function updateMessageTemplate(id: number, template: Partial<MessageTemplate>): Promise<void> {
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('message_templates').update({ content: template.content, is_active: template.is_active, name: template.name }).eq('id', id);
+      if (error) throw error;
+    } else {
+      const res = await api.updateMessageTemplate(id, template);
+      if (!res.success) throw new Error(res.error || 'Erro ao atualizar template');
+    }
+    addOperationLog(backend, 'Templates', 'UPDATE', `Atualizou template #${id}`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Templates', 'UPDATE', `Erro ao atualizar template #${id}`, 'error', err?.message);
+    throw err;
+  }
+}
+
 // ===== DASHBOARD =====
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {

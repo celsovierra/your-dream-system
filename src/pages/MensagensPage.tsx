@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { mockTemplates } from '@/services/mock-data';
 import { Save, MessageSquare, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { fetchSettings, saveSettings } from '@/services/data-layer';
+import { fetchSettings, saveSettings, fetchMessageTemplates, updateMessageTemplate } from '@/services/data-layer';
 import { userStorageSet } from '@/services/auth';
 
 const typeLabels: Record<string, string> = {
@@ -31,6 +31,17 @@ const MensagensPage = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    // Buscar templates do banco de dados
+    fetchMessageTemplates()
+      .then((dbTemplates) => {
+        if (dbTemplates && dbTemplates.length > 0) {
+          setTemplates(dbTemplates);
+        }
+      })
+      .catch((err) => {
+        console.error('Erro ao buscar templates, usando mock:', err);
+      });
+
     fetchSettings().then((s) => {
       setReminderDays(Number(s.reminder_days) || 3);
       setSendTimeReminder(s.send_time_reminder || '08:00');
@@ -47,6 +58,11 @@ const MensagensPage = () => {
   const handleSaveAll = async () => {
     setSaving(true);
     try {
+      // Salvar templates no banco
+      for (const t of templates) {
+        await updateMessageTemplate(t.id, { content: t.content, is_active: t.is_active, name: t.name });
+      }
+
       await saveSettings({
         reminder_days: String(reminderDays),
         send_time_reminder: sendTimeReminder,
@@ -59,7 +75,7 @@ const MensagensPage = () => {
       userStorageSet('cobranca_send_time_due', sendTimeDue);
       userStorageSet('cobranca_send_time_overdue', sendTimeOverdue);
       userStorageSet('cobranca_overdue_frequency', String(overdueFrequency));
-      toast.success('Todas as configurações salvas!');
+      toast.success('Todas as configurações e templates salvos!');
     } catch (err: any) {
       toast.error('Erro ao salvar: ' + (err.message || ''));
     } finally {
