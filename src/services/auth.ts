@@ -64,3 +64,22 @@ export function getCurrentOwnerId(): string {
   const user = getCurrentUser();
   return user?.id || '1';
 }
+
+// ===== User-scoped localStorage =====
+// Prefixes keys with user ID for isolated config per user
+
+function userPrefix(): string {
+  return `user_${getCurrentOwnerId()}_`;
+}
+
+export function userStorageGet(key: string): string | null {
+  return localStorage.getItem(userPrefix() + key);
+}
+
+export function userStorageSet(key: string, value: string): void {
+  localStorage.setItem(userPrefix() + key, value);
+}
+
+export function userStorageRemove(key: string): void {
+  localStorage.removeItem(userPrefix() + key);
+}
