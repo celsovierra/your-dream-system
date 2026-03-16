@@ -24,7 +24,6 @@ const ConfiguracoesPage = () => {
   const autoInstanceName = window.location.hostname.replace(/\./g, '_') + '_cobrancapro';
   const [whatsapp, setWhatsapp] = useState<{ api_url: string; api_key: string; instance_name: string; status: 'connected' | 'disconnected' | 'connecting' }>({ api_url: '', api_key: '', instance_name: autoInstanceName, status: 'disconnected' });
   const [payment, setPayment] = useState({ gateway: 'mercadopago' as 'mercadopago' | 'asaas' | 'pix_manual', access_token: '', asaas_token: '' });
-  const [apiBaseUrl, setApiBaseUrl] = useState('');
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [pollingStatus, setPollingStatus] = useState(false);

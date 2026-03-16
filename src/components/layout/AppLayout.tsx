@@ -46,17 +46,12 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [deploying, setDeploying] = useState(false);
   const [hasUpdate, setHasUpdate] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
-  const [deployApiConfigured, setDeployApiConfigured] = useState(() => Boolean(resolveDeployApiUrl()));
+  const deployApiConfigured = true;
   const [deployCheckError, setDeployCheckError] = useState<string | null>(null);
 
   function resolveDeployApiUrl() {
     if (typeof window === 'undefined') return '';
-
-    const savedUrl = window.localStorage.getItem('api_base_url')?.trim();
-    if (!savedUrl) return '';
-
-    const normalized = savedUrl.replace(/\/+$/, '');
-    return normalized.endsWith('/api') ? normalized : `${normalized}/api`;
+    return `${window.location.origin}/api`;
   }
 
   async function parseApiResponse(response: Response) {
