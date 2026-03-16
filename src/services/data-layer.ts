@@ -18,6 +18,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import api from '@/services/api';
 import type { Client, MessageTemplate, DashboardStats } from '@/types/billing';
+import { addOperationLog } from '@/services/operation-logger';
 
 type DataBackend = 'cloud' | 'api';
 
