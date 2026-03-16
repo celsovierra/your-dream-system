@@ -26,10 +26,10 @@ export function getStoredUsers(): AppUser[] {
     return users;
   }
   const users: AppUser[] = JSON.parse(stored);
-  // Ensure all users have a role (migration for existing data)
-  return users.map(u => ({
+  // First user is always admin, all others are regular users
+  return users.map((u, index) => ({
     ...u,
-    role: u.role || (u.id === '1' ? 'admin' : 'user'),
+    role: index === 0 ? 'admin' : 'user',
   }));
 }
 
