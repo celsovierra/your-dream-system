@@ -175,46 +175,6 @@ const ConfiguracoesPage = () => {
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <Card>
-        <CardContent className="space-y-4 pt-6">
-          <div className="flex items-center gap-2 text-base font-semibold">
-            <Server className="h-5 w-5 text-primary" />
-            Conexão da VPS
-          </div>
-          <div className="space-y-2">
-            <Label>URL da API</Label>
-            <Input
-              value={apiBaseUrl}
-              onChange={(e) => setApiBaseUrl(e.target.value)}
-              placeholder="https://seudominio.com/api"
-            />
-            <p className="text-xs text-muted-foreground">
-              Essa URL é usada pelo botão lateral de atualização da VPS.
-            </p>
-          </div>
-          <Button
-            size="sm"
-            onClick={() => {
-              try {
-                const normalized = normalizeApiBaseUrl(apiBaseUrl);
-                if (!normalized) {
-                  toast.error('Informe a URL da API da VPS');
-                  return;
-                }
-
-                localStorage.setItem('api_base_url', normalized);
-                setApiBaseUrl(normalized);
-                window.dispatchEvent(new Event('api-base-url-changed'));
-                toast.success('URL da VPS salva com sucesso!');
-              } catch {
-                toast.error('Informe uma URL válida, ex: https://seudominio.com/api');
-              }
-            }}
-          >
-            <Save className="mr-2 h-3 w-3" /> Salvar URL da VPS
-          </Button>
-        </CardContent>
-      </Card>
 
       {/* Gerenciar Usuários */}
       <Collapsible open={openSection === 'users'} onOpenChange={() => toggleSection('users')}>
