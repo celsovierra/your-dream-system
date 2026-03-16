@@ -235,7 +235,7 @@ INSERT IGNORE INTO users (name, email, password_hash) VALUES
 
 -- Dados iniciais de templates (ignora se já existirem)
 INSERT IGNORE INTO message_templates (id, name, type, content) VALUES
-(1, 'Lembrete', 'reminder', '🚨 Olá {nome}, tudo bem?\nBom dia, aqui é um lembrete que sua fatura já está disponível.\n\n🗓 Vencimento: {data_vencimento}\n💰 Valor: R$ {valor}\n\nUtilize o link abaixo para efetuar o pagamento:\n{link_pagamento}\n\nApós vencimento será cobrado juros pela operadora.\n\nO pagamento é confirmado automaticamente. Você receberá o recibo em seguida, sem precisar enviar comprovante.'),
+(1, 'Lembrete', 'reminder', '🚨 Olá *{nome}*, tudo bem?\nBom dia, aqui é um lembrete que sua fatura já está disponível.\n\n🗓 *Vencimento:* {data_vencimento}\n💰 *Valor:* R$ {valor}\n\nUtilize o link abaixo para efetuar o pagamento:\n{link_pagamento}\n\nApós vencimento será cobrado juros pela operadora.\n\n_O pagamento é confirmado automaticamente. Você receberá o recibo em seguida, sem precisar enviar comprovante._'),
 (2, 'Vencimento', 'due', 'Olá {nome}, seu boleto de R$ {valor} vence hoje. Pague pelo link: {link_pagamento}'),
 (3, 'Atraso', 'overdue', 'Olá {nome}!\n\nIdentificamos que sua mensalidade está em atraso.\n\n📅 Vencimento original: {data_vencimento}\n💵 Valor mensal: R$ {valor}\n📊 Multa: {multa}\n📈 Juros: {juros}\n💰 *Total a pagar: {valor_atualizado}*\n\nRegularize agora pelo PIX:\n{link_pagamento}\n\nEvite o bloqueio dos serviços.'),
 (4, 'Recibo', 'receipt', 'Olá {nome}, confirmamos o recebimento de R$ {valor}. Obrigado!');
