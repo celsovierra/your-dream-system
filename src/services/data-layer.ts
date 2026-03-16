@@ -442,7 +442,13 @@ export async function fetchBills(): Promise<BillPayable[]> {
     } else {
       const res = await api.getBills();
       if (!res.success) throw new Error(res.error || 'Erro ao buscar contas');
-      result = Array.isArray(res.data) ? res.data : [];
+      const payload = res.data as any;
+      const rows = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.data)
+          ? payload.data
+          : [];
+      result = rows as BillPayable[];
     }
     addOperationLog(backend, 'Financeiro', 'SELECT', `Listou ${result.length} contas`);
     return result;
@@ -463,7 +469,8 @@ export async function createBill(bill: Partial<BillPayable>): Promise<BillPayabl
     } else {
       const res = await api.createBill(bill as any);
       if (!res.success) throw new Error(res.error || 'Erro ao criar conta');
-      result = (res.data as BillPayable) || null;
+      const payload = res.data as any;
+      result = (payload?.data ?? payload ?? null) as BillPayable | null;
     }
     addOperationLog(backend, 'Financeiro', 'INSERT', `Criou conta "${bill.description}"`);
     return result;
