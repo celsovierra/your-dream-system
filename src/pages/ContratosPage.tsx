@@ -36,7 +36,7 @@ const defaultContracts: Contract[] = [
 const ContratosPage = () => {
   const [traccarLoading, setTraccarLoading] = useState(false);
   const [contracts, setContracts] = useState<Contract[]>(() => {
-    const saved = localStorage.getItem(CONTRACTS_STORAGE_KEY);
+    const saved = userStorageGet('contracts_data');
     return saved ? JSON.parse(saved) : defaultContracts;
   });
   const [traccarConfigured, setTraccarConfigured] = useState(false);
