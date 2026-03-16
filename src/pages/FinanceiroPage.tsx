@@ -108,7 +108,7 @@ const FinanceiroPage = () => {
           due_date: format(form.due_date, 'yyyy-MM-dd'),
           notes: form.notes.trim() || null,
         });
-        toast.success('Conta atualizada!');
+        toast.success(`Conta atualizada no backend ${activeBackend === 'api' ? 'VPS' : 'teste'}!`);
       } else if (form.payment_type === 'installment') {
         const parent = await createBill({
           description: form.description.trim(),
@@ -146,7 +146,7 @@ const FinanceiroPage = () => {
           }
           if (children.length > 0) await createBillChildren(children);
         }
-        toast.success(`Conta parcelada criada em ${installments}x!`);
+        toast.success(`Conta parcelada criada em ${installments}x no backend ${activeBackend === 'api' ? 'VPS' : 'teste'}!`);
       } else {
         await createBill({
           description: form.description.trim(),
@@ -160,16 +160,17 @@ const FinanceiroPage = () => {
           due_date: format(form.due_date, 'yyyy-MM-dd'),
           notes: form.notes.trim() || null,
         });
-        toast.success('Conta criada!');
+        toast.success(`Conta criada no backend ${activeBackend === 'api' ? 'VPS' : 'teste'}!`);
       }
 
       setDialogOpen(false);
       resetForm();
-      loadBills();
+      await loadBills();
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao salvar');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const handleDelete = async (id: number) => {
