@@ -516,7 +516,7 @@ export async function fetchSettings(): Promise<BillingSettings> {
       return settings;
     } else {
       const res = await apiFetch('/settings');
-      const json = await res.json();
+      const json = await safeJsonParse(res);
       if (!json.success) return defaults;
       addOperationLog(backend, 'Config', 'SELECT', 'Carregou configurações');
       return { ...defaults, ...json.data };
