@@ -350,6 +350,7 @@ const ClientesPage = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Dialog open={baixaDialogOpen} onOpenChange={setBaixaDialogOpen}>
