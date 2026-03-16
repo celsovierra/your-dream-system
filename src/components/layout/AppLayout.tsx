@@ -241,7 +241,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
     setDeploying(true);
 
     try {
-      const res = await fetch(`${apiUrl}/deploy`, {
+      const res = await proxyFetch(`${apiUrl}/deploy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
