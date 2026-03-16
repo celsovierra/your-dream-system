@@ -2,3 +2,6 @@ project_id = "pmnanfzbtimcfyzndeyq"
 
 [functions.mercado-pago-pix]
 verify_jwt = false
+
+[functions.vps-proxy]
+verify_jwt = false
