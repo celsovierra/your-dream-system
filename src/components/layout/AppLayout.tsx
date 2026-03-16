@@ -34,7 +34,7 @@ const navItems = [
   { path: '/fila', label: 'Fila de Envio', icon: ListTodo, color: 'text-purple-400' },
   { path: '/mensagens', label: 'Mensagens', icon: MessageSquare, color: 'text-green-400' },
   { path: '/contratos', label: 'Contratos', icon: FileText, color: 'text-orange-400' },
-  
+  { path: '/logs', label: 'Logs', icon: ScrollText, color: 'text-cyan-400' },
   { path: '/configuracoes', label: 'Configurações', icon: Settings, color: 'text-rose-400' },
 ];
 

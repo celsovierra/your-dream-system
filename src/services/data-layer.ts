@@ -418,85 +418,113 @@ export interface BillPayable {
 }
 
 export async function fetchBills(): Promise<BillPayable[]> {
-  if (isLovableEnv()) {
-    const { data, error } = await supabase
-      .from('bills_payable')
-      .select('*')
-      .is('parent_bill_id', null)
-      .order('due_date', { ascending: true });
-    if (error) throw error;
-    return (data as unknown as BillPayable[]) || [];
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    let result: BillPayable[];
+    if (isLovableEnv()) {
+      const { data, error } = await supabase.from('bills_payable').select('*').is('parent_bill_id', null).order('due_date', { ascending: true });
+      if (error) throw error;
+      result = (data as unknown as BillPayable[]) || [];
+    } else {
+      const res = await api.getBills();
+      if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar contas');
+      result = res.data;
+    }
+    addOperationLog(backend, 'Financeiro', 'SELECT', `Listou ${result.length} contas`);
+    return result;
+  } catch (err: any) {
+    addOperationLog(backend, 'Financeiro', 'SELECT', 'Erro ao listar contas', 'error', err?.message);
+    throw err;
   }
-
-  const res = await api.getBills();
-  if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar contas');
-  return res.data;
 }
 
 export async function createBill(bill: Partial<BillPayable>): Promise<BillPayable | null> {
-  if (isLovableEnv()) {
-    const { data, error } = await supabase
-      .from('bills_payable')
-      .insert(bill as any)
-      .select()
-      .single();
-    if (error) throw error;
-    return data as unknown as BillPayable;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    let result: BillPayable | null;
+    if (isLovableEnv()) {
+      const { data, error } = await supabase.from('bills_payable').insert(bill as any).select().single();
+      if (error) throw error;
+      result = data as unknown as BillPayable;
+    } else {
+      const res = await api.createBill(bill as any);
+      if (!res.success) throw new Error(res.error || 'Erro ao criar conta');
+      result = (res.data as BillPayable) || null;
+    }
+    addOperationLog(backend, 'Financeiro', 'INSERT', `Criou conta "${bill.description}"`);
+    return result;
+  } catch (err: any) {
+    addOperationLog(backend, 'Financeiro', 'INSERT', `Erro ao criar "${bill.description}"`, 'error', err?.message);
+    throw err;
   }
-
-  const res = await api.createBill(bill as any);
-  if (!res.success) throw new Error(res.error || 'Erro ao criar conta');
-  return (res.data as BillPayable) || null;
 }
 
 export async function createBillChildren(children: Partial<BillPayable>[]): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase.from('bills_payable').insert(children as any);
-    if (error) throw error;
-    return;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('bills_payable').insert(children as any);
+      if (error) throw error;
+    } else {
+      const res = await api.createBillsBatch(children as any);
+      if (!res.success) throw new Error(res.error || 'Erro ao criar parcelas');
+    }
+    addOperationLog(backend, 'Financeiro', 'INSERT', `Criou ${children.length} parcelas filhas`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Financeiro', 'INSERT', `Erro ao criar parcelas`, 'error', err?.message);
+    throw err;
   }
-
-  const res = await api.createBillsBatch(children as any);
-  if (!res.success) throw new Error(res.error || 'Erro ao criar parcelas');
 }
 
 export async function updateBill(id: number, bill: Partial<BillPayable>): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase
-      .from('bills_payable')
-      .update({ ...bill, updated_at: new Date().toISOString() } as any)
-      .eq('id', id);
-    if (error) throw error;
-    return;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('bills_payable').update({ ...bill, updated_at: new Date().toISOString() } as any).eq('id', id);
+      if (error) throw error;
+    } else {
+      const res = await api.updateBill(id, bill as any);
+      if (!res.success) throw new Error(res.error || 'Erro ao atualizar conta');
+    }
+    addOperationLog(backend, 'Financeiro', 'UPDATE', `Atualizou conta #${id}`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Financeiro', 'UPDATE', `Erro ao atualizar #${id}`, 'error', err?.message);
+    throw err;
   }
-
-  const res = await api.updateBill(id, bill as any);
-  if (!res.success) throw new Error(res.error || 'Erro ao atualizar conta');
 }
 
 export async function deleteBill(id: number): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase.from('bills_payable').delete().eq('id', id);
-    if (error) throw error;
-    return;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('bills_payable').delete().eq('id', id);
+      if (error) throw error;
+    } else {
+      const res = await api.deleteBill(id);
+      if (!res.success) throw new Error(res.error || 'Erro ao excluir conta');
+    }
+    addOperationLog(backend, 'Financeiro', 'DELETE', `Excluiu conta #${id}`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Financeiro', 'DELETE', `Erro ao excluir #${id}`, 'error', err?.message);
+    throw err;
   }
-
-  const res = await api.deleteBill(id);
-  if (!res.success) throw new Error(res.error || 'Erro ao excluir conta');
 }
 
 export async function markBillPaid(id: number): Promise<void> {
-  if (isLovableEnv()) {
-    const { error } = await supabase
-      .from('bills_payable')
-      .update({ status: 'paid', paid_date: formatLocalDate(new Date()) } as any)
-      .eq('id', id);
-    if (error) throw error;
-    return;
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('bills_payable').update({ status: 'paid', paid_date: formatLocalDate(new Date()) } as any).eq('id', id);
+      if (error) throw error;
+    } else {
+      const res = await api.markBillPaid(id);
+      if (!res.success) throw new Error(res.error || 'Erro ao marcar como paga');
+    }
+    addOperationLog(backend, 'Financeiro', 'UPDATE', `Marcou conta #${id} como paga`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Financeiro', 'UPDATE', `Erro ao marcar #${id} como paga`, 'error', err?.message);
+    throw err;
   }
-
-  const res = await api.markBillPaid(id);
-  if (!res.success) throw new Error(res.error || 'Erro ao marcar como paga');
 }
 
 export function getActiveDataBackend(): DataBackend {
