@@ -24,6 +24,7 @@ app.use(extractOwnerId);
 
 // Rotas da API
 app.use('/api', deployRouter);
+app.use('/api/auth', authRouter);
 app.use('/api/clients', clientsRouter);
 app.use('/api/templates/messages', templatesRouter);
 app.use('/api/dashboard/stats', dashboardRouter);
