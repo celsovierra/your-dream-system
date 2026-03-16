@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Search, Pencil, Trash2, MessageCircle, CheckCircle, Loader2, MapPin } from 'lucide-react';
+import { userStorageGet } from '@/services/auth';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
 import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, invokeEvolutionProxy, upsertClientFromTraccar } from '@/services/data-layer';
@@ -74,9 +75,9 @@ const ClientesPage = () => {
   const [traccarLoading, setTraccarLoading] = useState(false);
 
   const handleImportTraccar = async () => {
-    const traccarUrl = localStorage.getItem('traccar_url');
-    const traccarUser = localStorage.getItem('traccar_user');
-    const traccarPassword = localStorage.getItem('traccar_password');
+    const traccarUrl = userStorageGet('traccar_url');
+    const traccarUser = userStorageGet('traccar_user');
+    const traccarPassword = userStorageGet('traccar_password');
 
     if (!traccarUrl || !traccarUser || !traccarPassword) {
       toast.error('Configure a API Traccar em Configurações primeiro');
@@ -227,7 +228,7 @@ const ClientesPage = () => {
   };
 
   const getWhatsAppConfig = () => {
-    const saved = localStorage.getItem('whatsapp_config');
+    const saved = userStorageGet('whatsapp_config');
     if (!saved) return null;
     try { return JSON.parse(saved); } catch { return null; }
   };

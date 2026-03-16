@@ -7,6 +7,7 @@ import { FileText, Plus, Send, MapPin, Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { upsertClientFromTraccar } from '@/services/data-layer';
+import { userStorageGet, userStorageSet } from '@/services/auth';
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' | 'destructive' }> = {
   draft: { label: 'Rascunho', variant: 'secondary' },
@@ -24,7 +25,7 @@ interface Contract {
   created_at: string;
 }
 
-const CONTRACTS_STORAGE_KEY = 'contracts_data';
+// contracts_data is now user-scoped via userStorageGet/Set
 
 const defaultContracts: Contract[] = [
   { id: 1, client_name: 'João Silva', template: 'Contrato Padrão', status: 'signed', signed_at: '2024-03-10', created_at: '2024-03-08' },
@@ -35,20 +36,20 @@ const defaultContracts: Contract[] = [
 const ContratosPage = () => {
   const [traccarLoading, setTraccarLoading] = useState(false);
   const [contracts, setContracts] = useState<Contract[]>(() => {
-    const saved = localStorage.getItem(CONTRACTS_STORAGE_KEY);
+    const saved = userStorageGet('contracts_data');
     return saved ? JSON.parse(saved) : defaultContracts;
   });
   const [traccarConfigured, setTraccarConfigured] = useState(false);
 
   useEffect(() => {
-    const url = localStorage.getItem('traccar_url');
-    const user = localStorage.getItem('traccar_user');
-    const pass = localStorage.getItem('traccar_password');
+    const url = userStorageGet('traccar_url');
+    const user = userStorageGet('traccar_user');
+    const pass = userStorageGet('traccar_password');
     setTraccarConfigured(!!(url && user && pass));
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(CONTRACTS_STORAGE_KEY, JSON.stringify(contracts));
+    userStorageSet('contracts_data', JSON.stringify(contracts));
   }, [contracts]);
 
   const handleDeleteContract = (id: number) => {
@@ -57,9 +58,9 @@ const ContratosPage = () => {
   };
 
   const handleImportTraccar = async () => {
-    const traccarUrl = localStorage.getItem('traccar_url');
-    const traccarUser = localStorage.getItem('traccar_user');
-    const traccarPassword = localStorage.getItem('traccar_password');
+    const traccarUrl = userStorageGet('traccar_url');
+    const traccarUser = userStorageGet('traccar_user');
+    const traccarPassword = userStorageGet('traccar_password');
 
     if (!traccarUrl || !traccarUser || !traccarPassword) {
       toast.error('Configure a API Traccar em Configurações primeiro');

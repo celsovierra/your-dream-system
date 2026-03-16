@@ -11,7 +11,7 @@ import { Wifi, WifiOff, CreditCard, Save, Download, Upload, UserPlus, Trash2, Us
 import { toast } from 'sonner';
 import asaasLogo from '@/assets/asaas.png';
 import mercadoPagoLogo from '@/assets/mercado-pago.png';
-import { type AppUser, getStoredUsers, saveUsers } from '@/services/auth';
+import { type AppUser, getStoredUsers, saveUsers, userStorageGet, userStorageSet } from '@/services/auth';
 
 const ConfiguracoesPage = () => {
   const autoInstanceName = window.location.hostname.replace(/\./g, '_') + '_cobrancapro';
@@ -40,7 +40,7 @@ const ConfiguracoesPage = () => {
           setQrCode(null);
           setPollingStatus(false);
           setWhatsapp(prev => ({ ...prev, status: 'connected' }));
-          localStorage.setItem('whatsapp_status', 'connected');
+          userStorageSet('whatsapp_status', 'connected');
           toast.success('WhatsApp conectado com sucesso!');
           return;
         }
@@ -53,14 +53,14 @@ const ConfiguracoesPage = () => {
   }, [qrCode, whatsapp.api_url, whatsapp.api_key, whatsapp.instance_name]);
 
   useEffect(() => {
-    const savedGateway = localStorage.getItem('payment_gateway') || 'mercadopago';
-    const savedMpToken = localStorage.getItem('mp_access_token') || '';
-    const savedAsaasToken = localStorage.getItem('asaas_access_token') || '';
+    const savedGateway = userStorageGet('payment_gateway') || 'mercadopago';
+    const savedMpToken = userStorageGet('mp_access_token') || '';
+    const savedAsaasToken = userStorageGet('asaas_access_token') || '';
     setPayment({ gateway: savedGateway as any, access_token: savedMpToken, asaas_token: savedAsaasToken });
     
 
     // Carregar config WhatsApp salva (mantendo instance_name padronizado pela VPS)
-    const savedWa = localStorage.getItem('whatsapp_config');
+    const savedWa = userStorageGet('whatsapp_config');
     if (!savedWa) return;
 
     try {
@@ -68,7 +68,7 @@ const ConfiguracoesPage = () => {
       const api_url = parsed?.api_url || '';
       const api_key = parsed?.api_key || '';
 
-      const cachedStatus = localStorage.getItem('whatsapp_status');
+      const cachedStatus = userStorageGet('whatsapp_status');
       const initialStatus = (cachedStatus === 'connected') ? 'connected' : 'disconnected';
 
       setWhatsapp({
@@ -87,9 +87,9 @@ const ConfiguracoesPage = () => {
         }).then(({ data }) => {
           if (data?.state === 'open' || data?.state === 'connected') {
             setWhatsapp(prev => ({ ...prev, status: 'connected' }));
-            localStorage.setItem('whatsapp_status', 'connected');
+            userStorageSet('whatsapp_status', 'connected');
           } else {
-            localStorage.setItem('whatsapp_status', 'disconnected');
+            userStorageSet('whatsapp_status', 'disconnected');
           }
         }).catch(() => undefined);
       }
@@ -108,9 +108,9 @@ const ConfiguracoesPage = () => {
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Traccar API config state
-  const [traccarUrl, setTraccarUrl] = useState(() => localStorage.getItem('traccar_url') || '');
-  const [traccarUser, setTraccarUser] = useState(() => localStorage.getItem('traccar_user') || '');
-  const [traccarPassword, setTraccarPassword] = useState(() => localStorage.getItem('traccar_password') || '');
+  const [traccarUrl, setTraccarUrl] = useState(() => userStorageGet('traccar_url') || '');
+  const [traccarUser, setTraccarUser] = useState(() => userStorageGet('traccar_user') || '');
+  const [traccarPassword, setTraccarPassword] = useState(() => userStorageGet('traccar_password') || '');
 
   const toggleSection = (key: string) => {
     setOpenSection(prev => prev === key ? null : key);
@@ -253,7 +253,7 @@ const ConfiguracoesPage = () => {
                   toast.error('Preencha a URL e a API Key');
                   return;
                 }
-                localStorage.setItem('whatsapp_config', JSON.stringify({
+                userStorageSet('whatsapp_config', JSON.stringify({
                   api_url: whatsapp.api_url,
                   api_key: whatsapp.api_key,
                   instance_name: autoInstanceName,
@@ -412,9 +412,9 @@ const ConfiguracoesPage = () => {
               </div>
 
               <Button size="sm" onClick={() => {
-                localStorage.setItem('payment_gateway', payment.gateway);
-                localStorage.setItem('mp_access_token', payment.access_token);
-                localStorage.setItem('asaas_access_token', payment.asaas_token);
+                userStorageSet('payment_gateway', payment.gateway);
+                userStorageSet('mp_access_token', payment.access_token);
+                userStorageSet('asaas_access_token', payment.asaas_token);
                 toast.success('Configuração de pagamento salva!');
               }}>
                 <Save className="mr-2 h-3 w-3" /> Salvar
@@ -496,9 +496,9 @@ const ConfiguracoesPage = () => {
                   toast.error('Preencha todos os campos do Traccar');
                   return;
                 }
-                localStorage.setItem('traccar_url', traccarUrl);
-                localStorage.setItem('traccar_user', traccarUser);
-                localStorage.setItem('traccar_password', traccarPassword);
+                userStorageSet('traccar_url', traccarUrl);
+                userStorageSet('traccar_user', traccarUser);
+                userStorageSet('traccar_password', traccarPassword);
                 toast.success('Configuração do Traccar salva!');
               }}>
                 <Save className="mr-2 h-3 w-3" /> Salvar
