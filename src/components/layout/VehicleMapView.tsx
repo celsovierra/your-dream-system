@@ -91,7 +91,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
     };
 
     void fetchLive();
-    const interval = setInterval(fetchLive, 3000);
+    const interval = setInterval(fetchLive, isMobile ? 5000 : 3000);
     return () => clearInterval(interval);
   }, [initialDevice.id]);
 
