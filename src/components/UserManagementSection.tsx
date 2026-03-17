@@ -267,6 +267,21 @@ export default function UserManagementSection() {
             </div>
 
             <div>
+              <Label>Slug (URL personalizada)</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">/</span>
+                <Input
+                  value={form.slug}
+                  onChange={e => setForm(p => ({ ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '') }))}
+                  placeholder="meu-slug"
+                  maxLength={50}
+                  className="font-mono text-sm"
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">URL de login personalizada do usuário</p>
+            </div>
+
+            <div>
               <Label>{editingUser ? 'Nova Senha (deixe vazio para manter)' : 'Senha *'}</Label>
               <div className="relative">
                 <Input
