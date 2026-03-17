@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Car, Loader2, WifiOff, RefreshCw, Search, Share2, Pencil, Wifi, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userStorageGet } from '@/services/auth';
@@ -35,13 +35,6 @@ export interface TraccarPosition {
   };
 }
 
-interface TraccarEvent {
-  deviceId: number;
-  type?: string;
-  eventTime?: string;
-  serverTime?: string;
-}
-
 interface SidebarVehiclesProps {
   collapsed: boolean;
   onSelectDevice?: (device: TraccarDevice, position?: TraccarPosition) => void;
@@ -49,12 +42,25 @@ interface SidebarVehiclesProps {
   autoSelectFirst?: boolean;
 }
 
-function formatStoppedTimeFromEvent(eventTime?: string): string {
-  if (!eventTime) return '';
-  const offMs = new Date(eventTime).getTime();
-  if (Number.isNaN(offMs)) return '';
+const IGNITION_OFF_STORAGE_KEY = 'traccar_ignition_off_times';
 
-  const diff = Date.now() - offMs;
+function loadIgnitionOffTimes(): Record<number, number> {
+  try {
+    const raw = localStorage.getItem(IGNITION_OFF_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveIgnitionOffTimes(map: Record<number, number>) {
+  try {
+    localStorage.setItem(IGNITION_OFF_STORAGE_KEY, JSON.stringify(map));
+  } catch { /* ignore */ }
+}
+
+function formatStoppedDuration(offTimestampMs: number): string {
+  const diff = Date.now() - offTimestampMs;
   if (diff <= 0) return '0min';
 
   const mins = Math.floor(diff / 60000);
@@ -92,12 +98,12 @@ function getCategoryIcon(category?: string) {
 const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSelectFirst = false }: SidebarVehiclesProps) => {
   const [devices, setDevices] = useState<TraccarDevice[]>([]);
   const [positions, setPositions] = useState<TraccarPosition[]>([]);
-  const [ignitionOffEvents, setIgnitionOffEvents] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(false);
   const [configured, setConfigured] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [, setTick] = useState(0);
+  const ignitionOffTimesRef = useRef<Record<number, number>>(loadIgnitionOffTimes());
 
   const getCredentials = useCallback(() => {
     const traccar_url = userStorageGet('traccar_url');
@@ -117,33 +123,32 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     return payload;
   };
 
-  const fetchIgnitionOffEvents = useCallback(async (deviceList: TraccarDevice[]) => {
-    const creds = getCredentials();
-    if (!creds.traccar_url || !creds.traccar_user || !creds.traccar_password || deviceList.length === 0) return;
+  // Track ignition state changes locally - when ignition goes OFF, record Date.now() (Brasília)
+  // This completely ignores GPS timestamps
+  const updateIgnitionOffTimes = useCallback((deviceList: TraccarDevice[], positionList: TraccarPosition[]) => {
+    const map = { ...ignitionOffTimesRef.current };
+    let changed = false;
 
-    const to = new Date().toISOString();
-    const from = new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString();
+    deviceList.forEach((device) => {
+      const pos = positionList.find((p) => p.deviceId === device.id);
+      const ignition = pos?.attributes?.ignition;
 
-    try {
-      const eventEntries = await Promise.all(
-        deviceList.map(async (device) => {
-          const endpoint = `/api/reports/events?deviceId=${device.id}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
-          const result = await api.traccarProxy({ ...creds, endpoint, method: 'GET' });
-          const raw = unwrapProxyPayload(result.data);
-          const events = Array.isArray(raw) ? (raw as TraccarEvent[]) : [];
-          const ignitionOff = [...events]
-            .filter((event) => event.type === 'ignitionOff')
-            .sort((a, b) => new Date(b.eventTime || b.serverTime || 0).getTime() - new Date(a.eventTime || a.serverTime || 0).getTime())[0];
+      if (ignition === false && !map[device.id]) {
+        // Ignition just turned OFF — record current local time (Brasília)
+        map[device.id] = Date.now();
+        changed = true;
+      } else if (ignition === true && map[device.id]) {
+        // Ignition turned ON — clear the record
+        delete map[device.id];
+        changed = true;
+      }
+    });
 
-          return [device.id, ignitionOff?.eventTime || ignitionOff?.serverTime || ''] as const;
-        })
-      );
-
-      setIgnitionOffEvents(Object.fromEntries(eventEntries.filter(([, value]) => Boolean(value))));
-    } catch {
-      // silent fail to avoid breaking UI
+    if (changed) {
+      ignitionOffTimesRef.current = map;
+      saveIgnitionOffTimes(map);
     }
-  }, [getCredentials]);
+  }, []);
 
   const fetchDevices = useCallback(async () => {
     const creds = getCredentials();
@@ -152,7 +157,6 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
       setError(null);
       setDevices([]);
       setPositions([]);
-      setIgnitionOffEvents({});
       return;
     }
 
@@ -175,19 +179,20 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
       if (!posResult.success) {
         throw new Error(posResult.error || 'Não foi possível carregar as posições do Traccar');
       }
-      setPositions(Array.isArray(posData) ? (posData as TraccarPosition[]) : []);
+      const nextPositions = Array.isArray(posData) ? (posData as TraccarPosition[]) : [];
+      setPositions(nextPositions);
 
-      void fetchIgnitionOffEvents(nextDevices);
+      // Update ignition off times based on current ignition state (local Brasília time)
+      updateIgnitionOffTimes(nextDevices, nextPositions);
     } catch (err: any) {
       const message = err?.message || 'Erro ao carregar veículos do Traccar';
       setDevices([]);
       setPositions([]);
-      setIgnitionOffEvents({});
       setError(message);
     } finally {
       setLoading(false);
     }
-  }, [fetchIgnitionOffEvents, getCredentials]);
+  }, [updateIgnitionOffTimes, getCredentials]);
 
   useEffect(() => {
     void fetchDevices();
@@ -323,9 +328,9 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
             const sat = pos?.attributes?.sat;
             const power = pos?.attributes?.power;
             const isMoving = speed > 0;
-            const ignitionOffAt = ignitionOffEvents[device.id];
+            const ignitionOffAt = ignitionOffTimesRef.current[device.id];
             const stoppedTime = !isMoving && ignition === false && ignitionOffAt
-              ? formatStoppedTimeFromEvent(ignitionOffAt)
+              ? formatStoppedDuration(ignitionOffAt)
               : !isMoving
                 ? 'Parado'
                 : '';
