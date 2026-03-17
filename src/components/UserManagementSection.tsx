@@ -212,7 +212,9 @@ export default function UserManagementSection() {
                   <TableCell className="text-sm">
                     {(() => {
                       const slug = user.slug || user.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
-                      const url = `${window.location.origin}/${slug}`;
+                      const vpsBase = (localStorage.getItem('api_base_url') || '').replace(/\/api\/?$/, '').replace(/\/+$/, '');
+                      const baseUrl = vpsBase || window.location.origin;
+                      const url = `${baseUrl}/${slug}`;
                       return (
                         <div className="flex items-center gap-1">
                           <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]" title={url}>
