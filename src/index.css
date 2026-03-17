@@ -5,6 +5,11 @@
   touch-action: none;
 }
 
+.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
 @tailwind components;
 @tailwind utilities;
 
