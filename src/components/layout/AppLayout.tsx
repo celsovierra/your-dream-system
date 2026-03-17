@@ -508,7 +508,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {!selectedVehicle && (
+        {!showVehicleMap && (
           <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
             <div className="flex items-center gap-4">
               <button
@@ -559,11 +559,11 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           </header>
         )}
 
-        {selectedVehicle ? (
+        {showVehicleMap ? (
           <div className="flex-1 min-h-0">
             <VehicleMapView
-              device={selectedVehicle.device}
-              position={selectedVehicle.position}
+              device={selectedVehicle!.device}
+              position={selectedVehicle?.position}
               onClose={() => setSelectedVehicle(null)}
             />
           </div>
