@@ -84,6 +84,7 @@ export default function UserManagementSection() {
       client_limit: user.client_limit || 0,
       expires_at: user.expires_at ? user.expires_at.split('T')[0] : '',
       permissions: user.permissions || ALL_PERMISSIONS.map(p => p.key),
+      slug: user.slug || '',
     });
     setShowPassword(false);
     setDialogOpen(true);
