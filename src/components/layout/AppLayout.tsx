@@ -402,19 +402,17 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           </div>
         )}
 
-        <nav className="flex-1 overflow-y-auto p-2">
-          {!sidebarCollapsed && (
-            <SidebarVehicles
-              collapsed={sidebarCollapsed}
-              autoSelectFirst={location.pathname === '/' && !hasAutoOpenedMap}
-              selectedDeviceId={selectedVehicle?.device.id ?? null}
-              onSelectDevice={(device, position) => {
-                setSelectedVehicle({ device, position });
-                setSidebarCollapsed(true);
-                setHasAutoOpenedMap(true);
-              }}
-            />
-          )}
+        <nav className={cn("flex-1 overflow-y-auto p-2", sidebarCollapsed && "hidden")}>
+          <SidebarVehicles
+            collapsed={sidebarCollapsed}
+            autoSelectFirst={location.pathname === '/' && !hasAutoOpenedMap}
+            selectedDeviceId={selectedVehicle?.device.id ?? null}
+            onSelectDevice={(device, position) => {
+              setSelectedVehicle({ device, position });
+              setSidebarCollapsed(true);
+              setHasAutoOpenedMap(true);
+            }}
+          />
         </nav>
 
         <div className="border-t border-sidebar-border space-y-1 p-2">
