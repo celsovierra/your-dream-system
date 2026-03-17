@@ -113,6 +113,25 @@ const ConfiguracoesPage = () => {
     } catch {}
   }, [autoInstanceName]);
 
+  // Load current user's branding/slug from backend
+  useEffect(() => {
+    const currentUser = JSON.parse(localStorage.getItem('current_user') || '{}');
+    if (currentUser?.slug) {
+      setLayoutSlug(currentUser.slug);
+    }
+    // Try to load branding from user's own slug
+    if (currentUser?.slug) {
+      api.getBranding(currentUser.slug).then(res => {
+        if (res.success && res.data) {
+          const payload = (res.data as any)?.data || res.data;
+          if (payload.company_name) setLayoutCompanyName(payload.company_name);
+          if (payload.logo) setLayoutLogo(payload.logo);
+          if (payload.primary_color) setLayoutPrimaryColor(payload.primary_color);
+        }
+      }).catch(() => {});
+    }
+  }, []);
+
   const toggleSection = (key: string) => {
     setOpenSection(prev => (prev === key ? null : key));
   };
