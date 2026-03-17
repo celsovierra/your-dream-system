@@ -266,7 +266,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
                 </div>
 
                 {/* Address */}
-                {position.address && (
+                {livePosition.address && (
                   <div className="flex items-start gap-2 text-[11px] text-white/70">
                     <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-white/40" />
                     <span className="leading-relaxed">{position.address}</span>
