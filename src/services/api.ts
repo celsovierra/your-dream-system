@@ -22,6 +22,19 @@ import { supabase } from '@/integrations/supabase/client';
 // Base URL configurável - prioriza URL salva da VPS no navegador
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
+export interface SaasUser {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: 'admin' | 'user';
+  client_limit: number;
+  expires_at: string | null;
+  permissions: string[];
+  is_active: boolean;
+  createdAt: string;
+}
+
 class ApiService {
   private baseUrl: string;
   private token: string | null = null;
