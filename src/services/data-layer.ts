@@ -699,6 +699,7 @@ interface EvolutionPayload {
   instance_name: string;
   to?: string;
   message?: string;
+  queue_item?: AddQueueItemParams & { owner_id?: string | null };
 }
 
 export async function invokeEvolutionProxy(payload: EvolutionPayload): Promise<{ data?: any; error?: string }> {
