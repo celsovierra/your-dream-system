@@ -330,7 +330,11 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         </button>
 
         <nav className="flex-1 overflow-y-auto p-2">
-          <SidebarVehicles collapsed={sidebarCollapsed} />
+          <SidebarVehicles
+            collapsed={sidebarCollapsed}
+            selectedDeviceId={selectedVehicle?.device.id ?? null}
+            onSelectDevice={(device, position) => setSelectedVehicle({ device, position })}
+          />
         </nav>
 
         <div className="border-t border-sidebar-border space-y-1 p-2">
