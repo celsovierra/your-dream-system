@@ -62,7 +62,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
       } catch { /* silent */ }
     };
 
-    const interval = setInterval(fetchLive, 10000);
+    const interval = setInterval(fetchLive, 3000);
     return () => clearInterval(interval);
   }, [initialDevice.id]);
 
