@@ -502,6 +502,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           </main>
         )}
       </div>
+      <TraccarUsersDialog open={showTraccarUsers} onOpenChange={setShowTraccarUsers} />
     </div>
   );
 };
