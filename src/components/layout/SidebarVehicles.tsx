@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Car, MapPin, Loader2, WifiOff, RefreshCw, Search } from 'lucide-react';
+import { Car, Loader2, WifiOff, RefreshCw, Search, Share2, Pencil, ShieldOff, Wifi, Gauge, Radio, Battery, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userStorageGet } from '@/services/auth';
 import api from '@/services/api';
@@ -11,6 +11,7 @@ export interface TraccarDevice {
   status: string;
   lastUpdate: string;
   category?: string;
+  model?: string;
 }
 
 export interface TraccarPosition {
@@ -39,6 +40,38 @@ interface SidebarVehiclesProps {
   autoSelectFirst?: boolean;
 }
 
+function formatStoppedTime(lastUpdate: string): string {
+  if (!lastUpdate) return '';
+  const diff = Date.now() - new Date(lastUpdate).getTime();
+  if (diff < 0) return '';
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}min`;
+  const hours = Math.floor(mins / 60);
+  const remMins = mins % 60;
+  if (hours < 24) return `${hours}h ${remMins}min`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ${hours % 24}h`;
+}
+
+function formatDateTime(dateStr: string): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ', ' +
+    d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function getCategoryIcon(category?: string): string {
+  switch (category?.toLowerCase()) {
+    case 'motorcycle': return '🏍️';
+    case 'car': return '🚗';
+    case 'truck': return '🚛';
+    case 'bus': return '🚌';
+    case 'bicycle': return '🚲';
+    case 'boat': return '🚤';
+    default: return '🚗';
+  }
+}
+
 const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSelectFirst = false }: SidebarVehiclesProps) => {
   const [devices, setDevices] = useState<TraccarDevice[]>([]);
   const [positions, setPositions] = useState<TraccarPosition[]>([]);
@@ -62,14 +95,11 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
       }
       return nested;
     }
-
     return payload;
   };
 
   const fetchDevices = useCallback(async () => {
     const creds = getCredentials();
-    console.log('[SidebarVehicles] creds check:', { url: !!creds.traccar_url, user: !!creds.traccar_user, pass: !!creds.traccar_password });
-
     if (!creds.traccar_url || !creds.traccar_user || !creds.traccar_password) {
       setConfigured(false);
       setError(null);
@@ -84,27 +114,20 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
 
     try {
       const devResult = await api.traccarProxy({ ...creds, endpoint: '/api/devices', method: 'GET' });
-      console.log('[SidebarVehicles] devices response:', JSON.stringify(devResult).slice(0, 300));
-
       const devData = unwrapProxyPayload(devResult.data);
       if (!devResult.success || !Array.isArray(devData)) {
-        console.error('[SidebarVehicles] Unexpected devices format:', devResult);
         throw new Error(devResult.error || 'Não foi possível carregar os veículos do Traccar');
       }
-
       setDevices(devData as TraccarDevice[]);
 
       const posResult = await api.traccarProxy({ ...creds, endpoint: '/api/positions', method: 'GET' });
       const posData = unwrapProxyPayload(posResult.data);
-
       if (!posResult.success) {
         throw new Error(posResult.error || 'Não foi possível carregar as posições do Traccar');
       }
-
       setPositions(Array.isArray(posData) ? (posData as TraccarPosition[]) : []);
     } catch (err: any) {
       const message = err?.message || 'Erro ao carregar veículos do Traccar';
-      console.error('[SidebarVehicles] Traccar error:', message);
       setDevices([]);
       setPositions([]);
       setError(message);
@@ -116,13 +139,9 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
   useEffect(() => {
     fetchDevices();
     const interval = setInterval(fetchDevices, 60000);
-    const handleRefresh = () => {
-      void fetchDevices();
-    };
-
+    const handleRefresh = () => { void fetchDevices(); };
     window.addEventListener('traccar-config-updated', handleRefresh);
     window.addEventListener('focus', handleRefresh);
-
     return () => {
       clearInterval(interval);
       window.removeEventListener('traccar-config-updated', handleRefresh);
@@ -131,14 +150,6 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
   }, [fetchDevices]);
 
   const getDevicePosition = (deviceId: number) => positions.find((p) => p.deviceId === deviceId);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-success';
-      case 'offline': return 'bg-destructive';
-      default: return 'bg-warning';
-    }
-  };
 
   const filteredDevices = useMemo(() => {
     if (!search.trim()) return devices;
@@ -175,20 +186,23 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin text-sidebar-foreground/50" />
         ) : (
-          devices.slice(0, 10).map((device) => (
-            <button
-              key={device.id}
-              onClick={() => handleClick(device)}
-              title={`${device.name} (${device.status})`}
-              className={cn(
-                "relative flex items-center justify-center rounded-md h-8 w-8 hover:bg-sidebar-accent transition-colors",
-                selectedDeviceId === device.id && "bg-sidebar-primary text-sidebar-primary-foreground"
-              )}
-            >
-              <Car className="h-4 w-4 text-sidebar-foreground/70" />
-              <span className={cn("absolute top-0.5 right-0.5 h-2 w-2 rounded-full", getStatusColor(device.status))} />
-            </button>
-          ))
+          devices.slice(0, 10).map((device) => {
+            const isOnline = device.status === 'online';
+            return (
+              <button
+                key={device.id}
+                onClick={() => handleClick(device)}
+                title={`${device.name} (${device.status})`}
+                className={cn(
+                  "relative flex items-center justify-center rounded-md h-8 w-8 hover:bg-sidebar-accent transition-colors",
+                  selectedDeviceId === device.id && "bg-sidebar-primary text-sidebar-primary-foreground"
+                )}
+              >
+                <Car className="h-4 w-4 text-sidebar-foreground/70" />
+                <span className={cn("absolute top-0.5 right-0.5 h-2 w-2 rounded-full", isOnline ? 'bg-emerald-500' : 'bg-destructive')} />
+              </button>
+            );
+          })
         )}
       </div>
     );
@@ -209,7 +223,6 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
         </button>
       </div>
 
-      {/* Search */}
       <div className="px-2 pb-2">
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sidebar-foreground/40" />
@@ -242,39 +255,122 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
           {devices.length === 0 ? 'Nenhum veículo encontrado' : 'Nenhum resultado'}
         </p>
       ) : (
-        <div className="flex-1 overflow-y-auto space-y-px px-2">
+        <div className="flex-1 overflow-y-auto space-y-2 px-2 pb-2">
           {filteredDevices.map((device) => {
             const pos = getDevicePosition(device.id);
             const isSelected = selectedDeviceId === device.id;
+            const isOnline = device.status === 'online';
+            const ignition = pos?.attributes?.ignition;
+            const speed = pos?.speed ?? 0;
+            const sat = pos?.attributes?.sat;
+            const power = pos?.attributes?.power;
+            const isMoving = pos?.attributes?.motion || speed > 1;
+            const stoppedTime = !isMoving ? formatStoppedTime(pos?.fixTime || device.lastUpdate) : '';
+
             return (
-              <button
+              <div
                 key={device.id}
                 onClick={() => handleClick(device)}
                 className={cn(
-                  "w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors group",
+                  "rounded-xl border p-3 cursor-pointer transition-all duration-200",
                   isSelected
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                    : "hover:bg-sidebar-accent"
+                    ? "border-primary/60 bg-primary/10 shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)]"
+                    : "border-sidebar-border bg-sidebar-accent/30 hover:bg-sidebar-accent/60 hover:border-sidebar-foreground/20"
                 )}
               >
-                <div className="relative shrink-0">
-                  <Car className={cn("h-4 w-4", isSelected ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground")} />
-                  <span className={cn("absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border border-sidebar", getStatusColor(device.status))} />
+                {/* Top row: icon + name + actions + status */}
+                <div className="flex items-start gap-2.5">
+                  <span className="text-2xl leading-none mt-0.5">{getCategoryIcon(device.category)}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className={cn("font-bold text-xs truncate", isSelected ? "text-primary" : "text-sidebar-foreground")}>
+                        {device.name}
+                      </span>
+                      <span className={cn(
+                        "text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0",
+                        isOnline
+                          ? "bg-emerald-500/20 text-emerald-400"
+                          : "bg-destructive/20 text-destructive"
+                      )}>
+                        {isOnline ? 'Online' : 'Offline'}
+                      </span>
+                    </div>
+                    {device.model && (
+                      <p className="text-[10px] text-sidebar-foreground/50 truncate">{device.model}</p>
+                    )}
+                  </div>
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <button
+                      onClick={e => { e.stopPropagation(); }}
+                      title="Compartilhar"
+                      className="rounded-md p-1.5 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                    >
+                      <Share2 className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={e => { e.stopPropagation(); }}
+                      title="Editar"
+                      className="rounded-md p-1.5 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={e => { e.stopPropagation(); }}
+                      title="Bloquear"
+                      className="rounded-md p-1.5 text-sidebar-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    >
+                      <ShieldOff className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className={cn("truncate font-medium text-xs", isSelected ? "text-sidebar-primary-foreground" : "text-sidebar-foreground")}>{device.name}</p>
-                  {pos && pos.speed > 0 ? (
-                    <p className={cn("text-[10px] truncate", isSelected ? "text-sidebar-primary-foreground/70" : "text-sidebar-foreground/50")}>
-                      {Math.round(pos.speed)} km/h
-                    </p>
-                  ) : (
-                    <p className={cn("text-[10px]", isSelected ? "text-sidebar-primary-foreground/70" : "text-sidebar-foreground/50")}>
-                      {device.status === 'online' ? 'Parado' : 'Offline'}
-                    </p>
+
+                {/* Telemetry row */}
+                <div className="flex items-center gap-3 mt-2 flex-wrap">
+                  {/* Ignition */}
+                  <span className={cn("flex items-center gap-1 text-[10px] font-medium",
+                    ignition ? "text-emerald-400" : "text-destructive/80"
+                  )}>
+                    <span className="text-[9px]">⚡</span> {ignition ? 'Lig' : 'Des'}
+                  </span>
+                  {/* Signal */}
+                  <span className="flex items-center gap-1 text-[10px] font-medium text-sidebar-foreground/60">
+                    <Wifi className="h-3 w-3" /> OK
+                  </span>
+                  {/* Speed */}
+                  <span className="flex items-center gap-1 text-[10px] font-medium text-sidebar-foreground/60">
+                    <Gauge className="h-3 w-3" /> {Math.round(speed)} km/h
+                  </span>
+                  {/* Satellites */}
+                  {sat !== undefined && (
+                    <span className="flex items-center gap-1 text-[10px] font-medium text-sidebar-foreground/60">
+                      <Radio className="h-3 w-3" /> {sat}
+                    </span>
+                  )}
+                  {/* Voltage */}
+                  {power !== undefined && (
+                    <span className="flex items-center gap-1 text-[10px] font-medium text-sidebar-foreground/60">
+                      <Battery className="h-3 w-3" /> {power.toFixed(1)}V
+                    </span>
                   )}
                 </div>
-                <MapPin className={cn("h-3.5 w-3.5 shrink-0", isSelected ? "text-sidebar-primary-foreground/70" : "text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60")} />
-              </button>
+
+                {/* Bottom row: stopped time + last update */}
+                <div className="flex items-center justify-between mt-2">
+                  {stoppedTime ? (
+                    <span className="flex items-center gap-1 text-[10px] font-semibold text-destructive">
+                      <Clock className="h-3 w-3" /> Parado {stoppedTime}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-400">
+                      <Clock className="h-3 w-3" /> Em movimento
+                    </span>
+                  )}
+                  <span className="text-[10px] text-sidebar-foreground/40">
+                    {formatDateTime(pos?.fixTime || device.lastUpdate)}
+                  </span>
+                </div>
+              </div>
             );
           })}
         </div>
