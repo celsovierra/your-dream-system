@@ -18,6 +18,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import api from '@/services/api';
 import type { Client, MessageTemplate, DashboardStats } from '@/types/billing';
+import { mockTemplates } from '@/services/mock-data';
 import { addOperationLog } from '@/services/operation-logger';
 import { getCurrentOwnerId, isAdmin, userStorageGet, userStorageSet } from '@/services/auth';
 
@@ -400,11 +401,16 @@ export async function fetchMessageTemplates(): Promise<MessageTemplate[]> {
       if (!res.success || !res.data) throw new Error(res.error || 'Erro ao buscar templates');
       result = dedupeTemplates(res.data as MessageTemplate[]);
     }
+
+    if (result.length === 0) {
+      result = mockTemplates.map((template) => ({ ...template }));
+    }
+
     addOperationLog(backend, 'Templates', 'SELECT', `Listou ${result.length} templates`);
     return result;
   } catch (err: any) {
     addOperationLog(backend, 'Templates', 'SELECT', 'Erro ao listar templates', 'error', err?.message);
-    throw err;
+    return mockTemplates.map((template) => ({ ...template }));
   }
 }
 
