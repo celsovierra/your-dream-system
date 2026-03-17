@@ -353,6 +353,13 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         {/* Collapsed icon buttons */}
         {sidebarCollapsed && (
           <div className="flex flex-col items-center gap-2 py-3 border-b border-sidebar-border">
+            <button
+              onClick={() => setSidebarCollapsed(false)}
+              title="Expandir menu"
+              className="flex items-center justify-center rounded-lg h-8 w-8 transition-all duration-200 bg-white/10 hover:bg-white/20 text-white/70 hover:text-white hover:scale-105 active:scale-95"
+            >
+              <PanelLeft className="h-4 w-4" />
+            </button>
             <Link
               to="/configuracoes"
               onClick={() => setSidebarOpen(false)}
@@ -477,17 +484,16 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         )}
       </aside>
 
-      <button
-        onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-        title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
-        style={{ left: sidebarCollapsed ? '2.75rem' : 'calc(400px + 0.5rem)', top: sidebarCollapsed ? '4.5rem' : '1rem' }}
-        className={cn(
-          "fixed z-[1001] hidden lg:flex items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-2xl hover:bg-accent hover:text-accent-foreground hover:scale-110 active:scale-95 transition-all duration-200",
-          sidebarCollapsed ? 'h-10 w-10' : 'h-8 w-8'
-        )}
-      >
-        {sidebarCollapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-4 w-4" />}
-      </button>
+      {!sidebarCollapsed && (
+        <button
+          onClick={() => setSidebarCollapsed(true)}
+          title="Recolher menu"
+          style={{ left: 'calc(400px + 0.5rem)', top: '1rem' }}
+          className="fixed z-[1001] hidden lg:flex items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-2xl hover:bg-accent hover:text-accent-foreground hover:scale-110 active:scale-95 transition-all duration-200 h-8 w-8"
+        >
+          <PanelLeftClose className="h-4 w-4" />
+        </button>
+      )}
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
