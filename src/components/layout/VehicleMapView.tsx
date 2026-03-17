@@ -20,12 +20,12 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
   const markerRef = useRef<L.Marker | null>(null);
   const [cardOpen, setCardOpen] = useState(true);
   const [cardCollapsed, setCardCollapsed] = useState(false);
-  const [blocked, setBlocked] = useState(false);
+  const [blockedMap, setBlockedMap] = useState<Record<number, boolean>>({});
   const [blocking, setBlocking] = useState(false);
   const [mapType, setMapType] = useState<'satellite' | 'roadmap'>('satellite');
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const anchorCircleRef = useRef<L.Circle | null>(null);
-  const [anchorActive, setAnchorActive] = useState(false);
+  const [anchorMap, setAnchorMap] = useState<Record<number, boolean>>({});
   const [livePosition, setLivePosition] = useState<TraccarPosition | undefined>(initialPosition);
   const [liveDevice, setLiveDevice] = useState<TraccarDevice>(initialDevice);
 
@@ -105,21 +105,25 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
     }
   }, [liveDevice.id]);
 
+  const blocked = blockedMap[liveDevice.id] ?? false;
+  const anchorActive = anchorMap[liveDevice.id] ?? false;
+
   const handleToggleBlock = useCallback(async () => {
-    if (blocked) {
+    const devId = liveDevice.id;
+    if (blockedMap[devId]) {
       const ok = await sendCommand('engineResume');
       if (ok) {
-        setBlocked(false);
+        setBlockedMap((m) => ({ ...m, [devId]: false }));
         toast.success(`${liveDevice.name} desbloqueado!`);
       }
     } else {
       const ok = await sendCommand('engineStop');
       if (ok) {
-        setBlocked(true);
+        setBlockedMap((m) => ({ ...m, [devId]: true }));
         toast.success(`${liveDevice.name} bloqueado!`);
       }
     }
-  }, [blocked, liveDevice.name, sendCommand]);
+  }, [blockedMap, liveDevice.id, liveDevice.name, sendCommand]);
 
   useEffect(() => {
     if (!mapRef.current || !livePosition) return;
@@ -327,25 +331,24 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
               <button
                 title="Âncora"
                 onClick={() => {
-                  setAnchorActive((prev) => {
-                    const next = !prev;
-                    if (next && livePosition && mapInstanceRef.current) {
-                      if (anchorCircleRef.current) anchorCircleRef.current.remove();
-                      anchorCircleRef.current = L.circle([livePosition.latitude, livePosition.longitude], {
-                        radius: 50,
-                        color: '#ef4444',
-                        fillColor: '#ef4444',
-                        fillOpacity: 0.15,
-                        weight: 2,
-                      }).addTo(mapInstanceRef.current);
-                    } else {
-                      if (anchorCircleRef.current) {
-                        anchorCircleRef.current.remove();
-                        anchorCircleRef.current = null;
-                      }
+                  const devId = liveDevice.id;
+                  const next = !anchorMap[devId];
+                  setAnchorMap((m) => ({ ...m, [devId]: next }));
+                  if (next && livePosition && mapInstanceRef.current) {
+                    if (anchorCircleRef.current) anchorCircleRef.current.remove();
+                    anchorCircleRef.current = L.circle([livePosition.latitude, livePosition.longitude], {
+                      radius: 50,
+                      color: '#ef4444',
+                      fillColor: '#ef4444',
+                      fillOpacity: 0.15,
+                      weight: 2,
+                    }).addTo(mapInstanceRef.current);
+                  } else {
+                    if (anchorCircleRef.current) {
+                      anchorCircleRef.current.remove();
+                      anchorCircleRef.current = null;
                     }
-                    return next;
-                  });
+                  }
                 }}
                 className={cn(
                   "flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
