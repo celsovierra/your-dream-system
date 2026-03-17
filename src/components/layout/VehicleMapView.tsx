@@ -176,7 +176,9 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
 
       const tileLayer = L.tileLayer(tileUrl, {
         attribution: '© Google Maps',
-        maxZoom: 20,
+        maxZoom: isMobile ? 18 : 20,
+        updateWhenZooming: false,
+        updateWhenIdle: true,
       }).addTo(map);
       tileLayerRef.current = tileLayer;
 
