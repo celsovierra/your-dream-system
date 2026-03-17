@@ -158,7 +158,7 @@ export async function loginVps(email: string, password: string): Promise<AppUser
   const res = await api.login(email, password);
   if (!res.success || !res.data) throw new Error(res.error || 'Erro ao fazer login');
 
-  const payload = unwrapApiData<{ token: string; user: { id: string; name: string; email: string; role: string; createdAt?: string } }>(res.data);
+  const payload = unwrapApiData<{ token: string; user: SaasUser }>(res.data);
   const { token, user } = payload;
 
   if (!token || !user?.id) {
@@ -170,7 +170,11 @@ export async function loginVps(email: string, password: string): Promise<AppUser
     email: user.email,
     password: '',
     name: user.name,
-    role: (user.role as 'admin' | 'user') || 'user',
+    phone: user.phone,
+    role: user.role || 'user',
+    client_limit: user.client_limit,
+    expires_at: user.expires_at,
+    permissions: user.permissions,
     createdAt: user.createdAt || '',
   };
 
