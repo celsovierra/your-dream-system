@@ -17,7 +17,7 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeft,
-  
+  DollarSign,
   ScrollText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -34,6 +34,7 @@ const navItems = [
   { path: '/fila', label: 'Fila de Envio', icon: ListTodo, color: 'text-purple-400' },
   { path: '/mensagens', label: 'Mensagens', icon: MessageSquare, color: 'text-green-400' },
   { path: '/contratos', label: 'Contratos', icon: FileText, color: 'text-orange-400' },
+  { path: '/financeiro', label: 'Financeiro', icon: DollarSign, color: 'text-yellow-400' },
 ];
 
 const allBottomNavItems = [

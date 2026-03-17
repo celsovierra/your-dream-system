@@ -2,10 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, DollarSign, AlertTriangle, Clock, TrendingUp, Loader2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { fetchDashboardStats } from '@/services/data-layer';
 import type { DashboardStats } from '@/types/billing';
-import FinanceiroPage from './FinanceiroPage';
 
 function getLast12Months() {
   const months = [];
@@ -21,7 +19,7 @@ function getLast12Months() {
 const DashboardPage = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  
 
   useEffect(() => {
     fetchDashboardStats()
@@ -57,62 +55,43 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="dashboard" className="gap-1.5">
-            <TrendingUp className="h-4 w-4" />
-            Dashboard
-          </TabsTrigger>
-          <TabsTrigger value="financeiro" className="gap-1.5">
-            <DollarSign className="h-4 w-4" />
-            Financeiro
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="dashboard" className="mt-6">
-          {loading || !stats ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-                {statCards.map((stat) => (
-                  <Card key={stat.label}>
-                    <CardContent className="flex flex-col items-center p-4 text-center">
-                      <stat.icon className={`mb-2 h-8 w-8 ${stat.color}`} />
-                      <p className="text-2xl font-bold text-card-foreground">{stat.value}</p>
-                      <p className="text-xs text-muted-foreground">{stat.label}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              <Card>
-                <CardHeader><CardTitle className="text-base">Faturamento - Últimos 12 Meses</CardTitle></CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={monthlyData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                      <YAxis tickFormatter={(v) => `R$${v}`} tick={{ fontSize: 12 }} />
-                      <Tooltip formatter={(value: number) => `R$ ${value.toLocaleString('pt-BR')}`} />
-                      <Legend />
-                      <Bar dataKey="recebido" name="Recebido" stackId="a" fill="hsl(142, 71%, 45%)" />
-                      <Bar dataKey="a_receber" name="A Receber" stackId="a" fill="hsl(38, 92%, 50%)" />
-                      <Bar dataKey="atraso" name="Em Atraso" stackId="a" fill="hsl(0, 72%, 51%)" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+      {loading || !stats ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+            {statCards.map((stat) => (
+              <Card key={stat.label}>
+                <CardContent className="flex flex-col items-center p-4 text-center">
+                  <stat.icon className={`mb-2 h-8 w-8 ${stat.color}`} />
+                  <p className="text-2xl font-bold text-card-foreground">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground">{stat.label}</p>
                 </CardContent>
               </Card>
-            </div>
-          )}
-        </TabsContent>
+            ))}
+          </div>
 
-        <TabsContent value="financeiro" className="mt-6">
-          <FinanceiroPage />
-        </TabsContent>
-      </Tabs>
+          <Card>
+            <CardHeader><CardTitle className="text-base">Faturamento - Últimos 12 Meses</CardTitle></CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                  <YAxis tickFormatter={(v) => `R$${v}`} tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(value: number) => `R$ ${value.toLocaleString('pt-BR')}`} />
+                  <Legend />
+                  <Bar dataKey="recebido" name="Recebido" stackId="a" fill="hsl(142, 71%, 45%)" />
+                  <Bar dataKey="a_receber" name="A Receber" stackId="a" fill="hsl(38, 92%, 50%)" />
+                  <Bar dataKey="atraso" name="Em Atraso" stackId="a" fill="hsl(0, 72%, 51%)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 };

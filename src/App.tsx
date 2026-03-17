@@ -12,6 +12,7 @@ import LogsPage from "./pages/LogsPage";
 import FilaPage from "./pages/FilaPage";
 import MensagensPage from "./pages/MensagensPage";
 import ContratosPage from "./pages/ContratosPage";
+import FinanceiroPage from "./pages/FinanceiroPage";
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import NotFound from "./pages/NotFound";
 import { clearCurrentUser, getCurrentUser, isAdmin } from '@/services/auth';
@@ -107,7 +108,7 @@ const App = () => {
             <ErrorBoundary>
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
-                <Route path="/financeiro" element={<DashboardPage />} />
+                <Route path="/financeiro" element={<FinanceiroPage />} />
                 <Route path="/clientes" element={<ClientesPage />} />
                 <Route path="/logs" element={<LogsPage />} />
                 <Route path="/fila" element={<FilaPage />} />
