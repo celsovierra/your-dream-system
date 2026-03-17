@@ -285,7 +285,7 @@ const FinanceiroPage = () => {
                       <Label>Categoria</Label>
                       <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
                         <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="pointer-events-auto z-[9999]">
                           {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                         </SelectContent>
                       </Select>
