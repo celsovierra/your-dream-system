@@ -71,7 +71,13 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
           const myPos = positions.find((p) => p.deviceId === initialDevice.id);
           if (myPos) {
             setLivePosition(myPos);
-            if (markerRef.current) markerRef.current.setLatLng([myPos.latitude, myPos.longitude]);
+            if (markerRef.current) {
+              markerRef.current.setLatLng([myPos.latitude, myPos.longitude]);
+              // Rotate marker icon based on course
+              const el = markerRef.current.getElement();
+              const inner = el?.querySelector('div') as HTMLElement | null;
+              if (inner) inner.style.transform = `rotate(${myPos.course ?? 0}deg)`;
+            }
           }
         }
 
