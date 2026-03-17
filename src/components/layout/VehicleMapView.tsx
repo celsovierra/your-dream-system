@@ -14,15 +14,57 @@ interface VehicleMapViewProps {
   onClose: () => void;
 }
 
-const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
+const VehicleMapView = ({ device: initialDevice, position: initialPosition, onClose }: VehicleMapViewProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
   const [cardOpen, setCardOpen] = useState(true);
   const [cardCollapsed, setCardCollapsed] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [blocking, setBlocking] = useState(false);
   const [mapType, setMapType] = useState<'satellite' | 'roadmap'>('satellite');
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const [livePosition, setLivePosition] = useState<TraccarPosition | undefined>(initialPosition);
+  const [liveDevice, setLiveDevice] = useState<TraccarDevice>(initialDevice);
+
+  // Poll for live position & device updates
+  useEffect(() => {
+    const fetchLive = async () => {
+      const traccar_url = userStorageGet('traccar_url');
+      const traccar_user = userStorageGet('traccar_user');
+      const traccar_password = userStorageGet('traccar_password');
+      if (!traccar_url || !traccar_user || !traccar_password) return;
+
+      try {
+        const [posRes, devRes] = await Promise.all([
+          api.traccarProxy({ traccar_url, traccar_user, traccar_password, endpoint: '/api/positions', method: 'GET' }),
+          api.traccarProxy({ traccar_url, traccar_user, traccar_password, endpoint: `/api/devices?id=${initialDevice.id}`, method: 'GET' }),
+        ]);
+
+        if (posRes.success) {
+          const posData = posRes.data?.data || posRes.data;
+          const positions = Array.isArray(posData) ? posData as TraccarPosition[] : [];
+          const myPos = positions.find((p) => p.deviceId === initialDevice.id);
+          if (myPos) {
+            setLivePosition(myPos);
+            // Update marker position on map
+            if (markerRef.current && mapInstanceRef.current) {
+              markerRef.current.setLatLng([myPos.latitude, myPos.longitude]);
+            }
+          }
+        }
+
+        if (devRes.success) {
+          const devData = devRes.data?.data || devRes.data;
+          const devArr = Array.isArray(devData) ? devData as TraccarDevice[] : [];
+          if (devArr.length > 0) setLiveDevice(devArr[0]);
+        }
+      } catch { /* silent */ }
+    };
+
+    const interval = setInterval(fetchLive, 10000);
+    return () => clearInterval(interval);
+  }, [initialDevice.id]);
 
   const sendCommand = useCallback(async (type: 'engineStop' | 'engineResume') => {
     const traccar_url = userStorageGet('traccar_url');
