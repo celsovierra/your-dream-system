@@ -328,7 +328,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             <div className="flex shrink-0 gap-1.5 items-center">
               <Link
                 to="/configuracoes"
-                onClick={() => setSidebarOpen(false)}
+                onClick={() => { setSidebarOpen(false); setSelectedVehicle(null); }}
                 title="Configurações"
                 className={cn(
                   'flex items-center justify-center rounded-lg h-9 w-9 shrink-0 transition-all duration-200',
@@ -368,7 +368,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           <div className="flex flex-col items-center gap-2 py-3 border-b border-sidebar-border">
             <Link
               to="/configuracoes"
-              onClick={() => setSidebarOpen(false)}
+              onClick={() => { setSidebarOpen(false); setSelectedVehicle(null); }}
               title="Configurações"
               className={cn(
                 'flex items-center justify-center rounded-lg h-8 w-8 transition-all duration-200',
