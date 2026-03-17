@@ -460,10 +460,6 @@ const ConfiguracoesPage = () => {
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" onClick={() => {
-                  if (!traccarUrl || !traccarUser || !traccarPassword) {
-                    toast.error('Preencha todos os campos do Traccar');
-                    return;
-                  }
                   userStorageSet('traccar_url', traccarUrl.trim().replace(/\/+$/, ''));
                   userStorageSet('traccar_user', traccarUser.trim());
                   userStorageSet('traccar_password', traccarPassword);
@@ -471,6 +467,18 @@ const ConfiguracoesPage = () => {
                   toast.success('Configuração do Traccar salva!');
                 }}>
                   <Save className="mr-2 h-3 w-3" /> Salvar
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  setTraccarUrl('');
+                  setTraccarUser('');
+                  setTraccarPassword('');
+                  userStorageSet('traccar_url', '');
+                  userStorageSet('traccar_user', '');
+                  userStorageSet('traccar_password', '');
+                  window.dispatchEvent(new Event('traccar-config-updated'));
+                  toast.success('Configuração do Traccar limpa!');
+                }}>
+                  Limpar
                 </Button>
                 <Button size="sm" variant="outline" onClick={handleTestTraccar} disabled={traccarTesting}>
                   {traccarTesting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <MapPin className="mr-2 h-3 w-3" />}
