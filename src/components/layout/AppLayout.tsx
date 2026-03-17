@@ -212,6 +212,12 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   }, [sidebarCollapsed]);
 
   useEffect(() => {
+    if (location.pathname !== '/' && selectedVehicle) {
+      setSelectedVehicle(null);
+    }
+  }, [location.pathname, selectedVehicle]);
+
+  useEffect(() => {
     const confirmPendingDeploy = async () => {
       const pending = localStorage.getItem('deploy_pending');
       if (pending) {
