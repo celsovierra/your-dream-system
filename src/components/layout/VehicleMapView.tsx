@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { MapPin, Calendar, Battery, Satellite, Gauge, Power, ChevronDown, ChevronUp, Car, Lock, Unlock, Anchor, Route, Map as MapIcon, Pencil, History, Loader2, Layers, X } from 'lucide-react';
+import { MapPin, Calendar, Battery, Satellite, Gauge, Power, ChevronDown, ChevronUp, Car, Lock, Unlock, Anchor, Route, Map as MapIcon, Pencil, History, Loader2, Layers, X, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -7,6 +7,7 @@ import type { TraccarDevice, TraccarPosition } from './SidebarVehicles';
 import { userStorageGet } from '@/services/auth';
 import api from '@/services/api';
 import { toast } from 'sonner';
+import { getVehicleStopTime } from '@/hooks/useVehicleStopTime';
 
 interface VehicleMapViewProps {
   device: TraccarDevice;
@@ -328,6 +329,15 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
                     <Gauge className="h-3 w-3" />
                     <span className="text-[10px] font-bold">{getStatusLabel()}</span>
                   </div>
+                  {(() => {
+                    const { formattedDuration } = getVehicleStopTime({ position: livePosition ?? null });
+                    return formattedDuration ? (
+                      <div className="flex items-center gap-1.5 bg-yellow-500/20 rounded-lg px-2.5 py-1.5">
+                        <Timer className="h-3 w-3 text-yellow-400" />
+                        <span className="text-[10px] font-bold text-yellow-400">Parado {formattedDuration}</span>
+                      </div>
+                    ) : null;
+                  })()}
                 </div>
               </div>
             )}
