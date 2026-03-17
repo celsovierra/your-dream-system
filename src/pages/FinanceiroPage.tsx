@@ -297,7 +297,7 @@ const FinanceiroPage = () => {
                       <Label>Tipo de Pagamento</Label>
                       <Select value={form.payment_type} onValueChange={v => setForm({ ...form, payment_type: v as 'single' | 'installment' })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="pointer-events-auto z-[9999]">
                           <SelectItem value="single">Vencimento Único</SelectItem>
                           <SelectItem value="installment">Parcelado</SelectItem>
                         </SelectContent>
