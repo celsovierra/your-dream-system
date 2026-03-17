@@ -37,7 +37,8 @@ router.post('/proxy', async (req, res) => {
       return res.status(response.status).json({ error: `Traccar API error [${response.status}]: ${errorText}` });
     }
 
-    const data = await response.json();
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : null;
     res.json({ data });
   } catch (err) {
     console.error('Traccar proxy error:', err);
