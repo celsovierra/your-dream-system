@@ -32,6 +32,10 @@ export interface SaasUser {
   expires_at: string | null;
   permissions: string[];
   is_active: boolean;
+  slug: string | null;
+  layout_company_name: string | null;
+  layout_logo: string | null;
+  layout_primary_color: string | null;
   createdAt: string;
 }
 

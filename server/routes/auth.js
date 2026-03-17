@@ -195,6 +195,7 @@ router.put('/users/:id', async (req, res) => {
     if (expires_at !== undefined) { fields.push('expires_at = ?'); values.push(expires_at || null); }
     if (permissions !== undefined) { fields.push('permissions = ?'); values.push(JSON.stringify(permissions)); }
     if (is_active !== undefined) { fields.push('is_active = ?'); values.push(is_active ? 1 : 0); }
+    if (req.body.slug !== undefined) { fields.push('slug = ?'); values.push(req.body.slug?.toLowerCase().trim() || null); }
 
     if (fields.length === 0) {
       return res.status(400).json({ success: false, error: 'Nenhum campo para atualizar' });
