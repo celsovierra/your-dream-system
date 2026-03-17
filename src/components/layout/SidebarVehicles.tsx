@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Car, Loader2, WifiOff, RefreshCw, Search, Share2, Pencil, Wifi, Clock } from 'lucide-react';
+import { Car, Loader2, WifiOff, RefreshCw, Search, Share2, Pencil, Wifi, Clock, KeyRound } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userStorageGet } from '@/services/auth';
 import api from '@/services/api';
@@ -139,7 +139,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
 
   useEffect(() => {
     void fetchDevices();
-    const interval = setInterval(() => void fetchDevices(), 60000);
+    const interval = setInterval(() => void fetchDevices(), 5000);
     const handleRefresh = () => void fetchDevices();
     window.addEventListener('traccar-config-updated', handleRefresh);
     window.addEventListener('focus', handleRefresh);
@@ -151,7 +151,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
   }, [fetchDevices]);
 
   useEffect(() => {
-    const timer = setInterval(() => setTick((v) => v + 1), 30000);
+    const timer = setInterval(() => setTick((v) => v + 1), 5000);
     return () => clearInterval(timer);
   }, []);
 
@@ -307,11 +307,13 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                 </div>
 
                 <div className="mt-2 flex items-center gap-3 text-xs">
-                  <span className={cn('font-bold', ignition ? 'text-green-400' : 'text-orange-400')}>⚡{ignition ? 'Lig' : 'Des'}</span>
-                  <span className="text-[hsl(180,5%,55%)] font-medium"><Wifi className="mr-1 inline h-3.5 w-3.5" />OK</span>
-                  <span className="text-[hsl(180,5%,55%)] font-medium">⏱ {Math.round(speed)} km/h</span>
-                  {sat !== undefined && <span className="text-[hsl(180,5%,55%)] font-medium">📡 {sat}</span>}
-                  {power !== undefined && <span className="text-[hsl(180,5%,55%)] font-medium">🔋 {power.toFixed(1)}V</span>}
+                  <span className={cn('flex items-center gap-1 font-bold', ignition ? 'text-green-400' : 'text-yellow-400')}>
+                    <KeyRound className="h-3.5 w-3.5" />{ignition ? 'Lig' : 'Des'}
+                  </span>
+                  <span className="text-white/70 font-medium"><Wifi className="mr-1 inline h-3.5 w-3.5" />OK</span>
+                  <span className="text-white/70 font-medium">⏱ {Math.round(speed)} km/h</span>
+                  {sat !== undefined && <span className="text-white/70 font-medium">📡 {sat}</span>}
+                  {power !== undefined && <span className="text-white/70 font-medium">🔋 {power.toFixed(1)}V</span>}
                 </div>
 
                 <div className="mt-2 flex items-center justify-between">
@@ -320,15 +322,15 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                       <Clock className="h-3.5 w-3.5" /> Em movimento
                     </span>
                   ) : formattedDuration ? (
-                    <span className="flex items-center gap-1 text-xs font-bold text-red-400">
+                    <span className="flex items-center gap-1 text-xs font-bold text-yellow-400">
                       <Clock className="h-3.5 w-3.5" /> Parado {formattedDuration}
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-xs font-bold text-red-400">
+                    <span className="flex items-center gap-1 text-xs font-bold text-yellow-400">
                       <Clock className="h-3.5 w-3.5" /> Parado
                     </span>
                   )}
-                  <span className="text-xs text-[hsl(180,5%,45%)]">{formatDateTime(device.lastUpdate)}</span>
+                  <span className="text-xs text-white/50">{formatDateTime(device.lastUpdate)}</span>
                 </div>
               </div>
             );
