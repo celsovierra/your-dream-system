@@ -187,31 +187,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
   }
 
   if (collapsed) {
-    return (
-      <div className="flex flex-col items-center gap-1 p-1">
-        {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin text-sidebar-foreground/50" />
-        ) : (
-          devices.slice(0, 10).map((device) => {
-            const isOnline = device.status === 'online';
-            return (
-              <button
-                key={device.id}
-                onClick={() => handleClick(device)}
-                title={`${device.name} (${device.status})`}
-                className={cn(
-                  'relative flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-sidebar-accent',
-                  selectedDeviceId === device.id && 'bg-sidebar-primary text-sidebar-primary-foreground'
-                )}
-              >
-                <Car className="h-4 w-4 text-sidebar-foreground/70" />
-                <span className={cn('absolute right-0.5 top-0.5 h-2 w-2 rounded-full', isOnline ? 'bg-emerald-500' : 'bg-destructive')} />
-              </button>
-            );
-          })
-        )}
-      </div>
-    );
+    return null;
   }
 
   return (
