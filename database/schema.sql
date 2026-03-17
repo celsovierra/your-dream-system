@@ -1,6 +1,7 @@
 -- ===== SCHEMA MARIADB PARA VPS =====
 -- Execute este script no MariaDB da sua VPS para criar as tabelas
 
+SET NAMES utf8mb4;
 CREATE DATABASE IF NOT EXISTS cobranca_pro CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE cobranca_pro;
 
