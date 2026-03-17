@@ -429,7 +429,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       <button
         onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
         title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
-        style={{ left: sidebarCollapsed ? '4.5rem' : '25.5rem' }}
+        style={{ left: sidebarCollapsed ? '4.5rem' : 'calc(400px + 0.75rem)' }}
         className={cn(
           "fixed top-4 z-[1001] hidden lg:flex items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-2xl hover:bg-accent hover:text-accent-foreground hover:scale-110 active:scale-95 transition-all duration-200",
           sidebarCollapsed ? 'h-12 w-12' : 'h-8 w-8'
