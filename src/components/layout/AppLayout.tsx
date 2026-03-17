@@ -412,53 +412,56 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="rounded-md p-2 text-muted-foreground hover:bg-secondary lg:hidden"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <h2 className="text-lg font-semibold text-card-foreground lg:hidden">
-              {[...headerNavItems, ...navItems, ...bottomNavItems].find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
-            </h2>
-            <nav className="hidden md:flex items-center gap-1 ml-4">
-              {headerNavItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              title={darkMode ? 'Modo claro' : 'Modo escuro'}
-              className="rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
-            >
-              {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </button>
-            {onLogout && (
-              <Button variant="ghost" size="sm" onClick={onLogout} className="text-muted-foreground">
-                <LogOut className="mr-2 h-4 w-4" /> Sair
-              </Button>
-            )}
-          </div>
-        </header>
+        {!selectedVehicle && (
+          <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="rounded-md p-2 text-muted-foreground hover:bg-secondary lg:hidden"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <h2 className="text-lg font-semibold text-card-foreground lg:hidden">
+                {[...headerNavItems, ...navItems, ...bottomNavItems].find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
+              </h2>
+              <nav className="hidden md:flex items-center gap-1 ml-4">
+                {headerNavItems.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setSelectedVehicle(null)}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                        isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                      )}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setDarkMode(!darkMode)}
+                title={darkMode ? 'Modo claro' : 'Modo escuro'}
+                className="rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
+              >
+                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+              {onLogout && (
+                <Button variant="ghost" size="sm" onClick={onLogout} className="text-muted-foreground">
+                  <LogOut className="mr-2 h-4 w-4" /> Sair
+                </Button>
+              )}
+            </div>
+          </header>
+        )}
 
         {selectedVehicle ? (
           <div className="flex-1 min-h-0">
