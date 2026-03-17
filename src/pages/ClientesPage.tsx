@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { userStorageGet } from '@/services/auth';
 import type { Client } from '@/types/billing';
 import { toast } from 'sonner';
-import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, getTemplateByType, replaceTemplateVars, invokeEvolutionProxy, upsertClientFromTraccar, addQueueItem } from '@/services/data-layer';
+import { fetchClients, createClient, updateClient, deleteClient, getReceiptTemplate, getTemplateByType, replaceTemplateVars, invokeEvolutionProxy, upsertClientFromTraccar } from '@/services/data-layer';
 import api from '@/services/api';
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -326,21 +326,25 @@ const ClientesPage = () => {
         message = `Olá ${client.name}, segue sua cobrança no valor de R$ ${Number(client.amount).toFixed(2)}${dueDateText}.`;
       }
 
-      const { error } = await invokeEvolutionProxy({ action: 'send-text', to: client.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name });
-      if (error) throw new Error(error);
-
-      // Registrar na fila como enviado
       const overdueDays = isOverdue && dueDate ? Math.abs(Math.round((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))) : 0;
-      addQueueItem({
-        client_id: client.id,
-        client_name: client.name,
-        client_phone: client.phone,
-        type: templateType,
-        amount: Number(client.amount),
-        due_date: client.due_date || undefined,
-        days_overdue: overdueDays,
+      const { error } = await invokeEvolutionProxy({
+        action: 'send-text',
+        to: client.phone,
         message,
+        api_url: waConfig.api_url,
+        api_key: waConfig.api_key,
+        instance_name: waConfig.instance_name,
+        queue_item: {
+          client_id: client.id,
+          client_name: client.name,
+          client_phone: client.phone,
+          type: templateType,
+          amount: Number(client.amount),
+          due_date: client.due_date || undefined,
+          days_overdue: overdueDays,
+        },
       });
+      if (error) throw new Error(error);
 
       toast.success('Cobrança enviada via WhatsApp!', { id: `billing-${client.id}` });
     } catch (err: any) {
@@ -396,22 +400,24 @@ const ClientesPage = () => {
         try {
           toast.loading('Enviando recibo...', { id: `receipt-${baixaClient.id}` });
           await ensureWhatsAppConnected(waConfig);
-          const { error } = await invokeEvolutionProxy({ action: 'send-text', to: baixaClient.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name });
-          if (error) throw new Error(error);
-
-          // Registrar recibo na fila como enviado
-          await addQueueItem({
-            client_id: baixaClient.id,
-            client_name: baixaClient.name,
-            client_phone: baixaClient.phone,
-            type: 'receipt',
-            amount: totalAmount,
-            due_date: baixaClient.due_date || undefined,
-            days_overdue: 0,
+          const { error } = await invokeEvolutionProxy({
+            action: 'send-text',
+            to: baixaClient.phone,
             message,
+            api_url: waConfig.api_url,
+            api_key: waConfig.api_key,
+            instance_name: waConfig.instance_name,
+            queue_item: {
+              client_id: baixaClient.id,
+              client_name: baixaClient.name,
+              client_phone: baixaClient.phone,
+              type: 'receipt',
+              amount: totalAmount,
+              due_date: baixaClient.due_date || undefined,
+              days_overdue: 0,
+            },
           });
-
-          toast.success('Recibo enviado via WhatsApp!', { id: `receipt-${baixaClient.id}` });
+          if (error) throw new Error(error);
         } catch (err: any) { toast.error(err?.message || 'Erro ao enviar recibo', { id: `receipt-${baixaClient.id}` }); }
       }
     }

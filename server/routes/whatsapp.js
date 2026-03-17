@@ -20,7 +20,7 @@ async function tryFetch(url, options) {
 // Proxy para Evolution API — replica a lógica da Edge Function evolution-proxy
 router.post('/', async (req, res) => {
   try {
-    const { api_url, api_key, instance_name, action, to, message } = req.body;
+    const { api_url, api_key, instance_name, action, to, message, queue_item } = req.body;
 
     if (!api_url || !api_key || !instance_name) {
       return res.status(400).json({ error: 'Parâmetros obrigatórios: api_url, api_key, instance_name' });
@@ -101,6 +101,29 @@ router.post('/', async (req, res) => {
       const result = await tryFetch(sendUrl, { method: 'POST', headers, body: sendBody });
 
       if (result.status === 200 || result.status === 201) {
+        try {
+          if (queue_item?.client_id && queue_item?.client_name && queue_item?.client_phone && queue_item?.type) {
+            const { query } = await import('../db.js');
+            await query(
+              'INSERT INTO billing_queue (client_id, client_name, client_phone, type, amount, due_date, days_overdue, status, sent_at, message, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)',
+              [
+                queue_item.client_id,
+                queue_item.client_name,
+                queue_item.client_phone,
+                queue_item.type,
+                queue_item.amount || 0,
+                queue_item.due_date || null,
+                queue_item.days_overdue || 0,
+                'sent',
+                message || null,
+                req.ownerId || queue_item.owner_id || null,
+              ]
+            );
+          }
+        } catch (queueErr) {
+          console.error('[WhatsApp] Falha ao registrar envio manual na fila:', queueErr?.message || queueErr);
+        }
+
         return res.json({ success: true, data: result.data });
       }
 
