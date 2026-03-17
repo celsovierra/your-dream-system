@@ -41,6 +41,10 @@ function formatUser(u) {
     expires_at: u.expires_at || null,
     permissions: parsePermissions(u.permissions),
     is_active: u.is_active,
+    slug: u.slug || null,
+    layout_company_name: u.layout_company_name || null,
+    layout_logo: u.layout_logo || null,
+    layout_primary_color: u.layout_primary_color || null,
     createdAt: u.created_at,
   };
 }
