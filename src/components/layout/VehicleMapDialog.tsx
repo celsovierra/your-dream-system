@@ -46,18 +46,21 @@ const VehicleMapDialog = ({ open, onOpenChange, device, position }: VehicleMapDi
 
       if (!mapRef.current) return;
 
-      const map = L.map(mapRef.current).setView([position.latitude, position.longitude], 15);
+      const mobile = window.innerWidth < 768;
+      const map = L.map(mapRef.current, { preferCanvas: true, fadeAnimation: !mobile, zoomAnimation: !mobile }).setView([position.latitude, position.longitude], mobile ? 14 : 15);
 
-      L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      L.tileLayer(mobile ? 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}' : 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
         attribution: '© Google Maps',
-        maxZoom: 20,
+        maxZoom: mobile ? 18 : 20,
+        updateWhenZooming: false,
+        updateWhenIdle: true,
       }).addTo(map);
 
       const course = position.course ?? 0;
       const isMoto = device.category?.toLowerCase() === 'motorcycle';
       const iconImg = isMoto ? '/images/moto-top-view.png' : '/images/car-top-view.png';
-      const iconW = isMoto ? 50 : 60;
-      const iconH = isMoto ? 70 : 90;
+      const iconW = mobile ? (isMoto ? 36 : 42) : (isMoto ? 50 : 60);
+      const iconH = mobile ? (isMoto ? 50 : 64) : (isMoto ? 70 : 90);
       const icon = L.divIcon({
         html: `<div style="width:${iconW}px;height:${iconH}px;display:flex;align-items:center;justify-content:center;transform:rotate(${course}deg);filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
           <img src="${iconImg}" style="width:${iconW - 4}px;height:${iconH - 4}px;object-fit:contain;" />

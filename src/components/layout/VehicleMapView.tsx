@@ -23,7 +23,8 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
   const [cardCollapsed, setCardCollapsed] = useState(false);
   const [blockedMap, setBlockedMap] = useState<Record<number, boolean>>({});
   const [blocking, setBlocking] = useState(false);
-  const [mapType, setMapType] = useState<'satellite' | 'roadmap'>('satellite');
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const [mapType, setMapType] = useState<'satellite' | 'roadmap'>(isMobile ? 'roadmap' : 'satellite');
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const anchorCircleRef = useRef<L.Circle | null>(null);
   const [anchorMap, setAnchorMap] = useState<Record<number, boolean>>({});
@@ -90,7 +91,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
     };
 
     void fetchLive();
-    const interval = setInterval(fetchLive, 3000);
+    const interval = setInterval(fetchLive, isMobile ? 5000 : 3000);
     return () => clearInterval(interval);
   }, [initialDevice.id]);
 
@@ -166,7 +167,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
 
       if (!mapRef.current) return;
 
-      const map = L.map(mapRef.current, { zoomControl: false }).setView([pos.latitude, pos.longitude], 18);
+      const map = L.map(mapRef.current, { zoomControl: false, preferCanvas: true, fadeAnimation: !isMobile, zoomAnimation: !isMobile }).setView([pos.latitude, pos.longitude], isMobile ? 16 : 18);
       L.control.zoom({ position: 'topright' }).addTo(map);
 
       const tileUrl = mapType === 'satellite'
@@ -175,15 +176,17 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
 
       const tileLayer = L.tileLayer(tileUrl, {
         attribution: '© Google Maps',
-        maxZoom: 20,
+        maxZoom: isMobile ? 18 : 20,
+        updateWhenZooming: false,
+        updateWhenIdle: true,
       }).addTo(map);
       tileLayerRef.current = tileLayer;
 
       const course = pos.course ?? 0;
       const isMoto = initialDevice.category?.toLowerCase() === 'motorcycle';
       const iconImg = isMoto ? '/images/moto-top-view.png' : '/images/car-top-view.png';
-      const iconW = isMoto ? 50 : 60;
-      const iconH = isMoto ? 70 : 90;
+      const iconW = isMobile ? (isMoto ? 36 : 42) : (isMoto ? 50 : 60);
+      const iconH = isMobile ? (isMoto ? 50 : 64) : (isMoto ? 70 : 90);
       const icon = L.divIcon({
         html: `<div style="width:${iconW}px;height:${iconH}px;display:flex;align-items:center;justify-content:center;transform:rotate(${course}deg);transition:transform 0.5s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
           <img src="${iconImg}" style="width:${iconW - 4}px;height:${iconH - 4}px;object-fit:contain;" />
