@@ -72,19 +72,13 @@ function getCategoryIcon(category?: string) {
   }
 }
 
-// ===== Cache em memória para eventos ignitionOff (5 min) =====
-let ignitionEventsCache: { data: Record<string, string>; timestamp: number } | null = null;
-const FRONTEND_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
-
 const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSelectFirst = false }: SidebarVehiclesProps) => {
   const [devices, setDevices] = useState<TraccarDevice[]>([]);
   const [positions, setPositions] = useState<TraccarPosition[]>([]);
-  const [ignitionOffEvents, setIgnitionOffEvents] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [configured, setConfigured] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [, setTick] = useState(0);
 
   const getCredentials = useCallback(() => {
     const traccar_url = userStorageGet('traccar_url');
