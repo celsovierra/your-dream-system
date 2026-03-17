@@ -323,7 +323,36 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
                 )}
                 {blocking ? 'ENVIANDO...' : blocked ? 'DESBLOQUEAR' : 'BLOQUEAR'}
               </button>
-              <button title="Âncora" className="flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors">
+              <button
+                title="Âncora"
+                onClick={() => {
+                  setAnchorActive((prev) => {
+                    const next = !prev;
+                    if (next && livePosition && mapInstanceRef.current) {
+                      if (anchorCircleRef.current) anchorCircleRef.current.remove();
+                      anchorCircleRef.current = L.circle([livePosition.latitude, livePosition.longitude], {
+                        radius: 50,
+                        color: '#3b82f6',
+                        fillColor: '#3b82f6',
+                        fillOpacity: 0.15,
+                        weight: 2,
+                      }).addTo(mapInstanceRef.current);
+                    } else {
+                      if (anchorCircleRef.current) {
+                        anchorCircleRef.current.remove();
+                        anchorCircleRef.current = null;
+                      }
+                    }
+                    return next;
+                  });
+                }}
+                className={cn(
+                  "flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
+                  anchorActive
+                    ? "bg-blue-500 text-white animate-pulse"
+                    : "bg-white/10 hover:bg-white/20 text-white/70 hover:text-white"
+                )}
+              >
                 <Anchor className="h-4 w-4" />
               </button>
               <button title="Rota" className="flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors">
