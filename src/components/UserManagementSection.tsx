@@ -217,8 +217,8 @@ export default function UserManagementSection() {
                       const url = `${baseUrl}/${slug}`;
                       return (
                         <div className="flex items-center gap-1">
-                          <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]" title={url}>
-                            /{slug}
+                          <span className="text-muted-foreground font-mono text-xs" title={url}>
+                            {url}
                           </span>
                           <Button
                             variant="ghost"
