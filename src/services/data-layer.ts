@@ -596,6 +596,43 @@ export async function updateQueueItemStatus(id: number, status: string): Promise
   }
 }
 
+export interface AddQueueItemParams {
+  client_id: number;
+  client_name: string;
+  client_phone: string;
+  type: string;
+  amount: number;
+  due_date?: string;
+  days_overdue?: number;
+  message?: string;
+}
+
+export async function addQueueItem(item: AddQueueItemParams): Promise<void> {
+  const backend = ACTIVE_DATA_BACKEND;
+  try {
+    const payload = {
+      ...item,
+      status: 'sent',
+      sent_at: new Date().toISOString(),
+      days_overdue: item.days_overdue || 0,
+      owner_id: getCurrentOwnerId() || null,
+    };
+    if (isLovableEnv()) {
+      const { error } = await supabase.from('billing_queue').insert(payload as any);
+      if (error) throw error;
+    } else {
+      const res = await apiFetch('/queue', { method: 'POST', body: JSON.stringify(payload) });
+      const json = await safeJsonParse(res);
+      if (!json.success) throw new Error(json.error || 'Erro ao registrar na fila');
+    }
+    addOperationLog(backend, 'Fila', 'INSERT', `Registrou envio manual: ${item.client_name} (${item.type})`);
+  } catch (err: any) {
+    addOperationLog(backend, 'Fila', 'INSERT', 'Erro ao registrar na fila', 'error', err?.message);
+    // Non-blocking: don't throw, just log
+    console.warn('[addQueueItem] Falha ao registrar na fila:', err?.message);
+  }
+}
+
 // ===== CONFIGURAÇÕES =====
 
 export interface BillingSettings {
