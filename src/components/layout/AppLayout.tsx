@@ -31,7 +31,7 @@ interface LayoutProps {
 const headerNavItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard, color: 'text-blue-400' },
   { path: '/clientes', label: 'Clientes', icon: Users, color: 'text-emerald-400' },
-  { path: '/fila', label: 'Fila de Envio', icon: ListTodo, color: 'text-purple-400' },
+  { path: '/fila', label: 'Fila', icon: ListTodo, color: 'text-purple-400' },
   { path: '/mensagens', label: 'Mensagens', icon: MessageSquare, color: 'text-green-400' },
   { path: '/contratos', label: 'Contratos', icon: FileText, color: 'text-orange-400' },
   { path: '/financeiro', label: 'Contas', icon: DollarSign, color: 'text-yellow-400' },
