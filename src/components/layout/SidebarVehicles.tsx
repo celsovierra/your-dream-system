@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Car, Loader2, WifiOff, RefreshCw, Search, Share2, Pencil, Wifi, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userStorageGet } from '@/services/auth';
 import api from '@/services/api';
+import { useVehicleStopTime } from '@/hooks/useVehicleStopTime';
 
 export interface TraccarDevice {
   id: number;
