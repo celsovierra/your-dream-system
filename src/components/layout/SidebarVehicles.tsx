@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Car, Loader2, WifiOff, RefreshCw, Search, Share2, Pencil, Wifi, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userStorageGet } from '@/services/auth';
@@ -35,13 +35,6 @@ export interface TraccarPosition {
   };
 }
 
-interface TraccarEvent {
-  deviceId: number;
-  type?: string;
-  eventTime?: string;
-  serverTime?: string;
-}
-
 interface SidebarVehiclesProps {
   collapsed: boolean;
   onSelectDevice?: (device: TraccarDevice, position?: TraccarPosition) => void;
@@ -49,12 +42,25 @@ interface SidebarVehiclesProps {
   autoSelectFirst?: boolean;
 }
 
-function formatStoppedTimeFromEvent(eventTime?: string): string {
-  if (!eventTime) return '';
-  const offMs = new Date(eventTime).getTime();
-  if (Number.isNaN(offMs)) return '';
+const IGNITION_OFF_STORAGE_KEY = 'traccar_ignition_off_times';
 
-  const diff = Date.now() - offMs;
+function loadIgnitionOffTimes(): Record<number, number> {
+  try {
+    const raw = localStorage.getItem(IGNITION_OFF_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveIgnitionOffTimes(map: Record<number, number>) {
+  try {
+    localStorage.setItem(IGNITION_OFF_STORAGE_KEY, JSON.stringify(map));
+  } catch { /* ignore */ }
+}
+
+function formatStoppedDuration(offTimestampMs: number): string {
+  const diff = Date.now() - offTimestampMs;
   if (diff <= 0) return '0min';
 
   const mins = Math.floor(diff / 60000);
@@ -92,12 +98,12 @@ function getCategoryIcon(category?: string) {
 const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSelectFirst = false }: SidebarVehiclesProps) => {
   const [devices, setDevices] = useState<TraccarDevice[]>([]);
   const [positions, setPositions] = useState<TraccarPosition[]>([]);
-  const [ignitionOffEvents, setIgnitionOffEvents] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(false);
   const [configured, setConfigured] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [, setTick] = useState(0);
+  const ignitionOffTimesRef = useRef<Record<number, number>>(loadIgnitionOffTimes());
 
   const getCredentials = useCallback(() => {
     const traccar_url = userStorageGet('traccar_url');
