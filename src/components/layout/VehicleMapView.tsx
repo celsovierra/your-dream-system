@@ -114,7 +114,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
       const ok = await sendCommand('engineStop');
       if (ok) {
         setBlocked(true);
-        toast.success(`${device.name} bloqueado!`);
+        toast.success(`${liveDevice.name} bloqueado!`);
       }
     }
   }, [blocked, device.name, sendCommand]);
