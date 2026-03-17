@@ -5,12 +5,17 @@ SET NAMES utf8mb4;
 CREATE DATABASE IF NOT EXISTS cobranca_pro CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE cobranca_pro;
 
--- Usuários do sistema (admin)
+-- Usuários do sistema (SaaS)
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
+  phone VARCHAR(20),
+  role ENUM('admin','user') DEFAULT 'user',
+  client_limit INT DEFAULT 0,
+  expires_at DATE NULL,
+  permissions JSON,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
