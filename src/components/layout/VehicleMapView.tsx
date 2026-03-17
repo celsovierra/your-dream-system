@@ -350,7 +350,6 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
                     }
                   }
                 }}
-                }}
                 className={cn(
                   "flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
                   anchorActive
