@@ -342,7 +342,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
       )}
 
       {/* Map */}
-      {position ? (
+      {livePosition ? (
         <div ref={mapRef} className="flex-1 min-h-0" />
       ) : (
         <div className="flex-1 flex items-center justify-center text-muted-foreground">
