@@ -322,8 +322,13 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
             const speed = pos?.speed ?? 0;
             const sat = pos?.attributes?.sat;
             const power = pos?.attributes?.power;
+            const isMoving = speed > 0;
             const ignitionOffAt = ignitionOffEvents[device.id];
-            const stoppedTime = ignition === false ? formatStoppedTimeFromEvent(ignitionOffAt) : '';
+            const stoppedTime = !isMoving && ignition === false && ignitionOffAt
+              ? formatStoppedTimeFromEvent(ignitionOffAt)
+              : !isMoving
+                ? 'Parado'
+                : '';
 
             return (
               <div
@@ -364,13 +369,17 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                 </div>
 
                 <div className="mt-2 flex items-center justify-between">
-                  {stoppedTime ? (
+                  {isMoving ? (
                     <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                      <Clock className="h-3.5 w-3.5" /> Em movimento
+                    </span>
+                  ) : stoppedTime && stoppedTime !== 'Parado' ? (
+                    <span className="flex items-center gap-1 text-[11px] font-bold text-red-400">
                       <Clock className="h-3.5 w-3.5" /> Parado {stoppedTime}
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
-                      <Clock className="h-3.5 w-3.5" /> Em movimento
+                    <span className="flex items-center gap-1 text-[11px] font-bold text-red-400">
+                      <Clock className="h-3.5 w-3.5" /> Parado
                     </span>
                   )}
                   <span className="text-[10px] text-[hsl(180,5%,40%)]">{formatDateTime(device.lastUpdate)}</span>
