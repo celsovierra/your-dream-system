@@ -150,6 +150,12 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     onSelectDevice?.(device, getDevicePosition(device.id));
   };
 
+  useEffect(() => {
+    if (!autoSelectFirst || loading || !onSelectDevice || selectedDeviceId || devices.length === 0) return;
+    const first = devices[0];
+    onSelectDevice(first, getDevicePosition(first.id));
+  }, [autoSelectFirst, loading, onSelectDevice, selectedDeviceId, devices, positions]);
+
   if (!configured) {
     return (
       <div className="flex flex-col items-center justify-center p-4 text-center">
