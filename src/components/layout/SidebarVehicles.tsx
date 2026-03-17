@@ -136,7 +136,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     } finally {
       setLoading(false);
     }
-  }, [updateIgnitionOffTimes, getCredentials]);
+  }, [getCredentials]);
 
   useEffect(() => {
     void fetchDevices();
