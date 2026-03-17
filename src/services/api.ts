@@ -374,19 +374,6 @@ class ApiService {
     return requestPromise;
   }
 
-  // Buscar eventos ignitionOff em lote (com cache server-side de 5 min)
-  async getIgnitionOffEvents(params: { traccar_url: string; traccar_user: string; traccar_password: string }) {
-    const result = await this.request<{ data: Record<string, string>; cached?: boolean }>('/traccar/ignition-events', {
-      method: 'POST',
-      body: JSON.stringify(params),
-    });
-
-    if (!result.success) {
-      console.warn('[api.getIgnitionOffEvents] VPS request failed:', result.error);
-    }
-
-    return result;
-  }
 
   // ===== CONFIGURAÇÕES =====
   async getWhatsAppConfig() {
