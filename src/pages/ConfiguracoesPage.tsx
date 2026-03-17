@@ -625,21 +625,51 @@ const ConfiguracoesPage = () => {
                 </div>
               </div>
 
-              <Button size="sm" onClick={() => {
-                localStorage.setItem('layout_company_name', layoutCompanyName);
-                localStorage.setItem('layout_primary_color', layoutPrimaryColor);
-                if (layoutLogo) localStorage.setItem('layout_logo', layoutLogo);
-                else localStorage.removeItem('layout_logo');
+              <Button size="sm" disabled={slugSaving} onClick={async () => {
+                setSlugSaving(true);
+                try {
+                  // Save to localStorage
+                  localStorage.setItem('layout_company_name', layoutCompanyName);
+                  localStorage.setItem('layout_primary_color', layoutPrimaryColor);
+                  if (layoutLogo) localStorage.setItem('layout_logo', layoutLogo);
+                  else localStorage.removeItem('layout_logo');
 
-                const hsl = hexToHSL(layoutPrimaryColor);
-                if (hsl) {
-                  document.documentElement.style.setProperty('--primary', hsl);
-                  localStorage.setItem('layout_primary_hsl', hsl);
+                  const hsl = hexToHSL(layoutPrimaryColor);
+                  if (hsl) {
+                    document.documentElement.style.setProperty('--primary', hsl);
+                    localStorage.setItem('layout_primary_hsl', hsl);
+                  }
+
+                  // Save to backend (slug + branding)
+                  const res = await api.saveBranding({
+                    slug: layoutSlug || undefined,
+                    layout_company_name: layoutCompanyName,
+                    layout_logo: layoutLogo,
+                    layout_primary_color: layoutPrimaryColor,
+                  });
+
+                  if (!res.success) {
+                    toast.error(res.error || 'Erro ao salvar branding no servidor');
+                    return;
+                  }
+
+                  // Update current_user in localStorage with slug
+                  if (layoutSlug) {
+                    try {
+                      const cu = JSON.parse(localStorage.getItem('current_user') || '{}');
+                      cu.slug = layoutSlug;
+                      localStorage.setItem('current_user', JSON.stringify(cu));
+                    } catch {}
+                  }
+
+                  toast.success('Layout salvo! A tela de login será atualizada.');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Erro ao salvar layout');
+                } finally {
+                  setSlugSaving(false);
                 }
-
-                toast.success('Layout salvo! A tela de login será atualizada.');
               }}>
-                <Save className="mr-2 h-3 w-3" /> Salvar Layout
+                <Save className="mr-2 h-3 w-3" /> {slugSaving ? 'Salvando...' : 'Salvar Layout'}
               </Button>
             </CardContent>
           </CollapsibleContent>
