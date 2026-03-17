@@ -244,14 +244,14 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
                     <span className="text-[10px] uppercase tracking-wider text-white/50">KM/H</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-sm leading-tight truncate">{device.name}</h3>
-                    <p className="text-[11px] text-white/50 truncate mt-0.5">ID: {device.uniqueId}</p>
+                    <h3 className="font-bold text-sm leading-tight truncate">{liveDevice.name}</h3>
+                    <p className="text-[11px] text-white/50 truncate mt-0.5">ID: {liveDevice.uniqueId}</p>
                     <div className="flex items-center gap-2 mt-1.5">
                       <span className={cn("inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full",
-                        device.status === 'online' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                        liveDevice.status === 'online' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
                       )}>
-                        <span className={cn("h-1.5 w-1.5 rounded-full", device.status === 'online' ? 'bg-emerald-400' : 'bg-red-400')} />
-                        {device.status === 'online' ? 'Online' : 'Offline'}
+                        <span className={cn("h-1.5 w-1.5 rounded-full", liveDevice.status === 'online' ? 'bg-emerald-400' : 'bg-red-400')} />
+                        {liveDevice.status === 'online' ? 'Online' : 'Offline'}
                       </span>
                       {ignition !== undefined && (
                         <span className={cn("inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full",
