@@ -338,7 +338,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           <SidebarVehicles
             collapsed={sidebarCollapsed}
             selectedDeviceId={selectedVehicle?.device.id ?? null}
-            onSelectDevice={(device, position) => setSelectedVehicle({ device, position })}
+            onSelectDevice={(device, position) => { setSelectedVehicle({ device, position }); setSidebarCollapsed(true); }}
           />
         </nav>
 
