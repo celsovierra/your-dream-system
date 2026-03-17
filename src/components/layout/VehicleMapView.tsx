@@ -104,7 +104,7 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
 
       {/* Vehicle info card */}
       {cardOpen && position && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] w-80 max-w-[calc(100%-2rem)]">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[1000] w-80 max-w-[calc(100%-2rem)]">
           <div className="rounded-2xl bg-slate-900/95 backdrop-blur-md text-white shadow-2xl overflow-hidden border border-white/10">
             {/* Collapse toggle */}
             <button
