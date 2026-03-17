@@ -101,7 +101,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
     } finally {
       setBlocking(false);
     }
-  }, [device.id]);
+  }, [liveDevice.id]);
 
   const handleToggleBlock = useCallback(async () => {
     if (blocked) {
