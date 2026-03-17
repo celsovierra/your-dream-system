@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import SidebarVehicles from './SidebarVehicles';
 import { Button } from '@/components/ui/button';
 import { isAdmin } from '@/services/auth';
 import {
@@ -327,6 +328,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         </button>
 
         <nav className="flex-1 overflow-y-auto p-2">
+          <SidebarVehicles collapsed={sidebarCollapsed} />
         </nav>
 
         <div className="border-t border-sidebar-border space-y-1 p-2">
