@@ -130,7 +130,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
     };
   }
 
-  const checkForUpdates = async () => {
+  const checkForUpdates = async (silentOnGatewayError = false) => {
     const apiUrl = resolveDeployApiUrl();
 
     if (!apiUrl) {
@@ -143,6 +143,12 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       const res = await proxyFetch(`${apiUrl}/check-update?t=${Date.now()}`, {
         cache: 'no-store',
       });
+
+      // During deploy, 502/503 are expected — skip silently
+      if (silentOnGatewayError && (res.status === 502 || res.status === 503)) {
+        return null;
+      }
+
       const data = await parseApiResponse(res);
 
       if (res.ok && data.success) {
@@ -158,11 +164,15 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       }
 
       setHasUpdate(false);
-      setDeployCheckError(data.error || 'Não foi possível verificar atualizações');
+      if (!silentOnGatewayError) {
+        setDeployCheckError('Não foi possível verificar atualizações');
+      }
       return null;
     } catch (error) {
       setHasUpdate(false);
-      setDeployCheckError(error instanceof Error ? error.message : 'Não foi possível verificar atualizações');
+      if (!silentOnGatewayError) {
+        setDeployCheckError('Não foi possível verificar atualizações');
+      }
       return null;
     }
   };
@@ -194,7 +204,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         }
       }
 
-      const checkData = await checkForUpdates();
+      const checkData = await checkForUpdates(true);
       if (!checkData) {
         continue;
       }
