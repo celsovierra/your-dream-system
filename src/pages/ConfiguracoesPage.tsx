@@ -544,6 +544,23 @@ const ConfiguracoesPage = () => {
           <CollapsibleContent>
             <CardContent className="space-y-5 pt-0">
               <div>
+                <Label>Slug da URL (endereço personalizado)</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">{window.location.origin}/</span>
+                  <Input
+                    value={layoutSlug}
+                    onChange={(e) => setLayoutSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                    placeholder="meu-slug"
+                    maxLength={50}
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Este será o link de login personalizado para você e seus usuários. Ex: seudominio.com/gpswill
+                </p>
+              </div>
+
+              <div>
                 <Label>Nome da Empresa (tela de login)</Label>
                 <Input value={layoutCompanyName} onChange={(e) => setLayoutCompanyName(e.target.value)} placeholder="Nome da sua empresa" maxLength={50} />
               </div>
