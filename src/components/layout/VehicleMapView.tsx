@@ -327,10 +327,12 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
                       <span className="text-[10px] font-medium">{sat}</span>
                     </div>
                   )}
-                  <div className={cn("flex items-center gap-1.5 rounded-lg px-2.5 py-1.5", getStatusBg())}>
-                    <Gauge className="h-3 w-3" />
-                    <span className="text-[10px] font-bold">{getStatusLabel()}</span>
-                  </div>
+                  {!stopDuration && (
+                    <div className={cn("flex items-center gap-1.5 rounded-lg px-2.5 py-1.5", getStatusBg())}>
+                      <Gauge className="h-3 w-3" />
+                      <span className="text-[10px] font-bold">{getStatusLabel()}</span>
+                    </div>
+                  )}
                   {stopDuration && (
                     <div className="flex items-center gap-1.5 bg-yellow-500/20 rounded-lg px-2.5 py-1.5">
                       <Timer className="h-3 w-3 text-yellow-400" />
