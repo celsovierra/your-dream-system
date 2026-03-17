@@ -589,6 +589,28 @@ const ConfiguracoesPage = () => {
           </CollapsibleContent>
         </Card>
       </Collapsible>}
+
+      {userIsAdmin && <Collapsible open={openSection === 'logs'} onOpenChange={() => toggleSection('logs')}>
+        <Card>
+          <CollapsibleTrigger className="w-full">
+            <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
+              <div className="flex items-center gap-2 text-base font-semibold">
+                <ScrollText className="h-5 w-5 text-cyan-500" />
+                Logs do Sistema
+              </div>
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'logs' ? 'rotate-180' : ''}`} />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <a href="/logs" className="inline-flex items-center gap-2 text-sm text-primary hover:underline font-medium">
+                <ScrollText className="h-4 w-4" />
+                Abrir painel de Logs
+              </a>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>}
     </div>
   );
 };
