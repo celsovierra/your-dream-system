@@ -28,6 +28,8 @@ const ConfiguracoesPage = () => {
   const [layoutCompanyName, setLayoutCompanyName] = useState(() => localStorage.getItem('layout_company_name') || 'CobrançaPro');
   const [layoutPrimaryColor, setLayoutPrimaryColor] = useState(() => localStorage.getItem('layout_primary_color') || '#3b82f6');
   const [layoutLogo, setLayoutLogo] = useState<string | null>(() => localStorage.getItem('layout_logo'));
+  const [layoutSlug, setLayoutSlug] = useState('');
+  const [slugSaving, setSlugSaving] = useState(false);
   const [apiBaseUrl, setApiBaseUrl] = useState(() => localStorage.getItem('api_base_url') || '');
   const configuredWebhookBase = (apiBaseUrl || window.location.origin).trim().replace(/\/+$/, '').replace(/\/api$/, '');
   const logoInputRef = useRef<HTMLInputElement>(null);
