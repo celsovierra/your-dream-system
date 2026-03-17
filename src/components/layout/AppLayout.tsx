@@ -416,7 +416,6 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             selectedDeviceId={selectedVehicle?.device.id ?? null}
             onSelectDevice={(device, position) => {
               setSelectedVehicle({ device, position });
-              setSidebarCollapsed(true);
               setHasAutoOpenedMap(true);
             }}
           />
