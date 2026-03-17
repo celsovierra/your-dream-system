@@ -62,6 +62,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [hasUpdate, setHasUpdate] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
   const [deployCheckError, setDeployCheckError] = useState<string | null>(null);
+  const [runningVersion, setRunningVersion] = useState<string | null>(null);
   const showVehicleMap = location.pathname === '/' && Boolean(selectedVehicle);
 
   function isLovableHost() {
