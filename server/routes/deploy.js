@@ -1,11 +1,28 @@
 import express from 'express';
-import { exec } from 'node:child_process';
+import { exec, execSync } from 'node:child_process';
 
 const router = express.Router();
 
 const DEPLOY_TOKEN = process.env.DEPLOY_TOKEN || 'cobranca-deploy-2024';
 const PROJECT_DIR = process.env.PROJECT_DIR || '/opt/cobranca-pro';
 const DEPLOY_TIMEOUT_MS = 10 * 60 * 1000;
+
+function readGitValue(command) {
+  try {
+    const output = execSync(command, {
+      cwd: PROJECT_DIR,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      encoding: 'utf8',
+    });
+    return output.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+const RUNNING_COMMIT = readGitValue('git rev-parse HEAD');
+const RUNNING_COMMIT_DATE = readGitValue('git log -1 --format=%cI HEAD');
+const RUNNING_STARTED_AT = new Date().toISOString();
 
 const deployState = {
   status: 'idle',
@@ -45,7 +62,7 @@ function setDeployState(nextState) {
   Object.assign(deployState, nextState);
 }
 
-// Verifica se há atualizações disponíveis (compara local vs remoto)
+// Verifica se há atualizações disponíveis comparando o commit remoto com o commit realmente em execução
 router.get('/check-update', (_req, res) => {
   const script = `
     cd ${shellQuote(PROJECT_DIR)} &&
@@ -53,8 +70,7 @@ router.get('/check-update', (_req, res) => {
     git fetch origin "$BRANCH" 2>/dev/null &&
     echo "$BRANCH" &&
     git rev-parse HEAD &&
-    git rev-parse "origin/$BRANCH" &&
-    git log -1 --format=%cI HEAD
+    git rev-parse "origin/$BRANCH"
   `;
 
   exec(script, { shell: '/bin/bash' }, (error, stdout) => {
@@ -64,18 +80,20 @@ router.get('/check-update', (_req, res) => {
     }
 
     const lines = stdout.trim().split('\n');
-    const branch = lines[0];
-    const local = lines[1];
-    const remote = lines[2];
-    const lastCommitDate = lines[3] || null;
+    const branch = lines[0] || 'main';
+    const local = lines[1] || null;
+    const remote = lines[2] || null;
+    const hasUpdate = Boolean(remote && RUNNING_COMMIT !== remote);
 
     return res.json({
       success: true,
-      hasUpdate: local !== remote,
+      hasUpdate,
       branch,
-      localCommit: local?.substring(0, 7),
-      remoteCommit: remote?.substring(0, 7),
-      lastCommitDate,
+      localCommit: local?.substring(0, 7) || null,
+      remoteCommit: remote?.substring(0, 7) || null,
+      runningCommit: RUNNING_COMMIT?.substring(0, 7) || null,
+      runningCommitDate: RUNNING_COMMIT_DATE,
+      runningStartedAt: RUNNING_STARTED_AT,
     });
   });
 });
