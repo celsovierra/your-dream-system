@@ -56,6 +56,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
   const [deploying, setDeploying] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<{ device: TraccarDevice; position?: TraccarPosition } | null>(null);
   const [hasUpdate, setHasUpdate] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
   const [deployCheckError, setDeployCheckError] = useState<string | null>(null);
