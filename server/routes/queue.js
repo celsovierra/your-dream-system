@@ -82,4 +82,26 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
+// POST /api/queue — registra item na fila (envio manual)
+router.post('/', async (req, res) => {
+  try {
+    const { client_id, client_name, client_phone, type, amount, due_date, days_overdue, status, sent_at, message, owner_id } = req.body;
+
+    if (!client_id || !client_name || !client_phone || !type) {
+      return res.status(400).json({ success: false, error: 'Campos obrigatórios: client_id, client_name, client_phone, type' });
+    }
+
+    const finalOwnerId = owner_id || req.ownerId || null;
+
+    await query(
+      'INSERT INTO billing_queue (client_id, client_name, client_phone, type, amount, due_date, days_overdue, status, sent_at, message, owner_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [client_id, client_name, client_phone, type, amount || 0, due_date || null, days_overdue || 0, status || 'sent', sent_at || null, message || null, finalOwnerId]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 export default router;
