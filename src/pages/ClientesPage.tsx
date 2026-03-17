@@ -328,6 +328,20 @@ const ClientesPage = () => {
 
       const { error } = await invokeEvolutionProxy({ action: 'send-text', to: client.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name });
       if (error) throw new Error(error);
+
+      // Registrar na fila como enviado
+      const daysOverdue = isOverdue && dueDate ? Math.abs(Math.round((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))) : 0;
+      await addQueueItem({
+        client_id: client.id,
+        client_name: client.name,
+        client_phone: client.phone,
+        type: templateType,
+        amount: Number(client.amount),
+        due_date: client.due_date || undefined,
+        days_overdue: daysOverdue,
+        message,
+      });
+
       toast.success('Cobrança enviada via WhatsApp!', { id: `billing-${client.id}` });
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao enviar cobrança', { id: `billing-${client.id}` });
