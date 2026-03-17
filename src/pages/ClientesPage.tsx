@@ -330,15 +330,15 @@ const ClientesPage = () => {
       if (error) throw new Error(error);
 
       // Registrar na fila como enviado
-      const daysOverdue = isOverdue && dueDate ? Math.abs(Math.round((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))) : 0;
-      await addQueueItem({
+      const overdueDays = isOverdue && dueDate ? Math.abs(Math.round((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))) : 0;
+      addQueueItem({
         client_id: client.id,
         client_name: client.name,
         client_phone: client.phone,
         type: templateType,
         amount: Number(client.amount),
         due_date: client.due_date || undefined,
-        days_overdue: daysOverdue,
+        days_overdue: overdueDays,
         message,
       });
 
