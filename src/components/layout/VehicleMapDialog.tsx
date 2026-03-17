@@ -59,7 +59,7 @@ const VehicleMapDialog = ({ open, onOpenChange, device, position }: VehicleMapDi
       const course = position.course ?? 0;
       const isMoto = device.category?.toLowerCase() === 'motorcycle';
       const iconImg = isMoto ? '/images/moto-top-view.png' : '/images/car-top-view.png';
-      const iconW = mobile ? (isMoto ? 28 : 32) : (isMoto ? 38 : 44);
+      const iconW = mobile ? (isMoto ? 32 : 38) : (isMoto ? 45 : 54);
       const iconH = mobile ? (isMoto ? 50 : 64) : (isMoto ? 70 : 90);
       const icon = L.divIcon({
         html: `<div style="width:${iconW}px;height:${iconH}px;display:flex;align-items:center;justify-content:center;transform:rotate(${course}deg);filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
