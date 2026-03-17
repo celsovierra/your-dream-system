@@ -128,7 +128,7 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
         mapInstanceRef.current = null;
       }
     };
-  }, [position, device.name]);
+  }, [position, device.name, mapType]);
 
   const formatDateTime = (dateStr: string) => {
     try {
