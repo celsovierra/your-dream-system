@@ -176,8 +176,8 @@ export async function loginVps(email: string, password: string): Promise<AppUser
   return appUser;
 }
 
-export async function registerVps(name: string, email: string, password: string): Promise<void> {
-  const res = await api.register(name, email, password);
+export async function registerVps(data: { name: string; email: string; password: string; phone?: string; client_limit?: number; expires_at?: string | null; permissions?: string[] }): Promise<void> {
+  const res = await api.register(data);
   if (!res.success) throw new Error(res.error || 'Erro ao registrar');
 }
 
