@@ -112,7 +112,10 @@ CREATE TABLE IF NOT EXISTS message_templates (
   owner_id VARCHAR(100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_templates_owner (owner_id)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Garantir utf8mb4 em instalações existentes (necessário para emojis)
+ALTER TABLE message_templates CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Configurações de cobrança (key-value)
 CREATE TABLE IF NOT EXISTS billing_settings (
