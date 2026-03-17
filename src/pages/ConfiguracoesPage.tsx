@@ -114,6 +114,47 @@ const ConfiguracoesPage = () => {
     setOpenSection(prev => (prev === key ? null : key));
   };
 
+  const handleTestTraccar = async () => {
+    const url = traccarUrl.trim().replace(/\/+$/, '');
+    const user = traccarUser.trim();
+    const password = traccarPassword;
+
+    if (!url || !user || !password) {
+      toast.error('Preencha a URL, usuário e senha do Traccar');
+      return;
+    }
+
+    if (/^https:\/\/\d{1,3}(\.\d{1,3}){3}(:\d+)?$/i.test(url)) {
+      toast.warning('HTTPS com IP costuma falhar por certificado. Se possível, use http://IP:PORTA ou um domínio com SSL válido.');
+    }
+
+    setTraccarTesting(true);
+
+    try {
+      const result = await api.traccarProxy({
+        traccar_url: url,
+        traccar_user: user,
+        traccar_password: password,
+        endpoint: '/api/devices',
+        method: 'GET',
+      });
+
+      const devices = result.data && typeof result.data === 'object' && 'data' in result.data
+        ? (result.data as { data?: unknown }).data
+        : result.data;
+
+      if (!result.success || !Array.isArray(devices)) {
+        throw new Error(result.error || 'Resposta inválida do Traccar');
+      }
+
+      toast.success(`Conexão com Traccar OK: ${devices.length} veículo(s) encontrado(s).`);
+    } catch (err: any) {
+      toast.error(`Falha no Traccar: ${err?.message || 'erro desconhecido'}`);
+    } finally {
+      setTraccarTesting(false);
+    }
+  };
+
   return (
     <div className="space-y-4 max-w-2xl">
       <Collapsible open={openSection === 'whatsapp'} onOpenChange={() => toggleSection('whatsapp')}>
