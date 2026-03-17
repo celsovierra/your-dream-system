@@ -194,18 +194,25 @@ export async function fetchUsersVps(): Promise<AppUser[]> {
   const res = await api.getUsers();
   if (!res.success || !res.data) throw new Error(res.error || 'Erro ao listar usuários');
 
-  const users = unwrapApiData<Array<{ id: string; email: string; name: string; role: string; createdAt?: string }>>(res.data);
+  const users = unwrapApiData<SaasUser[]>(res.data);
   return users.map(u => ({
     id: String(u.id),
     email: u.email,
     password: '',
     name: u.name,
-    role: (u.role as 'admin' | 'user') || 'user',
+    phone: u.phone,
+    role: u.role || 'user',
+    client_limit: u.client_limit,
+    expires_at: u.expires_at,
+    permissions: u.permissions,
     createdAt: u.createdAt || '',
   }));
 }
 
-export async function deleteUserVps(id: string): Promise<void> {
+export async function updateUserVps(id: string, data: Partial<{ name: string; email: string; phone: string; password: string; client_limit: number; expires_at: string | null; permissions: string[]; is_active: boolean }>): Promise<void> {
+  const res = await api.updateUser(id, data);
+  if (!res.success) throw new Error(res.error || 'Erro ao atualizar usuário');
+}
   const res = await api.deleteUser(id);
   if (!res.success) throw new Error(res.error || 'Erro ao remover usuário');
 }
