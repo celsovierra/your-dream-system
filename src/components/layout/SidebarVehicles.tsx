@@ -270,30 +270,8 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
             const sat = pos?.attributes?.sat;
             const power = pos?.attributes?.power;
 
-            // Regras de status conforme especificação:
-            // speed > 5 → "Em movimento"
-            // speed <= 5 E ignition == false E existe ignitionOff → mostrar tempo parado
-            // Caso contrário → "Parado (sem histórico)"
             const isMoving = speed > 5;
-
-            // eventTime do último ignitionOff vindo do Traccar (UTC)
-            const ignitionOffEventTime = ignitionOffEvents[String(device.id)];
-
-            // Fallback: se não há evento, usar pos.fixTime
-            const fallbackTime = pos?.fixTime;
-
-            let stoppedLabel = '';
-            if (isMoving) {
-              stoppedLabel = '';
-            } else if (ignition === false && ignitionOffEventTime) {
-              // Tempo parado = agora - eventTime do Traccar (ambos em UTC/epoch)
-              stoppedLabel = formatStoppedDuration(ignitionOffEventTime);
-            } else if (!isMoving && fallbackTime && ignition === false) {
-              // Fallback usando fixTime
-              stoppedLabel = formatStoppedDuration(fallbackTime);
-            } else {
-              stoppedLabel = 'sem histórico';
-            }
+            const movementLabel = isMoving ? 'Em movimento' : 'Parado';
 
             return (
               <div
