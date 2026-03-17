@@ -120,7 +120,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
   }, [blocked, liveDevice.name, sendCommand]);
 
   useEffect(() => {
-    if (!mapRef.current || !position) return;
+    if (!mapRef.current || !livePosition) return;
 
     const timeout = setTimeout(() => {
       if (mapInstanceRef.current) {
@@ -130,7 +130,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
 
       if (!mapRef.current) return;
 
-      const map = L.map(mapRef.current, { zoomControl: false }).setView([position.latitude, position.longitude], 15);
+      const map = L.map(mapRef.current, { zoomControl: false }).setView([livePosition.latitude, livePosition.longitude], 15);
       L.control.zoom({ position: 'topright' }).addTo(map);
 
       const tileUrl = mapType === 'satellite'
@@ -152,7 +152,8 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
         iconAnchor: [20, 20],
       });
 
-      const marker = L.marker([position.latitude, position.longitude], { icon }).addTo(map);
+      const marker = L.marker([livePosition.latitude, livePosition.longitude], { icon }).addTo(map);
+      markerRef.current = marker;
 
       marker.on('click', () => {
         setCardOpen(true);
@@ -170,7 +171,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
         mapInstanceRef.current = null;
       }
     };
-  }, [position, device.name, mapType]);
+  }, [initialPosition, initialDevice.name, mapType]);
 
   const formatDateTime = (dateStr: string) => {
     try {
