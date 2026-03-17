@@ -139,7 +139,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
 
   useEffect(() => {
     void fetchDevices();
-    const interval = setInterval(() => void fetchDevices(), 60000);
+    const interval = setInterval(() => void fetchDevices(), 5000);
     const handleRefresh = () => void fetchDevices();
     window.addEventListener('traccar-config-updated', handleRefresh);
     window.addEventListener('focus', handleRefresh);
