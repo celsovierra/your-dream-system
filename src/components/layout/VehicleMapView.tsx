@@ -331,25 +331,25 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
               <button
                 title="Âncora"
                 onClick={() => {
-                  setAnchorActive((prev) => {
-                    const next = !prev;
-                    if (next && livePosition && mapInstanceRef.current) {
-                      if (anchorCircleRef.current) anchorCircleRef.current.remove();
-                      anchorCircleRef.current = L.circle([livePosition.latitude, livePosition.longitude], {
-                        radius: 50,
-                        color: '#ef4444',
-                        fillColor: '#ef4444',
-                        fillOpacity: 0.15,
-                        weight: 2,
-                      }).addTo(mapInstanceRef.current);
-                    } else {
-                      if (anchorCircleRef.current) {
-                        anchorCircleRef.current.remove();
-                        anchorCircleRef.current = null;
-                      }
+                  const devId = liveDevice.id;
+                  const next = !anchorMap[devId];
+                  setAnchorMap((m) => ({ ...m, [devId]: next }));
+                  if (next && livePosition && mapInstanceRef.current) {
+                    if (anchorCircleRef.current) anchorCircleRef.current.remove();
+                    anchorCircleRef.current = L.circle([livePosition.latitude, livePosition.longitude], {
+                      radius: 50,
+                      color: '#ef4444',
+                      fillColor: '#ef4444',
+                      fillOpacity: 0.15,
+                      weight: 2,
+                    }).addTo(mapInstanceRef.current);
+                  } else {
+                    if (anchorCircleRef.current) {
+                      anchorCircleRef.current.remove();
+                      anchorCircleRef.current = null;
                     }
-                    return next;
-                  });
+                  }
+                }}
                 }}
                 className={cn(
                   "flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
