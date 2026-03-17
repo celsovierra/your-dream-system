@@ -290,8 +290,8 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                 <div className="flex items-start gap-2.5">
                   <span className="mt-0.5 shrink-0 text-2xl leading-none">{getCategoryIcon(device.category)}</span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[12px] font-bold leading-tight text-white">{device.name}</p>
-                    {device.model && <p className="truncate text-[10px] leading-tight text-[hsl(180,5%,50%)]">{device.model}</p>}
+                    <p className="truncate text-sm font-bold leading-tight text-white">{device.name}</p>
+                    {device.model && <p className="truncate text-xs leading-tight text-[hsl(180,5%,55%)]">{device.model}</p>}
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
                     <button onClick={(e) => e.stopPropagation()} title="Compartilhar" className="rounded-md p-1.5 text-[hsl(180,5%,45%)] transition-colors hover:bg-white/10 hover:text-white">
