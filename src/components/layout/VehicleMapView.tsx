@@ -86,34 +86,13 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
-        <div className="flex items-center gap-2">
-          <Car className="h-5 w-5 text-foreground" />
-          <span className="font-semibold text-foreground">{device.name}</span>
-          <span className={`inline-flex h-2.5 w-2.5 rounded-full ${device.status === 'online' ? 'bg-green-500' : 'bg-red-500'}`} />
-        </div>
-        <div className="flex items-center gap-4">
-          {position && (
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Navigation className="h-3.5 w-3.5" />
-                {Math.round(position.speed)} km/h
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" />
-                {formatDate(position.fixTime)}
-              </span>
-            </div>
-          )}
-          <button
-            onClick={onClose}
-            className="rounded-md p-1.5 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
+    <div className="relative flex flex-col h-full">
+      <button
+        onClick={onClose}
+        className="absolute top-3 right-3 z-[1000] rounded-full p-2 bg-card/90 backdrop-blur-sm shadow-md hover:bg-card text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <X className="h-5 w-5" />
+      </button>
 
       {position ? (
         <div ref={mapRef} className="flex-1 min-h-0" />
