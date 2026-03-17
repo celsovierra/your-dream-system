@@ -232,5 +232,75 @@ router.delete('/users/:id', async (req, res) => {
   }
 });
 
+// GET /api/auth/branding/:slug — public, no auth needed
+router.get('/branding/:slug', async (req, res) => {
+  try {
+    const slug = req.params.slug.toLowerCase().trim();
+    const rows = await query(
+      'SELECT id, name, slug, layout_company_name, layout_logo, layout_primary_color FROM users WHERE LOWER(slug) = ? AND is_active = 1 LIMIT 1',
+      [slug]
+    );
+    const user = rows.find(r => r && typeof r === 'object' && 'id' in r);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Tenant não encontrado' });
+    }
+    res.json({
+      success: true,
+      data: {
+        slug: user.slug,
+        company_name: user.layout_company_name || user.name,
+        logo: user.layout_logo || null,
+        primary_color: user.layout_primary_color || null,
+        owner_id: String(user.id),
+      },
+    });
+  } catch (err) {
+    console.error('GET /auth/branding/:slug error:', err);
+    res.status(500).json({ success: false, error: 'Erro ao buscar branding' });
+  }
+});
+
+// PUT /api/auth/branding — save layout settings for current user
+router.put('/branding', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ success: false, error: 'Token ausente' });
+    const token = authHeader.replace('Bearer ', '');
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.id;
+
+    const { slug, layout_company_name, layout_logo, layout_primary_color } = req.body;
+
+    const fields = [];
+    const values = [];
+
+    if (slug !== undefined) {
+      // Check uniqueness
+      const existing = await query('SELECT id FROM users WHERE LOWER(slug) = ? AND id != ?', [slug.toLowerCase().trim(), userId]);
+      const conflict = existing.find(r => r && typeof r === 'object' && 'id' in r);
+      if (conflict) {
+        return res.status(409).json({ success: false, error: 'Este slug já está em uso por outro usuário' });
+      }
+      fields.push('slug = ?');
+      values.push(slug.toLowerCase().trim() || null);
+    }
+    if (layout_company_name !== undefined) { fields.push('layout_company_name = ?'); values.push(layout_company_name || null); }
+    if (layout_logo !== undefined) { fields.push('layout_logo = ?'); values.push(layout_logo || null); }
+    if (layout_primary_color !== undefined) { fields.push('layout_primary_color = ?'); values.push(layout_primary_color || null); }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ success: false, error: 'Nenhum campo para atualizar' });
+    }
+
+    values.push(userId);
+    await query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('PUT /auth/branding error:', err);
+    res.status(500).json({ success: false, error: 'Erro ao salvar branding' });
+  }
+});
+
 export { JWT_SECRET };
 export default router;
