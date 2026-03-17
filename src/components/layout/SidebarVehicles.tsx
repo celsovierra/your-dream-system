@@ -307,11 +307,13 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                 </div>
 
                 <div className="mt-2 flex items-center gap-3 text-xs">
-                  <span className={cn('font-bold', ignition ? 'text-green-400' : 'text-orange-400')}>⚡{ignition ? 'Lig' : 'Des'}</span>
-                  <span className="text-[hsl(180,5%,55%)] font-medium"><Wifi className="mr-1 inline h-3.5 w-3.5" />OK</span>
-                  <span className="text-[hsl(180,5%,55%)] font-medium">⏱ {Math.round(speed)} km/h</span>
-                  {sat !== undefined && <span className="text-[hsl(180,5%,55%)] font-medium">📡 {sat}</span>}
-                  {power !== undefined && <span className="text-[hsl(180,5%,55%)] font-medium">🔋 {power.toFixed(1)}V</span>}
+                  <span className={cn('flex items-center gap-1 font-bold', ignition ? 'text-green-400' : 'text-yellow-400')}>
+                    <KeyRound className="h-3.5 w-3.5" />{ignition ? 'Lig' : 'Des'}
+                  </span>
+                  <span className="text-white/70 font-medium"><Wifi className="mr-1 inline h-3.5 w-3.5" />OK</span>
+                  <span className="text-white/70 font-medium">⏱ {Math.round(speed)} km/h</span>
+                  {sat !== undefined && <span className="text-white/70 font-medium">📡 {sat}</span>}
+                  {power !== undefined && <span className="text-white/70 font-medium">🔋 {power.toFixed(1)}V</span>}
                 </div>
 
                 <div className="mt-2 flex items-center justify-between">
