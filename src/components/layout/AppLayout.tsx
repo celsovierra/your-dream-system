@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import SidebarVehicles from './SidebarVehicles';
+import SidebarVehicles, { type TraccarDevice, type TraccarPosition } from './SidebarVehicles';
+import VehicleMapView from './VehicleMapView';
 import { Button } from '@/components/ui/button';
 import { isAdmin } from '@/services/auth';
 import {
@@ -55,6 +56,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
   const [deploying, setDeploying] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<{ device: TraccarDevice; position?: TraccarPosition } | null>(null);
   const [hasUpdate, setHasUpdate] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
   const [deployCheckError, setDeployCheckError] = useState<string | null>(null);
@@ -328,7 +330,11 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         </button>
 
         <nav className="flex-1 overflow-y-auto p-2">
-          <SidebarVehicles collapsed={sidebarCollapsed} />
+          <SidebarVehicles
+            collapsed={sidebarCollapsed}
+            selectedDeviceId={selectedVehicle?.device.id ?? null}
+            onSelectDevice={(device, position) => setSelectedVehicle({ device, position })}
+          />
         </nav>
 
         <div className="border-t border-sidebar-border space-y-1 p-2">
@@ -454,9 +460,19 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {children}
-        </main>
+        {selectedVehicle ? (
+          <div className="flex-1 min-h-0">
+            <VehicleMapView
+              device={selectedVehicle.device}
+              position={selectedVehicle.position}
+              onClose={() => setSelectedVehicle(null)}
+            />
+          </div>
+        ) : (
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            {children}
+          </main>
+        )}
       </div>
     </div>
   );

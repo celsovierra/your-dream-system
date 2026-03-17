@@ -3,10 +3,8 @@ import { Car, MapPin, Loader2, WifiOff, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userStorageGet } from '@/services/auth';
 import api from '@/services/api';
-import { toast } from 'sonner';
-import VehicleMapDialog from './VehicleMapDialog';
 
-interface TraccarDevice {
+export interface TraccarDevice {
   id: number;
   name: string;
   uniqueId: string;
@@ -15,7 +13,7 @@ interface TraccarDevice {
   category?: string;
 }
 
-interface TraccarPosition {
+export interface TraccarPosition {
   deviceId: number;
   latitude: number;
   longitude: number;
@@ -27,15 +25,15 @@ interface TraccarPosition {
 
 interface SidebarVehiclesProps {
   collapsed: boolean;
+  onSelectDevice?: (device: TraccarDevice, position?: TraccarPosition) => void;
+  selectedDeviceId?: number | null;
 }
 
-const SidebarVehicles = ({ collapsed }: SidebarVehiclesProps) => {
+const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: SidebarVehiclesProps) => {
   const [devices, setDevices] = useState<TraccarDevice[]>([]);
   const [positions, setPositions] = useState<TraccarPosition[]>([]);
   const [loading, setLoading] = useState(false);
   const [configured, setConfigured] = useState(false);
-  const [selectedDevice, setSelectedDevice] = useState<TraccarDevice | null>(null);
-  const [mapOpen, setMapOpen] = useState(false);
 
   const getCredentials = useCallback(() => {
     const traccar_url = userStorageGet('traccar_url');
@@ -54,26 +52,11 @@ const SidebarVehicles = ({ collapsed }: SidebarVehiclesProps) => {
     setLoading(true);
 
     try {
-      // Fetch devices
-      const devResult = await api.traccarProxy({
-        ...creds,
-        endpoint: '/api/devices',
-        method: 'GET',
-      });
-
-      if (!devResult.success || !Array.isArray(devResult.data?.data)) {
-        throw new Error(devResult.error || 'Erro ao buscar dispositivos');
-      }
-
+      const devResult = await api.traccarProxy({ ...creds, endpoint: '/api/devices', method: 'GET' });
+      if (!devResult.success || !Array.isArray(devResult.data?.data)) throw new Error('Erro');
       setDevices(devResult.data.data);
 
-      // Fetch positions
-      const posResult = await api.traccarProxy({
-        ...creds,
-        endpoint: '/api/positions',
-        method: 'GET',
-      });
-
+      const posResult = await api.traccarProxy({ ...creds, endpoint: '/api/positions', method: 'GET' });
       if (posResult.success && Array.isArray(posResult.data?.data)) {
         setPositions(posResult.data.data);
       }
@@ -90,14 +73,7 @@ const SidebarVehicles = ({ collapsed }: SidebarVehiclesProps) => {
     return () => clearInterval(interval);
   }, [fetchDevices]);
 
-  const handleDeviceClick = (device: TraccarDevice) => {
-    setSelectedDevice(device);
-    setMapOpen(true);
-  };
-
-  const getDevicePosition = (deviceId: number) => {
-    return positions.find((p) => p.deviceId === deviceId);
-  };
+  const getDevicePosition = (deviceId: number) => positions.find((p) => p.deviceId === deviceId);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -105,6 +81,10 @@ const SidebarVehicles = ({ collapsed }: SidebarVehiclesProps) => {
       case 'offline': return 'bg-red-500';
       default: return 'bg-yellow-500';
     }
+  };
+
+  const handleClick = (device: TraccarDevice) => {
+    onSelectDevice?.(device, getDevicePosition(device.id));
   };
 
   if (!configured) {
@@ -129,22 +109,17 @@ const SidebarVehicles = ({ collapsed }: SidebarVehiclesProps) => {
           devices.slice(0, 10).map((device) => (
             <button
               key={device.id}
-              onClick={() => handleDeviceClick(device)}
+              onClick={() => handleClick(device)}
               title={`${device.name} (${device.status})`}
-              className="relative flex items-center justify-center rounded-md h-8 w-8 hover:bg-sidebar-accent transition-colors"
+              className={cn(
+                "relative flex items-center justify-center rounded-md h-8 w-8 hover:bg-sidebar-accent transition-colors",
+                selectedDeviceId === device.id && "bg-sidebar-primary text-sidebar-primary-foreground"
+              )}
             >
               <Car className="h-4 w-4 text-sidebar-foreground/70" />
               <span className={cn("absolute top-0.5 right-0.5 h-2 w-2 rounded-full", getStatusColor(device.status))} />
             </button>
           ))
-        )}
-        {selectedDevice && (
-          <VehicleMapDialog
-            open={mapOpen}
-            onOpenChange={setMapOpen}
-            device={selectedDevice}
-            position={getDevicePosition(selectedDevice.id)}
-          />
         )}
       </div>
     );
@@ -175,42 +150,39 @@ const SidebarVehicles = ({ collapsed }: SidebarVehiclesProps) => {
         <div className="flex-1 overflow-y-auto space-y-0.5 px-2">
           {devices.map((device) => {
             const pos = getDevicePosition(device.id);
+            const isSelected = selectedDeviceId === device.id;
             return (
               <button
                 key={device.id}
-                onClick={() => handleDeviceClick(device)}
-                className="w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-sidebar-accent group"
+                onClick={() => handleClick(device)}
+                className={cn(
+                  "w-full flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-colors group",
+                  isSelected
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                    : "hover:bg-sidebar-accent"
+                )}
               >
                 <div className="relative shrink-0">
-                  <Car className="h-4 w-4 text-sidebar-foreground/70 group-hover:text-sidebar-foreground" />
+                  <Car className={cn("h-4 w-4", isSelected ? "text-sidebar-primary-foreground" : "text-sidebar-foreground/70 group-hover:text-sidebar-foreground")} />
                   <span className={cn("absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full border border-sidebar", getStatusColor(device.status))} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="truncate text-sidebar-foreground font-medium text-xs">{device.name}</p>
+                  <p className={cn("truncate font-medium text-xs", isSelected ? "text-sidebar-primary-foreground" : "text-sidebar-foreground")}>{device.name}</p>
                   {pos && pos.speed > 0 ? (
-                    <p className="text-[10px] text-sidebar-foreground/50 truncate">
+                    <p className={cn("text-[10px] truncate", isSelected ? "text-sidebar-primary-foreground/70" : "text-sidebar-foreground/50")}>
                       {Math.round(pos.speed)} km/h
                     </p>
                   ) : (
-                    <p className="text-[10px] text-sidebar-foreground/50">
+                    <p className={cn("text-[10px]", isSelected ? "text-sidebar-primary-foreground/70" : "text-sidebar-foreground/50")}>
                       {device.status === 'online' ? 'Parado' : 'Offline'}
                     </p>
                   )}
                 </div>
-                <MapPin className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60" />
+                <MapPin className={cn("h-3.5 w-3.5 shrink-0", isSelected ? "text-sidebar-primary-foreground/70" : "text-sidebar-foreground/30 group-hover:text-sidebar-foreground/60")} />
               </button>
             );
           })}
         </div>
-      )}
-
-      {selectedDevice && (
-        <VehicleMapDialog
-          open={mapOpen}
-          onOpenChange={setMapOpen}
-          device={selectedDevice}
-          position={getDevicePosition(selectedDevice.id)}
-        />
       )}
     </div>
   );
