@@ -418,6 +418,9 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             onSelectDevice={(device, position) => {
               setSelectedVehicle({ device, position });
               setHasAutoOpenedMap(true);
+              if (location.pathname !== '/') {
+                navigate('/');
+              }
             }}
           />
         </nav>
