@@ -306,12 +306,12 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                   </span>
                 </div>
 
-                <div className="mt-2 flex items-center gap-2.5 text-[10px]">
-                  <span className={cn('font-semibold', ignition ? 'text-green-400' : 'text-orange-400')}>⚡{ignition ? 'Lig' : 'Des'}</span>
-                  <span className="text-[hsl(180,5%,50%)]"><Wifi className="mr-1 inline h-3 w-3" />OK</span>
-                  <span className="text-[hsl(180,5%,50%)]">⏱ {Math.round(speed)} km/h</span>
-                  {sat !== undefined && <span className="text-[hsl(180,5%,50%)]">📡 {sat}</span>}
-                  {power !== undefined && <span className="text-[hsl(180,5%,50%)]">🔋 {power.toFixed(1)}V</span>}
+                <div className="mt-2 flex items-center gap-3 text-xs">
+                  <span className={cn('font-bold', ignition ? 'text-green-400' : 'text-orange-400')}>⚡{ignition ? 'Lig' : 'Des'}</span>
+                  <span className="text-[hsl(180,5%,55%)] font-medium"><Wifi className="mr-1 inline h-3.5 w-3.5" />OK</span>
+                  <span className="text-[hsl(180,5%,55%)] font-medium">⏱ {Math.round(speed)} km/h</span>
+                  {sat !== undefined && <span className="text-[hsl(180,5%,55%)] font-medium">📡 {sat}</span>}
+                  {power !== undefined && <span className="text-[hsl(180,5%,55%)] font-medium">🔋 {power.toFixed(1)}V</span>}
                 </div>
 
                 <div className="mt-2 flex items-center justify-between">
