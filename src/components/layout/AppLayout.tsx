@@ -248,7 +248,8 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
     }
 
     const beforeDeploy = await checkForUpdates();
-    const previousRemoteCommit = beforeDeploy?.remoteCommit;
+    const previousRunningCommit = beforeDeploy?.runningCommit;
+    const previousRunningStartedAt = beforeDeploy?.runningStartedAt ?? null;
 
     setDeploying(true);
 
@@ -269,7 +270,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       }
 
       toast.success(data.message || 'Atualização iniciada com sucesso.');
-      await waitForDeployCompletion(apiUrl, previousRemoteCommit);
+      await waitForDeployCompletion(previousRunningCommit, previousRunningStartedAt);
     } catch {
       toast.error('Não foi possível conectar à API da VPS');
     } finally {
