@@ -476,13 +476,6 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowTraccarUsers(true)}
-                title="Usuários Traccar"
-                className="rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
-              >
-                <UserCircle className="h-5 w-5" />
-              </button>
-              <button
                 onClick={() => setDarkMode(!darkMode)}
                 title={darkMode ? 'Modo claro' : 'Modo escuro'}
                 className="rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
