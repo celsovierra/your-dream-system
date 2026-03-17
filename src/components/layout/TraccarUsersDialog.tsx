@@ -268,7 +268,11 @@ export default function TraccarUsersDialog({ open, onOpenChange }: TraccarUsersD
               <p className="text-sm text-muted-foreground text-center py-4">Nenhum veículo encontrado</p>
             )}
 
-            {!loadingDevices && filteredDevices.map(d => {
+            {!loadingDevices && [...filteredDevices].sort((a, b) => {
+              const aLinked = linkedDeviceIds.has(a.id) ? 0 : 1;
+              const bLinked = linkedDeviceIds.has(b.id) ? 0 : 1;
+              return aLinked - bLinked;
+            }).map(d => {
               const isLinked = linkedDeviceIds.has(d.id);
               const isToggling = togglingDevice === d.id;
               return (
