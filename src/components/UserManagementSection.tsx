@@ -30,6 +30,7 @@ interface UserForm {
   client_limit: number;
   expires_at: string;
   permissions: string[];
+  slug: string;
 }
 
 const emptyForm: UserForm = {
@@ -40,6 +41,7 @@ const emptyForm: UserForm = {
   client_limit: 0,
   expires_at: '',
   permissions: ALL_PERMISSIONS.map(p => p.key),
+  slug: '',
 };
 
 export default function UserManagementSection() {
