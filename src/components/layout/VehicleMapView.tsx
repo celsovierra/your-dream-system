@@ -29,18 +29,26 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
   const [livePosition, setLivePosition] = useState<TraccarPosition | undefined>(initialPosition);
   const [liveDevice, setLiveDevice] = useState<TraccarDevice>(initialDevice);
 
-  // Sync when parent selects a different vehicle
+  // Sync when parent selects a different vehicle (instant UI + instant map focus)
   useEffect(() => {
     setLiveDevice(initialDevice);
     setLivePosition(initialPosition);
     setCardOpen(true);
     setCardCollapsed(false);
-    // Remove old anchor circle when switching vehicles
+
     if (anchorCircleRef.current) {
       anchorCircleRef.current.remove();
       anchorCircleRef.current = null;
     }
-  }, [initialDevice.id]);
+
+    if (initialPosition && mapInstanceRef.current) {
+      const nextLatLng: L.LatLngExpression = [initialPosition.latitude, initialPosition.longitude];
+      mapInstanceRef.current.flyTo(nextLatLng, 18, { duration: 0.35 });
+      if (markerRef.current) {
+        markerRef.current.setLatLng(nextLatLng);
+      }
+    }
+  }, [initialDevice.id, initialPosition]);
 
   // Poll for live position & device updates
   useEffect(() => {
@@ -62,10 +70,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
           const myPos = positions.find((p) => p.deviceId === initialDevice.id);
           if (myPos) {
             setLivePosition(myPos);
-            // Update marker position on map
-            if (markerRef.current && mapInstanceRef.current) {
-              markerRef.current.setLatLng([myPos.latitude, myPos.longitude]);
-            }
+            if (markerRef.current) markerRef.current.setLatLng([myPos.latitude, myPos.longitude]);
           }
         }
 
@@ -77,6 +82,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
       } catch { /* silent */ }
     };
 
+    void fetchLive();
     const interval = setInterval(fetchLive, 3000);
     return () => clearInterval(interval);
   }, [initialDevice.id]);
