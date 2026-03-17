@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { X, MapPin, Calendar, Battery, Satellite, Gauge, Power, ChevronDown, ChevronUp, Car, Lock, Anchor, Route, Map, Pencil, History } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { X, MapPin, Calendar, Battery, Satellite, Gauge, Power, ChevronDown, ChevronUp, Car, Lock, Unlock, Anchor, Route, Map, Pencil, History, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { TraccarDevice, TraccarPosition } from './SidebarVehicles';
+import { userStorageGet } from '@/services/auth';
+import api from '@/services/api';
+import { toast } from 'sonner';
 
 interface VehicleMapViewProps {
   device: TraccarDevice;
@@ -16,6 +19,61 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
   const mapInstanceRef = useRef<L.Map | null>(null);
   const [cardOpen, setCardOpen] = useState(true);
   const [cardCollapsed, setCardCollapsed] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [blocking, setBlocking] = useState(false);
+
+  const sendCommand = useCallback(async (type: 'engineStop' | 'engineResume') => {
+    const traccar_url = userStorageGet('traccar_url');
+    const traccar_user = userStorageGet('traccar_user');
+    const traccar_password = userStorageGet('traccar_password');
+
+    if (!traccar_url || !traccar_user || !traccar_password) {
+      toast.error('Credenciais do Traccar não configuradas');
+      return false;
+    }
+
+    setBlocking(true);
+    try {
+      const result = await api.traccarProxy({
+        traccar_url,
+        traccar_user,
+        traccar_password,
+        endpoint: '/api/commands/send',
+        method: 'POST',
+        body: {
+          deviceId: device.id,
+          type,
+        },
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Erro ao enviar comando');
+      }
+
+      return true;
+    } catch (err: any) {
+      toast.error(`Falha: ${err?.message || 'erro desconhecido'}`);
+      return false;
+    } finally {
+      setBlocking(false);
+    }
+  }, [device.id]);
+
+  const handleToggleBlock = useCallback(async () => {
+    if (blocked) {
+      const ok = await sendCommand('engineResume');
+      if (ok) {
+        setBlocked(false);
+        toast.success(`${device.name} desbloqueado!`);
+      }
+    } else {
+      const ok = await sendCommand('engineStop');
+      if (ok) {
+        setBlocked(true);
+        toast.success(`${device.name} bloqueado!`);
+      }
+    }
+  }, [blocked, device.name, sendCommand]);
 
   useEffect(() => {
     if (!mapRef.current || !position) return;
