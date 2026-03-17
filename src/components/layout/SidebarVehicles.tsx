@@ -104,6 +104,9 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
   const [error, setError] = useState<string | null>(null);
   const [, setTick] = useState(0);
   const ignitionOffTimesRef = useRef<Record<number, number>>(loadIgnitionOffTimes());
+  // Track previous ignition state per device to detect transitions (ON→OFF)
+  const prevIgnitionRef = useRef<Record<number, boolean | undefined>>({});
+  const isFirstLoadRef = useRef(true);
 
   const getCredentials = useCallback(() => {
     const traccar_url = userStorageGet('traccar_url');
@@ -123,26 +126,50 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     return payload;
   };
 
-  // Track ignition state changes locally - when ignition goes OFF, record Date.now() (Brasília)
+  // Track ignition state changes locally - when ignition TRANSITIONS from ON to OFF, record Date.now() (Brasília)
   // This completely ignores GPS timestamps
   const updateIgnitionOffTimes = useCallback((deviceList: TraccarDevice[], positionList: TraccarPosition[]) => {
     const map = { ...ignitionOffTimesRef.current };
+    const prevIgnition = prevIgnitionRef.current;
+    const firstLoad = isFirstLoadRef.current;
     let changed = false;
 
     deviceList.forEach((device) => {
       const pos = positionList.find((p) => p.deviceId === device.id);
       const ignition = pos?.attributes?.ignition;
 
-      if (ignition === false && !map[device.id]) {
-        // Ignition just turned OFF — record current local time (Brasília)
-        map[device.id] = Date.now();
-        changed = true;
-      } else if (ignition === true && map[device.id]) {
-        // Ignition turned ON — clear the record
-        delete map[device.id];
-        changed = true;
+      if (firstLoad) {
+        // On first load: only populate map for devices that already have a saved timestamp
+        // Don't create new entries — we don't know when they actually turned off
+        prevIgnition[device.id] = ignition;
+        // If ignition is now ON but we had a saved off time, clear it
+        if (ignition === true && map[device.id]) {
+          delete map[device.id];
+          changed = true;
+        }
+      } else {
+        const wasOn = prevIgnition[device.id] === true;
+        const wasUndefined = prevIgnition[device.id] === undefined;
+
+        if (ignition === false && wasOn) {
+          // TRANSITION: Ignition just turned OFF — record current local time (Brasília)
+          map[device.id] = Date.now();
+          changed = true;
+        } else if (ignition === true && map[device.id]) {
+          // Ignition turned ON — clear the record
+          delete map[device.id];
+          changed = true;
+        } else if (ignition === false && wasUndefined && !map[device.id]) {
+          // New device detected with ignition off, no prior state — skip (don't assume just stopped)
+        }
+
+        prevIgnition[device.id] = ignition;
       }
     });
+
+    if (firstLoad) {
+      isFirstLoadRef.current = false;
+    }
 
     if (changed) {
       ignitionOffTimesRef.current = map;
