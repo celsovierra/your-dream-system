@@ -222,6 +222,8 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
   const motion = attrs.motion;
   const speed = livePosition?.speed ?? 0;
 
+  const { formattedDuration: stopDuration } = getVehicleStopTime({ position: livePosition ?? null });
+
   const getStatusLabel = () => {
     if (liveDevice.status === 'offline') return 'Offline';
     if (speed > 1) return `${Math.round(speed)} km/h`;
