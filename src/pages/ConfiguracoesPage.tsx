@@ -157,7 +157,7 @@ const ConfiguracoesPage = () => {
   };
 
   return (
-    <div className="space-y-4 max-w-2xl">
+    <div className={`space-y-4 ${openSection === 'users' ? '' : 'max-w-2xl'}`}>
       {userIsAdmin && <Collapsible open={openSection === 'users'} onOpenChange={() => toggleSection('users')}>
         <Card>
           <CollapsibleTrigger className="w-full">
