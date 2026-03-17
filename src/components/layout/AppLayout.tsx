@@ -47,7 +47,6 @@ const navItems = [
 
 const allBottomNavItems = [
   { path: '/logs', label: 'Logs', icon: ScrollText, color: 'text-cyan-400' },
-  { path: '/configuracoes', label: 'Configurações', icon: Settings, color: 'text-rose-400' },
 ];
 
 const AppLayout = ({ children, onLogout }: LayoutProps) => {
