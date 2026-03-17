@@ -14,15 +14,57 @@ interface VehicleMapViewProps {
   onClose: () => void;
 }
 
-const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
+const VehicleMapView = ({ device: initialDevice, position: initialPosition, onClose }: VehicleMapViewProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
   const [cardOpen, setCardOpen] = useState(true);
   const [cardCollapsed, setCardCollapsed] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [blocking, setBlocking] = useState(false);
   const [mapType, setMapType] = useState<'satellite' | 'roadmap'>('satellite');
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const [livePosition, setLivePosition] = useState<TraccarPosition | undefined>(initialPosition);
+  const [liveDevice, setLiveDevice] = useState<TraccarDevice>(initialDevice);
+
+  // Poll for live position & device updates
+  useEffect(() => {
+    const fetchLive = async () => {
+      const traccar_url = userStorageGet('traccar_url');
+      const traccar_user = userStorageGet('traccar_user');
+      const traccar_password = userStorageGet('traccar_password');
+      if (!traccar_url || !traccar_user || !traccar_password) return;
+
+      try {
+        const [posRes, devRes] = await Promise.all([
+          api.traccarProxy({ traccar_url, traccar_user, traccar_password, endpoint: '/api/positions', method: 'GET' }),
+          api.traccarProxy({ traccar_url, traccar_user, traccar_password, endpoint: `/api/devices?id=${initialDevice.id}`, method: 'GET' }),
+        ]);
+
+        if (posRes.success) {
+          const posData = posRes.data?.data || posRes.data;
+          const positions = Array.isArray(posData) ? posData as TraccarPosition[] : [];
+          const myPos = positions.find((p) => p.deviceId === initialDevice.id);
+          if (myPos) {
+            setLivePosition(myPos);
+            // Update marker position on map
+            if (markerRef.current && mapInstanceRef.current) {
+              markerRef.current.setLatLng([myPos.latitude, myPos.longitude]);
+            }
+          }
+        }
+
+        if (devRes.success) {
+          const devData = devRes.data?.data || devRes.data;
+          const devArr = Array.isArray(devData) ? devData as TraccarDevice[] : [];
+          if (devArr.length > 0) setLiveDevice(devArr[0]);
+        }
+      } catch { /* silent */ }
+    };
+
+    const interval = setInterval(fetchLive, 10000);
+    return () => clearInterval(interval);
+  }, [initialDevice.id]);
 
   const sendCommand = useCallback(async (type: 'engineStop' | 'engineResume') => {
     const traccar_url = userStorageGet('traccar_url');
@@ -43,7 +85,7 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
         endpoint: '/api/commands/send',
         method: 'POST',
         body: {
-          deviceId: device.id,
+          deviceId: liveDevice.id,
           type,
         },
       });
@@ -59,26 +101,26 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
     } finally {
       setBlocking(false);
     }
-  }, [device.id]);
+  }, [liveDevice.id]);
 
   const handleToggleBlock = useCallback(async () => {
     if (blocked) {
       const ok = await sendCommand('engineResume');
       if (ok) {
         setBlocked(false);
-        toast.success(`${device.name} desbloqueado!`);
+        toast.success(`${liveDevice.name} desbloqueado!`);
       }
     } else {
       const ok = await sendCommand('engineStop');
       if (ok) {
         setBlocked(true);
-        toast.success(`${device.name} bloqueado!`);
+        toast.success(`${liveDevice.name} bloqueado!`);
       }
     }
-  }, [blocked, device.name, sendCommand]);
+  }, [blocked, liveDevice.name, sendCommand]);
 
   useEffect(() => {
-    if (!mapRef.current || !position) return;
+    if (!mapRef.current || !livePosition) return;
 
     const timeout = setTimeout(() => {
       if (mapInstanceRef.current) {
@@ -88,7 +130,7 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
 
       if (!mapRef.current) return;
 
-      const map = L.map(mapRef.current, { zoomControl: false }).setView([position.latitude, position.longitude], 15);
+      const map = L.map(mapRef.current, { zoomControl: false }).setView([livePosition.latitude, livePosition.longitude], 15);
       L.control.zoom({ position: 'topright' }).addTo(map);
 
       const tileUrl = mapType === 'satellite'
@@ -110,7 +152,8 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
         iconAnchor: [20, 20],
       });
 
-      const marker = L.marker([position.latitude, position.longitude], { icon }).addTo(map);
+      const marker = L.marker([livePosition.latitude, livePosition.longitude], { icon }).addTo(map);
+      markerRef.current = marker;
 
       marker.on('click', () => {
         setCardOpen(true);
@@ -128,7 +171,7 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
         mapInstanceRef.current = null;
       }
     };
-  }, [position, device.name, mapType]);
+  }, [initialPosition, initialDevice.name, mapType]);
 
   const formatDateTime = (dateStr: string) => {
     try {
@@ -138,22 +181,22 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
     } catch { return dateStr; }
   };
 
-  const attrs = position?.attributes || {};
+  const attrs = livePosition?.attributes || {};
   const ignition = attrs.ignition;
   const power = attrs.power;
   const sat = attrs.sat;
   const motion = attrs.motion;
-  const speed = position?.speed ?? 0;
+  const speed = livePosition?.speed ?? 0;
 
   const getStatusLabel = () => {
-    if (device.status === 'offline') return 'Offline';
+    if (liveDevice.status === 'offline') return 'Offline';
     if (speed > 1) return `${Math.round(speed)} km/h`;
     if (motion) return 'Em movimento';
     return 'Parado';
   };
 
   const getStatusBg = () => {
-    if (device.status === 'offline') return 'bg-red-500/20 text-red-400';
+    if (liveDevice.status === 'offline') return 'bg-red-500/20 text-red-400';
     if (speed > 1) return 'bg-blue-500/20 text-blue-400';
     return 'bg-emerald-500/20 text-emerald-400';
   };
@@ -172,7 +215,7 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
 
 
       {/* Vehicle info card */}
-      {cardOpen && position && (
+      {cardOpen && livePosition && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[1000] w-80 max-w-[calc(100%-2rem)]">
           <div className="rounded-2xl bg-slate-900/95 backdrop-blur-md text-white shadow-2xl overflow-hidden border border-white/10">
             {/* Collapse toggle */}
@@ -201,14 +244,14 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
                     <span className="text-[10px] uppercase tracking-wider text-white/50">KM/H</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-sm leading-tight truncate">{device.name}</h3>
-                    <p className="text-[11px] text-white/50 truncate mt-0.5">ID: {device.uniqueId}</p>
+                    <h3 className="font-bold text-sm leading-tight truncate">{liveDevice.name}</h3>
+                    <p className="text-[11px] text-white/50 truncate mt-0.5">ID: {liveDevice.uniqueId}</p>
                     <div className="flex items-center gap-2 mt-1.5">
                       <span className={cn("inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full",
-                        device.status === 'online' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
+                        liveDevice.status === 'online' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
                       )}>
-                        <span className={cn("h-1.5 w-1.5 rounded-full", device.status === 'online' ? 'bg-emerald-400' : 'bg-red-400')} />
-                        {device.status === 'online' ? 'Online' : 'Offline'}
+                        <span className={cn("h-1.5 w-1.5 rounded-full", liveDevice.status === 'online' ? 'bg-emerald-400' : 'bg-red-400')} />
+                        {liveDevice.status === 'online' ? 'Online' : 'Offline'}
                       </span>
                       {ignition !== undefined && (
                         <span className={cn("inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full",
@@ -223,10 +266,10 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
                 </div>
 
                 {/* Address */}
-                {position.address && (
+                {livePosition.address && (
                   <div className="flex items-start gap-2 text-[11px] text-white/70">
                     <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-white/40" />
-                    <span className="leading-relaxed">{position.address}</span>
+                    <span className="leading-relaxed">{livePosition.address}</span>
                   </div>
                 )}
 
@@ -234,7 +277,7 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="flex items-center gap-1.5 bg-white/10 rounded-lg px-2.5 py-1.5">
                     <Calendar className="h-3 w-3 text-blue-400" />
-                    <span className="text-[10px] font-medium">{formatDateTime(position.fixTime)}</span>
+                    <span className="text-[10px] font-medium">{formatDateTime(livePosition.fixTime)}</span>
                   </div>
                   {power !== undefined && (
                     <div className="flex items-center gap-1.5 bg-white/10 rounded-lg px-2.5 py-1.5">
@@ -299,7 +342,7 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
       )}
 
       {/* Map */}
-      {position ? (
+      {livePosition ? (
         <div ref={mapRef} className="flex-1 min-h-0" />
       ) : (
         <div className="flex-1 flex items-center justify-center text-muted-foreground">
