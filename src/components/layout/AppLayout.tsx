@@ -45,9 +45,7 @@ const navItems = [
   { path: '/', label: 'Financeiro', icon: DollarSign, color: 'text-yellow-400' },
 ];
 
-const allBottomNavItems = [
-  { path: '/logs', label: 'Logs', icon: ScrollText, color: 'text-cyan-400' },
-];
+const allBottomNavItems: { path: string; label: string; icon: any; color: string }[] = [];
 
 const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const userIsAdmin = isAdmin();
