@@ -181,12 +181,12 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
 
       const course = pos.course ?? 0;
       const icon = L.divIcon({
-        html: `<div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;transform:rotate(${course}deg);transition:transform 0.5s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
-          <img src="/images/car-top-view.png" style="width:40px;height:40px;object-fit:contain;" />
+        html: `<div style="width:60px;height:60px;display:flex;align-items:center;justify-content:center;transform:rotate(${course}deg);transition:transform 0.5s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+          <img src="/images/car-top-view.png" style="width:56px;height:56px;object-fit:contain;" />
         </div>`,
         className: '',
-        iconSize: [44, 44],
-        iconAnchor: [22, 22],
+        iconSize: [60, 60],
+        iconAnchor: [30, 30],
       });
 
       const marker = L.marker([pos.latitude, pos.longitude], { icon }).addTo(map);
