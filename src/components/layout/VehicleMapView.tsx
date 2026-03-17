@@ -185,8 +185,8 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
       const course = pos.course ?? 0;
       const isMoto = initialDevice.category?.toLowerCase() === 'motorcycle';
       const iconImg = isMoto ? '/images/moto-top-view.png' : '/images/car-top-view.png';
-      const iconW = isMoto ? 50 : 60;
-      const iconH = isMoto ? 70 : 90;
+      const iconW = isMobile ? (isMoto ? 36 : 42) : (isMoto ? 50 : 60);
+      const iconH = isMobile ? (isMoto ? 50 : 64) : (isMoto ? 70 : 90);
       const icon = L.divIcon({
         html: `<div style="width:${iconW}px;height:${iconH}px;display:flex;align-items:center;justify-content:center;transform:rotate(${course}deg);transition:transform 0.5s ease;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
           <img src="${iconImg}" style="width:${iconW - 4}px;height:${iconH - 4}px;object-fit:contain;" />
