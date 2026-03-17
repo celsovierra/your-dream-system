@@ -604,7 +604,15 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         )}
 
         {showVehicleMap ? (
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 relative">
+            {/* Mobile: floating button to reopen vehicle list */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="absolute top-3 left-3 z-[1000] flex items-center justify-center h-10 w-10 rounded-xl bg-sidebar/90 backdrop-blur-sm text-sidebar-foreground shadow-lg hover:bg-sidebar active:scale-95 transition-all lg:hidden"
+              title="Abrir lista de veículos"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
             <VehicleMapView
               device={selectedVehicle!.device}
               position={selectedVehicle?.position}
