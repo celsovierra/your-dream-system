@@ -91,10 +91,15 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
       const map = L.map(mapRef.current, { zoomControl: false }).setView([position.latitude, position.longitude], 15);
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      const tileUrl = mapType === 'satellite'
+        ? 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+        : 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+
+      const tileLayer = L.tileLayer(tileUrl, {
         attribution: '© Google Maps',
         maxZoom: 20,
       }).addTo(map);
+      tileLayerRef.current = tileLayer;
 
       const icon = L.divIcon({
         html: `<div style="background:hsl(var(--primary));color:white;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.4);border:3px solid white;">
