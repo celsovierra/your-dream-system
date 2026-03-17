@@ -326,28 +326,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
         </button>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto p-2">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
-                title={sidebarCollapsed ? item.label : undefined}
-                className={cn(
-                  'flex items-center rounded-md py-2.5 text-sm font-medium transition-colors',
-                  sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3',
-                  isActive
-                    ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                )}
-              >
-                <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-sidebar-primary-foreground" : item.color)} />
-                {!sidebarCollapsed && item.label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto p-2">
         </nav>
 
         <div className="border-t border-sidebar-border space-y-1 p-2">
