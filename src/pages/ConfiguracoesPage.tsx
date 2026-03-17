@@ -381,6 +381,7 @@ const ConfiguracoesPage = () => {
                 userStorageSet('traccar_url', traccarUrl);
                 userStorageSet('traccar_user', traccarUser);
                 userStorageSet('traccar_password', traccarPassword);
+                window.dispatchEvent(new Event('traccar-config-updated'));
                 toast.success('Configuração do Traccar salva!');
               }}>
                 <Save className="mr-2 h-3 w-3" /> Salvar
