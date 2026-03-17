@@ -17,14 +17,15 @@ import type {
   PaymentGatewayConfig,
   DashboardStats,
 } from '@/types/billing';
-import { supabase } from '@/integrations/supabase/client';
-
 // Base URL configurável - prioriza URL salva da VPS no navegador
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const RETRIABLE_PROXY_ERROR = /\b(502|503|504)\b|bad gateway|gateway timeout/i;
 
 class ApiService {
   private baseUrl: string;
   private token: string | null = null;
+  private traccarGetCache = new Map<string, { expiresAt: number; result: ApiResponse<any> }>();
+  private traccarInFlight = new Map<string, Promise<ApiResponse<any>>>();
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
