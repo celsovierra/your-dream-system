@@ -199,7 +199,11 @@ router.put('/users/:id', async (req, res) => {
     values.push(req.params.id);
     await query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
 
-    const [updated] = await query('SELECT * FROM users WHERE id = ?', [req.params.id]);
+    const rows = await query('SELECT * FROM users WHERE id = ?', [req.params.id]);
+    const updated = rows.find(r => r && typeof r === 'object' && 'id' in r);
+    if (!updated) {
+      return res.status(404).json({ success: false, error: 'Usuário não encontrado' });
+    }
     res.json({ success: true, data: formatUser(updated) });
   } catch (err) {
     console.error('PUT /auth/users/:id error:', err);
@@ -210,7 +214,8 @@ router.put('/users/:id', async (req, res) => {
 // DELETE /api/auth/users/:id
 router.delete('/users/:id', async (req, res) => {
   try {
-    const [user] = await query('SELECT role FROM users WHERE id = ?', [req.params.id]);
+    const rows = await query('SELECT role FROM users WHERE id = ?', [req.params.id]);
+    const user = rows.find(r => r && typeof r === 'object' && 'role' in r);
     if (user && user.role === 'admin') {
       return res.status(403).json({ success: false, error: 'Não é possível remover o administrador' });
     }
