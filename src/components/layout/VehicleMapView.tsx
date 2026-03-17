@@ -21,6 +21,8 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
   const [cardCollapsed, setCardCollapsed] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [blocking, setBlocking] = useState(false);
+  const [mapType, setMapType] = useState<'satellite' | 'roadmap'>('satellite');
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
 
   const sendCommand = useCallback(async (type: 'engineStop' | 'engineResume') => {
     const traccar_url = userStorageGet('traccar_url');
