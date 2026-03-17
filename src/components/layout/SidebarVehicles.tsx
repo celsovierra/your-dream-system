@@ -290,8 +290,8 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                 <div className="flex items-start gap-2.5">
                   <span className="mt-0.5 shrink-0 text-2xl leading-none">{getCategoryIcon(device.category)}</span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[12px] font-bold leading-tight text-white">{device.name}</p>
-                    {device.model && <p className="truncate text-[10px] leading-tight text-[hsl(180,5%,50%)]">{device.model}</p>}
+                    <p className="truncate text-sm font-bold leading-tight text-white">{device.name}</p>
+                    {device.model && <p className="truncate text-xs leading-tight text-[hsl(180,5%,55%)]">{device.model}</p>}
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
                     <button onClick={(e) => e.stopPropagation()} title="Compartilhar" className="rounded-md p-1.5 text-[hsl(180,5%,45%)] transition-colors hover:bg-white/10 hover:text-white">
@@ -306,29 +306,29 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                   </span>
                 </div>
 
-                <div className="mt-2 flex items-center gap-2.5 text-[10px]">
-                  <span className={cn('font-semibold', ignition ? 'text-green-400' : 'text-orange-400')}>⚡{ignition ? 'Lig' : 'Des'}</span>
-                  <span className="text-[hsl(180,5%,50%)]"><Wifi className="mr-1 inline h-3 w-3" />OK</span>
-                  <span className="text-[hsl(180,5%,50%)]">⏱ {Math.round(speed)} km/h</span>
-                  {sat !== undefined && <span className="text-[hsl(180,5%,50%)]">📡 {sat}</span>}
-                  {power !== undefined && <span className="text-[hsl(180,5%,50%)]">🔋 {power.toFixed(1)}V</span>}
+                <div className="mt-2 flex items-center gap-3 text-xs">
+                  <span className={cn('font-bold', ignition ? 'text-green-400' : 'text-orange-400')}>⚡{ignition ? 'Lig' : 'Des'}</span>
+                  <span className="text-[hsl(180,5%,55%)] font-medium"><Wifi className="mr-1 inline h-3.5 w-3.5" />OK</span>
+                  <span className="text-[hsl(180,5%,55%)] font-medium">⏱ {Math.round(speed)} km/h</span>
+                  {sat !== undefined && <span className="text-[hsl(180,5%,55%)] font-medium">📡 {sat}</span>}
+                  {power !== undefined && <span className="text-[hsl(180,5%,55%)] font-medium">🔋 {power.toFixed(1)}V</span>}
                 </div>
 
                 <div className="mt-2 flex items-center justify-between">
                   {isMoving ? (
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                    <span className="flex items-center gap-1 text-xs font-bold text-emerald-400">
                       <Clock className="h-3.5 w-3.5" /> Em movimento
                     </span>
                   ) : formattedDuration ? (
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-red-400">
+                    <span className="flex items-center gap-1 text-xs font-bold text-red-400">
                       <Clock className="h-3.5 w-3.5" /> Parado {formattedDuration}
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-red-400">
+                    <span className="flex items-center gap-1 text-xs font-bold text-red-400">
                       <Clock className="h-3.5 w-3.5" /> Parado
                     </span>
                   )}
-                  <span className="text-[10px] text-[hsl(180,5%,40%)]">{formatDateTime(device.lastUpdate)}</span>
+                  <span className="text-xs text-[hsl(180,5%,45%)]">{formatDateTime(device.lastUpdate)}</span>
                 </div>
               </div>
             );
