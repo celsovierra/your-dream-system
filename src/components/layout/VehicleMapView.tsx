@@ -85,7 +85,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
         endpoint: '/api/commands/send',
         method: 'POST',
         body: {
-          deviceId: device.id,
+          deviceId: liveDevice.id,
           type,
         },
       });
