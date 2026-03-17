@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import SidebarVehicles, { type TraccarDevice, type TraccarPosition } from './SidebarVehicles';
 import VehicleMapView from './VehicleMapView';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,7 @@ const allBottomNavItems: { path: string; label: string; icon: any; color: string
 const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const userIsAdmin = isAdmin();
   const bottomNavItems = allBottomNavItems;
+  const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
@@ -212,10 +213,10 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   }, [sidebarCollapsed]);
 
   useEffect(() => {
-    if (location.pathname !== '/' && selectedVehicle) {
+    if (location.pathname !== '/' && location.pathname !== '/financeiro' && selectedVehicle) {
       setSelectedVehicle(null);
     }
-  }, [location.pathname, selectedVehicle]);
+  }, [location.pathname]);
 
   useEffect(() => {
     const confirmPendingDeploy = async () => {
@@ -417,6 +418,9 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             onSelectDevice={(device, position) => {
               setSelectedVehicle({ device, position });
               setHasAutoOpenedMap(true);
+              if (location.pathname !== '/') {
+                navigate('/');
+              }
             }}
           />
         </nav>
