@@ -253,6 +253,13 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   }, [location.pathname]);
 
   useEffect(() => {
+    fetch(`/version.json?t=${Date.now()}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.version) setRunningVersion(d.version); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     const confirmPendingDeploy = async () => {
       const pending = localStorage.getItem('deploy_pending');
       if (pending) {
