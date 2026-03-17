@@ -316,6 +316,22 @@ class ApiService {
     };
   }
 
+  // Buscar eventos ignitionOff em lote (com cache server-side de 5 min)
+  async getIgnitionOffEvents(params: { traccar_url: string; traccar_user: string; traccar_password: string }) {
+    const directResult = await this.request<{ data: Record<string, string>; cached?: boolean }>('/traccar/ignition-events', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+
+    if (directResult.success) {
+      return directResult;
+    }
+
+    // Fallback: sem endpoint VPS, retorna vazio
+    console.warn('[api.getIgnitionOffEvents] Failed:', directResult.error);
+    return { success: false, error: directResult.error, data: undefined };
+  }
+
   // ===== CONFIGURAÇÕES =====
   async getWhatsAppConfig() {
     return this.request<WhatsAppConfig>('/config/whatsapp');
