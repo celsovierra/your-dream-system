@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Car, Loader2, WifiOff, RefreshCw, Search, Share2, Pencil, ShieldOff, Wifi, Gauge, Radio, Battery, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userStorageGet } from '@/services/auth';
