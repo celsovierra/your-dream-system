@@ -46,11 +46,14 @@ const VehicleMapDialog = ({ open, onOpenChange, device, position }: VehicleMapDi
 
       if (!mapRef.current) return;
 
-      const map = L.map(mapRef.current).setView([position.latitude, position.longitude], 15);
+      const mobile = window.innerWidth < 768;
+      const map = L.map(mapRef.current, { preferCanvas: true, fadeAnimation: !mobile, zoomAnimation: !mobile }).setView([position.latitude, position.longitude], mobile ? 14 : 15);
 
-      L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      L.tileLayer(mobile ? 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}' : 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
         attribution: '© Google Maps',
-        maxZoom: 20,
+        maxZoom: mobile ? 18 : 20,
+        updateWhenZooming: false,
+        updateWhenIdle: true,
       }).addTo(map);
 
       const course = position.course ?? 0;
