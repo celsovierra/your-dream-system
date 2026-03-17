@@ -277,7 +277,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className="flex items-center gap-1.5 bg-white/10 rounded-lg px-2.5 py-1.5">
                     <Calendar className="h-3 w-3 text-blue-400" />
-                    <span className="text-[10px] font-medium">{formatDateTime(position.fixTime)}</span>
+                    <span className="text-[10px] font-medium">{formatDateTime(livePosition.fixTime)}</span>
                   </div>
                   {power !== undefined && (
                     <div className="flex items-center gap-1.5 bg-white/10 rounded-lg px-2.5 py-1.5">
