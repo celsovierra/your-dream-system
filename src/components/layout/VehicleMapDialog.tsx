@@ -54,13 +54,17 @@ const VehicleMapDialog = ({ open, onOpenChange, device, position }: VehicleMapDi
       }).addTo(map);
 
       const course = position.course ?? 0;
+      const isMoto = device.category?.toLowerCase() === 'motorcycle';
+      const iconImg = isMoto ? '/images/moto-top-view.png' : '/images/car-top-view.png';
+      const iconW = isMoto ? 50 : 60;
+      const iconH = isMoto ? 70 : 90;
       const icon = L.divIcon({
-        html: `<div style="width:60px;height:90px;display:flex;align-items:center;justify-content:center;transform:rotate(${course}deg);filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
-          <img src="/images/car-top-view.png" style="width:56px;height:86px;object-fit:contain;" />
+        html: `<div style="width:${iconW}px;height:${iconH}px;display:flex;align-items:center;justify-content:center;transform:rotate(${course}deg);filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+          <img src="${iconImg}" style="width:${iconW - 4}px;height:${iconH - 4}px;object-fit:contain;" />
         </div>`,
         className: '',
-        iconSize: [60, 90],
-        iconAnchor: [30, 45],
+        iconSize: [iconW, iconH],
+        iconAnchor: [iconW / 2, iconH / 2],
       });
 
       L.marker([position.latitude, position.longitude], { icon })
