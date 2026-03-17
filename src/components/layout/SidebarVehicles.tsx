@@ -271,12 +271,10 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
             const sat = pos?.attributes?.sat;
             const power = pos?.attributes?.power;
             const isMoving = speed > 0;
-            const ignitionOffAt = ignitionOffTimesRef.current[device.id];
-            const stoppedTime = !isMoving && ignition === false && ignitionOffAt
-              ? formatStoppedDuration(ignitionOffAt)
-              : !isMoving
-                ? 'Parado'
-                : '';
+
+            const { formattedDuration } = useVehicleStopTime({
+              position: pos ? { ...pos, deviceId: device.id } : null,
+            });
 
             return (
               <div
@@ -321,9 +319,9 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                     <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
                       <Clock className="h-3.5 w-3.5" /> Em movimento
                     </span>
-                  ) : stoppedTime && stoppedTime !== 'Parado' ? (
+                  ) : formattedDuration ? (
                     <span className="flex items-center gap-1 text-[11px] font-bold text-red-400">
-                      <Clock className="h-3.5 w-3.5" /> Parado {stoppedTime}
+                      <Clock className="h-3.5 w-3.5" /> Parado {formattedDuration}
                     </span>
                   ) : (
                     <span className="flex items-center gap-1 text-[11px] font-bold text-red-400">
