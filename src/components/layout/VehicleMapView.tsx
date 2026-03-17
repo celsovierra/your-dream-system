@@ -181,22 +181,22 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
     } catch { return dateStr; }
   };
 
-  const attrs = position?.attributes || {};
+  const attrs = livePosition?.attributes || {};
   const ignition = attrs.ignition;
   const power = attrs.power;
   const sat = attrs.sat;
   const motion = attrs.motion;
-  const speed = position?.speed ?? 0;
+  const speed = livePosition?.speed ?? 0;
 
   const getStatusLabel = () => {
-    if (device.status === 'offline') return 'Offline';
+    if (liveDevice.status === 'offline') return 'Offline';
     if (speed > 1) return `${Math.round(speed)} km/h`;
     if (motion) return 'Em movimento';
     return 'Parado';
   };
 
   const getStatusBg = () => {
-    if (device.status === 'offline') return 'bg-red-500/20 text-red-400';
+    if (liveDevice.status === 'offline') return 'bg-red-500/20 text-red-400';
     if (speed > 1) return 'bg-blue-500/20 text-blue-400';
     return 'bg-emerald-500/20 text-emerald-400';
   };
