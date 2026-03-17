@@ -407,6 +407,9 @@ const ConfiguracoesPage = () => {
               <div>
                 <Label>URL do Servidor Traccar</Label>
                 <Input value={traccarUrl} onChange={(e) => setTraccarUrl(e.target.value)} placeholder="https://traccar.seudominio.com.br" />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Se estiver usando IP, prefira <span className="font-medium">http://IP:PORTA</span>. <span className="font-medium">https://IP</span> costuma falhar por certificado inválido.
+                </p>
               </div>
               <div>
                 <Label>Usuário / Email</Label>
@@ -416,19 +419,25 @@ const ConfiguracoesPage = () => {
                 <Label>Senha</Label>
                 <Input type="password" value={traccarPassword} onChange={(e) => setTraccarPassword(e.target.value)} placeholder="Senha do Traccar" />
               </div>
-              <Button size="sm" onClick={() => {
-                if (!traccarUrl || !traccarUser || !traccarPassword) {
-                  toast.error('Preencha todos os campos do Traccar');
-                  return;
-                }
-                userStorageSet('traccar_url', traccarUrl);
-                userStorageSet('traccar_user', traccarUser);
-                userStorageSet('traccar_password', traccarPassword);
-                window.dispatchEvent(new Event('traccar-config-updated'));
-                toast.success('Configuração do Traccar salva!');
-              }}>
-                <Save className="mr-2 h-3 w-3" /> Salvar
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => {
+                  if (!traccarUrl || !traccarUser || !traccarPassword) {
+                    toast.error('Preencha todos os campos do Traccar');
+                    return;
+                  }
+                  userStorageSet('traccar_url', traccarUrl.trim().replace(/\/+$/, ''));
+                  userStorageSet('traccar_user', traccarUser.trim());
+                  userStorageSet('traccar_password', traccarPassword);
+                  window.dispatchEvent(new Event('traccar-config-updated'));
+                  toast.success('Configuração do Traccar salva!');
+                }}>
+                  <Save className="mr-2 h-3 w-3" /> Salvar
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleTestTraccar} disabled={traccarTesting}>
+                  {traccarTesting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <MapPin className="mr-2 h-3 w-3" />}
+                  Testar conexão
+                </Button>
+              </div>
             </CardContent>
           </CollapsibleContent>
         </Card>
