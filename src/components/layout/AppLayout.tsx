@@ -297,7 +297,20 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className={cn("flex items-center border-b border-sidebar-border px-3 gap-2", sidebarCollapsed ? "h-12 justify-center" : "h-16")}>
+        {/* Collapsed: expand button at very top */}
+        {sidebarCollapsed && (
+          <div className="flex items-center justify-center py-3 border-b border-sidebar-border">
+            <button
+              onClick={() => setSidebarCollapsed(false)}
+              title="Expandir menu"
+              className="flex items-center justify-center rounded-xl h-10 w-10 transition-all duration-300 bg-gradient-to-b from-sidebar-primary/80 to-sidebar-primary text-white shadow-lg hover:shadow-sidebar-primary/40 hover:scale-110 active:scale-95"
+            >
+              <PanelLeft className="h-5 w-5" />
+            </button>
+          </div>
+        )}
+
+        <div className={cn("flex items-center border-b border-sidebar-border px-3 gap-2", sidebarCollapsed ? "h-auto py-2 justify-center" : "h-16")}>
           {!sidebarCollapsed && (
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {(() => {
@@ -353,13 +366,6 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         {/* Collapsed icon buttons */}
         {sidebarCollapsed && (
           <div className="flex flex-col items-center gap-2 py-3 border-b border-sidebar-border">
-            <button
-              onClick={() => setSidebarCollapsed(false)}
-              title="Expandir menu"
-              className="flex items-center justify-center rounded-lg h-8 w-8 transition-all duration-200 bg-white/10 hover:bg-white/20 text-white/70 hover:text-white hover:scale-105 active:scale-95"
-            >
-              <PanelLeft className="h-4 w-4" />
-            </button>
             <Link
               to="/configuracoes"
               onClick={() => setSidebarOpen(false)}
