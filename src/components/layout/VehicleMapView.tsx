@@ -29,6 +29,19 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
   const [livePosition, setLivePosition] = useState<TraccarPosition | undefined>(initialPosition);
   const [liveDevice, setLiveDevice] = useState<TraccarDevice>(initialDevice);
 
+  // Sync when parent selects a different vehicle
+  useEffect(() => {
+    setLiveDevice(initialDevice);
+    setLivePosition(initialPosition);
+    setCardOpen(true);
+    setCardCollapsed(false);
+    // Remove old anchor circle when switching vehicles
+    if (anchorCircleRef.current) {
+      anchorCircleRef.current.remove();
+      anchorCircleRef.current = null;
+    }
+  }, [initialDevice.id]);
+
   // Poll for live position & device updates
   useEffect(() => {
     const fetchLive = async () => {
