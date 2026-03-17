@@ -158,6 +158,23 @@ const ConfiguracoesPage = () => {
 
   return (
     <div className="space-y-4 max-w-2xl">
+      {userIsAdmin && <Collapsible open={openSection === 'users'} onOpenChange={() => toggleSection('users')}>
+        <Card>
+          <CollapsibleTrigger className="w-full">
+            <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 rounded-t-lg transition-colors">
+              <div className="flex items-center gap-2 text-base font-semibold">
+                <Users className="h-5 w-5 text-primary" />
+                Gerenciar Usuários
+              </div>
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${openSection === 'users' ? 'rotate-180' : ''}`} />
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <UserManagementSection />
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>}
+
       <Collapsible open={openSection === 'whatsapp'} onOpenChange={() => toggleSection('whatsapp')}>
         <Card>
           <CollapsibleTrigger className="w-full">
