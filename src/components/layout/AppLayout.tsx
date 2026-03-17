@@ -279,7 +279,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="relative flex h-screen overflow-hidden">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
