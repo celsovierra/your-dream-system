@@ -60,6 +60,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [deploying, setDeploying] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<{ device: TraccarDevice; position?: TraccarPosition } | null>(null);
   const [hasAutoOpenedMap, setHasAutoOpenedMap] = useState(false);
+  const [showTraccarUsers, setShowTraccarUsers] = useState(false);
   const [hasUpdate, setHasUpdate] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
   const [deployCheckError, setDeployCheckError] = useState<string | null>(null);
