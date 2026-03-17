@@ -40,10 +40,19 @@ interface SidebarVehiclesProps {
   autoSelectFirst?: boolean;
 }
 
-function formatStoppedTime(lastUpdate: string): string {
-  if (!lastUpdate) return '';
-  const diff = Date.now() - new Date(lastUpdate).getTime();
-  if (diff < 0) return '';
+function getBrasiliaTime(): number {
+  // Current time in UTC-3 (Brasília) as a timestamp
+  // We compare timestamps so we just use Date.now() since the reference times
+  // from Traccar are already in UTC and the diff is timezone-independent
+  return Date.now();
+}
+
+function formatStoppedTime(referenceTime: string): string {
+  if (!referenceTime) return '';
+  const refMs = new Date(referenceTime).getTime();
+  const nowMs = getBrasiliaTime();
+  const diff = nowMs - refMs;
+  if (diff < 0) return '0min';
   const mins = Math.floor(diff / 60000);
   if (mins < 60) return `${mins}min`;
   const hours = Math.floor(mins / 60);
