@@ -312,7 +312,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           </div>
           <Link
             to="/"
-            onClick={() => { setSidebarOpen(false); setSelectedVehicle(null); }}
+            onClick={() => { setSidebarOpen(false); setSelectedVehicle(null); setSidebarCollapsed(true); }}
             title="Financeiro"
             className={cn(
               'flex items-center justify-center rounded-lg h-9 w-9 shrink-0 mr-4 transition-all duration-200',
