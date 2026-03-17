@@ -2,35 +2,6 @@ import express from 'express';
 
 const router = express.Router();
 
-// ===== Cache de eventos ignitionOff (server-side, 5 min TTL) =====
-const ignitionCache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
-
-function getCacheKey(url, user) {
-  return `${url}:${user}`;
-}
-
-async function fetchTraccar(baseUrl, authHeader, endpoint) {
-  const response = await fetch(`${baseUrl}${endpoint}`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': authHeader,
-    },
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Traccar API error [${response.status}]: ${errorText.slice(0, 200)}`);
-  }
-
-  const text = await response.text();
-  return text ? JSON.parse(text) : [];
-}
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 // Proxy genérico para a API do Traccar
 router.post('/proxy', async (req, res) => {
