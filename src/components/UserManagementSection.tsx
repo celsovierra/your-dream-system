@@ -117,6 +117,7 @@ export default function UserManagementSection() {
         await updateUserVps(editingUser.id, updateData as any);
         toast.success('Usuário atualizado!');
       } else {
+        const autoSlugNew = form.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '').trim();
         await registerVps({
           name: form.name,
           email: form.email,
@@ -126,6 +127,14 @@ export default function UserManagementSection() {
           expires_at: form.expires_at || null,
           permissions: form.permissions,
         });
+        // Set slug after creation
+        if (autoSlugNew) {
+          const users = await fetchUsersVps();
+          const created = users.find(u => u.email === form.email.toLowerCase().trim());
+          if (created) {
+            await updateUserVps(created.id, { slug: autoSlugNew } as any);
+          }
+        }
         toast.success('Usuário criado!');
       }
       setDialogOpen(false);
