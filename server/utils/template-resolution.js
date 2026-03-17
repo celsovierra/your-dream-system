@@ -1,6 +1,33 @@
 import { query } from '../db.js';
 import { queryWithOptionalOwnerScope } from './owner-scope.js';
 
+const DEFAULT_TEMPLATES = {
+  reminder: {
+    name: 'Lembrete',
+    type: 'reminder',
+    content: '🚨 Olá *{nome}*, tudo bem?\nBom dia, aqui é um lembrete que sua fatura já está disponível.\n\n🗓 *Vencimento:* {vencimento}\n💰 *Valor:* R$ {valor}\n💸 *Desconto:* {desconto}\n\nPIX Copia e Cola:\n{pix_copia_cola}\n\nApós vencimento será cobrado juros pela operadora.\n\n_O pagamento é confirmado automaticamente. Você receberá o recibo em seguida, sem precisar enviar comprovante._',
+    is_active: 1,
+  },
+  due: {
+    name: 'Vencimento',
+    type: 'due',
+    content: 'Olá *{nome}*!\n\nSua mensalidade está disponível para pagamento.\n\n📅 *Vencimento:* {vencimento}\n💰 *Valor:* R$ {valor}\n💸 *Desconto:* {desconto}\n\nPague agora pelo PIX:\n{pix_copia_cola}\n\n_Após o pagamento, você receberá seu recibo automaticamente._',
+    is_active: 1,
+  },
+  overdue: {
+    name: 'Atraso',
+    type: 'overdue',
+    content: 'Olá *{nome}*!\n\nIdentificamos que sua mensalidade está em atraso.\n\n📅 *Vencimento original:* {vencimento}\n💵 *Valor mensal:* R$ {valor}\n📊 *Multa:* {multa}\n📈 *Juros:* {juros}\n💰 *Total a pagar: {valor_atualizado}*\n\nRegularize agora pelo PIX:\n{pix_copia_cola}\n\n_Evite o bloqueio dos serviços._',
+    is_active: 1,
+  },
+  receipt: {
+    name: 'Recibo',
+    type: 'receipt',
+    content: '✅ *Pagamento Confirmado!* ✅\n\n```RECIBO DE PAGAMENTO\n=======================\nCliente : {nome}\nServiço : Rastreamento\nPeríodo : {vencimento}\nValor   : R$ {valor}\nMulta   : {multa}\nJuros   : {juros}\nDesconto: {desconto}\n\nValor Total : {valor_atualizado}\n=======================\nPago em : {data_hoje}\nStatus  : ✅PAGO✅\nPróx Venc: {prox_vencimento}\n=======================```',
+    is_active: 1,
+  },
+};
+
 export function isTemplateRow(row) {
   return Boolean(row && typeof row === 'object' && 'id' in row && row.type);
 }
@@ -26,7 +53,70 @@ export function dedupeTemplatesByType(rows, ownerId) {
   return Array.from(map.values()).sort((a, b) => Number(a.id) - Number(b.id));
 }
 
+async function getTemplatesByType(type, ownerId, options = {}) {
+  const { activeOnly = false } = options;
+  return await queryWithOptionalOwnerScope({
+    tableName: 'message_templates',
+    ownerId,
+    run: async ({ useOwnerScope, ownerId: scopedOwnerId }) => {
+      let sql = 'SELECT * FROM message_templates WHERE type = ?';
+      const params = [type];
+      if (activeOnly) sql += ' AND is_active = 1';
+      if (useOwnerScope && scopedOwnerId) {
+        sql += ' AND (owner_id = ? OR owner_id IS NULL)';
+        params.push(scopedOwnerId);
+      }
+      sql += ' ORDER BY id DESC';
+      return query(sql, params);
+    },
+  });
+}
+
+async function getGlobalTemplateByType(type) {
+  const rows = await query(
+    'SELECT * FROM message_templates WHERE type = ? AND owner_id IS NULL ORDER BY id DESC',
+    [type]
+  );
+  return Array.isArray(rows) ? rows.find(isTemplateRow) || null : null;
+}
+
+async function ensureGlobalTemplate(type) {
+  const existing = await getGlobalTemplateByType(type);
+  if (existing) return existing;
+
+  const fallback = DEFAULT_TEMPLATES[type];
+  if (!fallback) return null;
+
+  const result = await query(
+    'INSERT INTO message_templates (name, type, content, is_active, owner_id) VALUES (?, ?, ?, ?, NULL)',
+    [fallback.name, fallback.type, fallback.content, fallback.is_active]
+  );
+
+  const insertId = Number(result?.insertId ?? result?.[0]?.insertId ?? 0);
+  if (!insertId) return await getGlobalTemplateByType(type);
+
+  const inserted = await query('SELECT * FROM message_templates WHERE id = ?', [insertId]);
+  return Array.isArray(inserted) ? inserted.find(isTemplateRow) || null : null;
+}
+
+async function ensureDefaultGlobalTemplates() {
+  for (const type of Object.keys(DEFAULT_TEMPLATES)) {
+    await ensureGlobalTemplate(type);
+  }
+}
+
+async function getOwnedTemplateByType(type, ownerId) {
+  if (!ownerId) return null;
+  const rows = await query(
+    'SELECT * FROM message_templates WHERE type = ? AND owner_id = ? ORDER BY id DESC',
+    [type, ownerId]
+  );
+  return Array.isArray(rows) ? rows.find(isTemplateRow) || null : null;
+}
+
 export async function listResolvedTemplates(ownerId) {
+  await ensureDefaultGlobalTemplates();
+
   const rows = await queryWithOptionalOwnerScope({
     tableName: 'message_templates',
     ownerId,
@@ -47,23 +137,8 @@ export async function listResolvedTemplates(ownerId) {
 }
 
 export async function resolveTemplateByType(type, ownerId, options = {}) {
-  const { activeOnly = false } = options;
-  const rows = await queryWithOptionalOwnerScope({
-    tableName: 'message_templates',
-    ownerId,
-    run: async ({ useOwnerScope, ownerId: scopedOwnerId }) => {
-      let sql = 'SELECT * FROM message_templates WHERE type = ?';
-      const params = [type];
-      if (activeOnly) sql += ' AND is_active = 1';
-      if (useOwnerScope && scopedOwnerId) {
-        sql += ' AND (owner_id = ? OR owner_id IS NULL)';
-        params.push(scopedOwnerId);
-      }
-      sql += ' ORDER BY id DESC';
-      return query(sql, params);
-    },
-  });
-
+  await ensureGlobalTemplate(type);
+  const rows = await getTemplatesByType(type, ownerId, options);
   const validRows = Array.isArray(rows) ? rows.filter(isTemplateRow) : [];
   return validRows.sort((a, b) => sortTemplatesByPriority(a, b, ownerId))[0] || null;
 }
@@ -86,29 +161,30 @@ export async function updateResolvedTemplateByType(type, ownerId, payload) {
   if (payload.name !== undefined) { fields.push('name = ?'); values.push(payload.name); }
   if (fields.length === 0) return null;
 
-  const targetTemplate = await resolveTemplateByType(type, ownerId);
-  if (!targetTemplate) return null;
+  const globalTemplate = await ensureGlobalTemplate(type);
+  if (!globalTemplate) return null;
 
-  await queryWithOptionalOwnerScope({
-    tableName: 'message_templates',
-    ownerId,
-    run: async ({ useOwnerScope, ownerId: scopedOwnerId }) => {
-      const scopedFields = [...fields];
-      const scopedValues = [...values];
-      const params = [...scopedValues, targetTemplate.id];
-      let sql = `UPDATE message_templates SET ${scopedFields.join(', ')} WHERE id = ?`;
+  if (ownerId) {
+    const ownedTemplate = await getOwnedTemplateByType(type, ownerId);
 
-      if (useOwnerScope && scopedOwnerId) {
-        scopedFields.push('owner_id = ?');
-        scopedValues.push(scopedOwnerId);
-        params.length = 0;
-        params.push(...scopedValues, targetTemplate.id, scopedOwnerId);
-        sql = `UPDATE message_templates SET ${scopedFields.join(', ')} WHERE id = ? AND (owner_id = ? OR owner_id IS NULL)`;
-      }
+    if (ownedTemplate) {
+      await query(`UPDATE message_templates SET ${fields.join(', ')} WHERE id = ? AND owner_id = ?`, [...values, ownedTemplate.id, ownerId]);
+    } else {
+      await query(
+        'INSERT INTO message_templates (name, type, content, is_active, owner_id) VALUES (?, ?, ?, ?, ?)',
+        [
+          payload.name ?? globalTemplate.name,
+          type,
+          payload.content ?? globalTemplate.content,
+          payload.is_active ?? globalTemplate.is_active,
+          ownerId,
+        ]
+      );
+    }
 
-      return query(sql, params);
-    },
-  });
+    return await resolveTemplateByType(type, ownerId);
+  }
 
-  return await resolveTemplateByType(type, ownerId);
+  await query(`UPDATE message_templates SET ${fields.join(', ')} WHERE id = ? AND owner_id IS NULL`, [...values, globalTemplate.id]);
+  return await resolveTemplateByType(type, null);
 }
