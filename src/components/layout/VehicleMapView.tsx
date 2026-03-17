@@ -105,21 +105,25 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
     }
   }, [liveDevice.id]);
 
+  const blocked = blockedMap[liveDevice.id] ?? false;
+  const anchorActive = anchorMap[liveDevice.id] ?? false;
+
   const handleToggleBlock = useCallback(async () => {
-    if (blocked) {
+    const devId = liveDevice.id;
+    if (blockedMap[devId]) {
       const ok = await sendCommand('engineResume');
       if (ok) {
-        setBlocked(false);
+        setBlockedMap((m) => ({ ...m, [devId]: false }));
         toast.success(`${liveDevice.name} desbloqueado!`);
       }
     } else {
       const ok = await sendCommand('engineStop');
       if (ok) {
-        setBlocked(true);
+        setBlockedMap((m) => ({ ...m, [devId]: true }));
         toast.success(`${liveDevice.name} bloqueado!`);
       }
     }
-  }, [blocked, liveDevice.name, sendCommand]);
+  }, [blockedMap, liveDevice.id, liveDevice.name, sendCommand]);
 
   useEffect(() => {
     if (!mapRef.current || !livePosition) return;
