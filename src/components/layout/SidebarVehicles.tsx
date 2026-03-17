@@ -274,68 +274,60 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                 className={cn(
                   "rounded-xl border p-3 cursor-pointer transition-all duration-200",
                   isSelected
-                    ? "border-primary/60 bg-primary/10 shadow-[0_0_12px_-3px_hsl(var(--primary)/0.3)]"
-                    : "border-sidebar-border bg-sidebar-accent/30 hover:bg-sidebar-accent/60 hover:border-sidebar-foreground/20"
+                    ? "border-emerald-500/50 bg-[hsl(180,15%,12%)] shadow-[0_0_12px_-3px_rgba(16,185,129,0.3)]"
+                    : "border-[hsl(180,10%,18%)] bg-[hsl(180,10%,10%)] hover:border-emerald-500/30 hover:bg-[hsl(180,10%,13%)]"
                 )}
               >
-                {/* Row 1: Name + Status + Actions */}
-                <div className="flex items-center gap-2">
-                  <span className="text-lg leading-none shrink-0">{getCategoryIcon(device.category)}</span>
-                  <span className={cn("font-bold text-[11px] truncate flex-1 min-w-0", isSelected ? "text-primary" : "text-sidebar-foreground")}>
-                    {device.name}
-                  </span>
+                {/* Row 1: Image + Name/Model + Actions + Status */}
+                <div className="flex items-start gap-2.5">
+                  <span className="text-2xl leading-none mt-0.5 shrink-0">{getCategoryIcon(device.category)}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-[12px] text-white truncate leading-tight">{device.name}</p>
+                    {device.model && (
+                      <p className="text-[10px] text-[hsl(180,5%,50%)] truncate leading-tight">{device.model}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <button onClick={e => e.stopPropagation()} title="Compartilhar" className="rounded-md p-1.5 text-[hsl(180,5%,45%)] hover:text-white hover:bg-white/10 transition-colors">
+                      <Share2 className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={e => e.stopPropagation()} title="Editar" className="rounded-md p-1.5 text-[hsl(180,5%,45%)] hover:text-white hover:bg-white/10 transition-colors">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                   <span className={cn(
-                    "text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 uppercase tracking-wide",
-                    isOnline ? "bg-emerald-500/20 text-emerald-400" : "bg-destructive/20 text-destructive"
+                    "text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0",
+                    isOnline
+                      ? "bg-emerald-500/20 text-emerald-400"
+                      : "bg-red-500/20 text-red-400"
                   )}>
                     {isOnline ? 'Online' : 'Offline'}
                   </span>
-                  <div className="flex items-center shrink-0 -mr-1">
-                    <button onClick={e => e.stopPropagation()} title="Compartilhar" className="rounded p-1 text-sidebar-foreground/30 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
-                      <Share2 className="h-3 w-3" />
-                    </button>
-                    <button onClick={e => e.stopPropagation()} title="Editar" className="rounded p-1 text-sidebar-foreground/30 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
-                      <Pencil className="h-3 w-3" />
-                    </button>
-                    <button onClick={e => e.stopPropagation()} title="Bloquear" className="rounded p-1 text-sidebar-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-colors">
-                      <ShieldOff className="h-3 w-3" />
-                    </button>
-                  </div>
                 </div>
 
-                {device.model && (
-                  <p className="text-[10px] text-sidebar-foreground/40 truncate ml-7 -mt-0.5">{device.model}</p>
-                )}
-
-                {/* Row 2: Telemetry - compact single line */}
-                <div className="flex items-center gap-2 mt-1.5 ml-7 text-[10px] text-sidebar-foreground/50">
-                  <span className={cn("font-semibold", ignition ? "text-emerald-400" : "text-destructive/70")}>
+                {/* Row 2: Telemetry */}
+                <div className="flex items-center gap-2.5 mt-2 text-[10px]">
+                  <span className={cn("font-semibold", ignition ? "text-emerald-400" : "text-red-400")}>
                     ⚡{ignition ? 'Lig' : 'Des'}
                   </span>
-                  <span>📶OK</span>
-                  <span>⏱{Math.round(speed)}km/h</span>
-                  {sat !== undefined && <span>📡{sat}</span>}
+                  <span className="text-[hsl(180,5%,50%)]">📶 OK</span>
+                  <span className="text-[hsl(180,5%,50%)]">⏱ {Math.round(speed)} km/h</span>
+                  {sat !== undefined && <span className="text-[hsl(180,5%,50%)]">📡 {sat}</span>}
+                  {power !== undefined && <span className="text-[hsl(180,5%,50%)]">🔋 {power.toFixed(1)}V</span>}
                 </div>
 
-                {/* Row 3: Voltage on its own if present */}
-                {power !== undefined && (
-                  <div className="ml-7 mt-0.5 text-[10px] text-sidebar-foreground/50">
-                    🔋 {power.toFixed(1)}V
-                  </div>
-                )}
-
-                {/* Row 4: Status + time */}
-                <div className="flex items-center justify-between mt-1.5 ml-7">
+                {/* Row 3: Stopped time + datetime */}
+                <div className="flex items-center justify-between mt-2">
                   {stoppedTime ? (
-                    <span className="flex items-center gap-1 text-[10px] font-semibold text-destructive">
-                      <Clock className="h-3 w-3" /> Parado {stoppedTime}
+                    <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                      <Clock className="h-3.5 w-3.5" /> Parado {stoppedTime}
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-400">
-                      <Clock className="h-3 w-3" /> Em movimento
+                    <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                      <Clock className="h-3.5 w-3.5" /> Em movimento
                     </span>
                   )}
-                  <span className="text-[9px] text-sidebar-foreground/35">
+                  <span className="text-[10px] text-[hsl(180,5%,40%)]">
                     {formatDateTime(pos?.fixTime || device.lastUpdate)}
                   </span>
                 </div>
