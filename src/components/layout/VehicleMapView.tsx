@@ -138,8 +138,12 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
     }
   }, [blockedMap, liveDevice.id, liveDevice.name, sendCommand]);
 
+  const initPosRef = useRef(initialPosition);
+  initPosRef.current = initialPosition;
+
   useEffect(() => {
-    if (!mapRef.current || !livePosition) return;
+    const pos = initPosRef.current;
+    if (!mapRef.current || !pos) return;
 
     const timeout = setTimeout(() => {
       if (mapInstanceRef.current) {
@@ -149,7 +153,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
 
       if (!mapRef.current) return;
 
-      const map = L.map(mapRef.current, { zoomControl: false }).setView([livePosition.latitude, livePosition.longitude], 18);
+      const map = L.map(mapRef.current, { zoomControl: false }).setView([pos.latitude, pos.longitude], 18);
       L.control.zoom({ position: 'topright' }).addTo(map);
 
       const tileUrl = mapType === 'satellite'
@@ -171,13 +175,16 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
         iconAnchor: [20, 20],
       });
 
-      const marker = L.marker([livePosition.latitude, livePosition.longitude], { icon }).addTo(map);
+      const marker = L.marker([pos.latitude, pos.longitude], { icon }).addTo(map);
       markerRef.current = marker;
 
       marker.on('click', () => {
         setCardOpen(true);
         setCardCollapsed(false);
-        map.flyTo([livePosition.latitude, livePosition.longitude], 18, { duration: 0.5 });
+        if (markerRef.current) {
+          const ll = markerRef.current.getLatLng();
+          map.flyTo(ll, 18, { duration: 0.5 });
+        }
       });
 
       mapInstanceRef.current = map;
@@ -191,7 +198,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
         mapInstanceRef.current = null;
       }
     };
-  }, [initialPosition, initialDevice.name, mapType]);
+  }, [initialDevice.id, mapType]);
 
   const formatDateTime = (dateStr: string) => {
     try {
