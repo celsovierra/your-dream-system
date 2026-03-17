@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Car, Loader2, WifiOff, RefreshCw, Search, Share2, Pencil, Wifi, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userStorageGet } from '@/services/auth';
@@ -42,13 +42,25 @@ interface SidebarVehiclesProps {
   autoSelectFirst?: boolean;
 }
 
-// ===== Cálculo de tempo parado usando eventTime UTC do Traccar =====
-// NÃO usa Date.now() como início — usa o eventTime do último ignitionOff
-function formatStoppedDuration(eventTimeISO: string): string {
-  const eventMs = new Date(eventTimeISO).getTime(); // UTC correto
-  if (Number.isNaN(eventMs)) return '';
+const IGNITION_OFF_STORAGE_KEY = 'traccar_ignition_off_times';
 
-  const diff = Date.now() - eventMs;
+function loadIgnitionOffTimes(): Record<number, number> {
+  try {
+    const raw = localStorage.getItem(IGNITION_OFF_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveIgnitionOffTimes(map: Record<number, number>) {
+  try {
+    localStorage.setItem(IGNITION_OFF_STORAGE_KEY, JSON.stringify(map));
+  } catch { /* ignore */ }
+}
+
+function formatStoppedDuration(offTimestampMs: number): string {
+  const diff = Date.now() - offTimestampMs;
   if (diff <= 0) return '0min';
 
   const mins = Math.floor(diff / 60000);
@@ -63,13 +75,7 @@ function formatStoppedDuration(eventTimeISO: string): string {
 function formatDateTime(dateStr: string) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
-  return d.toLocaleString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return `${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}, ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 }
 
 function getCategoryIcon(category?: string) {
@@ -89,19 +95,18 @@ function getCategoryIcon(category?: string) {
   }
 }
 
-// ===== Cache em memória para eventos ignitionOff (5 min) =====
-let ignitionEventsCache: { data: Record<string, string>; timestamp: number } | null = null;
-const FRONTEND_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
-
 const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSelectFirst = false }: SidebarVehiclesProps) => {
   const [devices, setDevices] = useState<TraccarDevice[]>([]);
   const [positions, setPositions] = useState<TraccarPosition[]>([]);
-  const [ignitionOffEvents, setIgnitionOffEvents] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [configured, setConfigured] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [, setTick] = useState(0);
+  const ignitionOffTimesRef = useRef<Record<number, number>>(loadIgnitionOffTimes());
+  // Track previous ignition state per device to detect transitions (ON→OFF)
+  const prevIgnitionRef = useRef<Record<number, boolean | undefined>>({});
+  const isFirstLoadRef = useRef(true);
 
   const getCredentials = useCallback(() => {
     const traccar_url = userStorageGet('traccar_url');
@@ -121,34 +126,56 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     return payload;
   };
 
-  // Buscar eventos ignitionOff em lote (com cache de 5 min)
-  const fetchIgnitionOffEvents = useCallback(async () => {
-    // Verificar cache frontend
-    if (ignitionEventsCache && Date.now() - ignitionEventsCache.timestamp < FRONTEND_CACHE_TTL) {
-      setIgnitionOffEvents(ignitionEventsCache.data);
-      return;
-    }
+  // Track ignition state changes locally - when ignition TRANSITIONS from ON to OFF, record Date.now() (Brasília)
+  // This completely ignores GPS timestamps
+  const updateIgnitionOffTimes = useCallback((deviceList: TraccarDevice[], positionList: TraccarPosition[]) => {
+    const map = { ...ignitionOffTimesRef.current };
+    const prevIgnition = prevIgnitionRef.current;
+    const firstLoad = isFirstLoadRef.current;
+    let changed = false;
 
-    const creds = getCredentials();
-    if (!creds.traccar_url || !creds.traccar_user || !creds.traccar_password) return;
+    deviceList.forEach((device) => {
+      const pos = positionList.find((p) => p.deviceId === device.id);
+      const ignition = pos?.attributes?.ignition;
 
-    try {
-      const result = await api.getIgnitionOffEvents({
-        traccar_url: creds.traccar_url,
-        traccar_user: creds.traccar_user,
-        traccar_password: creds.traccar_password,
-      });
+      if (firstLoad) {
+        // On first load: only populate map for devices that already have a saved timestamp
+        // Don't create new entries — we don't know when they actually turned off
+        prevIgnition[device.id] = ignition;
+        // If ignition is now ON but we had a saved off time, clear it
+        if (ignition === true && map[device.id]) {
+          delete map[device.id];
+          changed = true;
+        }
+      } else {
+        const wasOn = prevIgnition[device.id] === true;
+        const wasUndefined = prevIgnition[device.id] === undefined;
 
-      if (result.success && result.data) {
-        const eventsData = (result.data as any).data || result.data;
-        const events = typeof eventsData === 'object' && eventsData !== null ? eventsData as Record<string, string> : {};
-        ignitionEventsCache = { data: events, timestamp: Date.now() };
-        setIgnitionOffEvents(events);
+        if (ignition === false && wasOn) {
+          // TRANSITION: Ignition just turned OFF — record current local time (Brasília)
+          map[device.id] = Date.now();
+          changed = true;
+        } else if (ignition === true && map[device.id]) {
+          // Ignition turned ON — clear the record
+          delete map[device.id];
+          changed = true;
+        } else if (ignition === false && wasUndefined && !map[device.id]) {
+          // New device detected with ignition off, no prior state — skip (don't assume just stopped)
+        }
+
+        prevIgnition[device.id] = ignition;
       }
-    } catch {
-      // Silencioso — não quebra a UI
+    });
+
+    if (firstLoad) {
+      isFirstLoadRef.current = false;
     }
-  }, [getCredentials]);
+
+    if (changed) {
+      ignitionOffTimesRef.current = map;
+      saveIgnitionOffTimes(map);
+    }
+  }, []);
 
   const fetchDevices = useCallback(async () => {
     const creds = getCredentials();
@@ -179,10 +206,11 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
       if (!posResult.success) {
         throw new Error(posResult.error || 'Não foi possível carregar as posições do Traccar');
       }
-      setPositions(Array.isArray(posData) ? (posData as TraccarPosition[]) : []);
+      const nextPositions = Array.isArray(posData) ? (posData as TraccarPosition[]) : [];
+      setPositions(nextPositions);
 
-      // Buscar eventos ignitionOff em paralelo (usa cache de 5 min)
-      void fetchIgnitionOffEvents();
+      // Update ignition off times based on current ignition state (local Brasília time)
+      updateIgnitionOffTimes(nextDevices, nextPositions);
     } catch (err: any) {
       const message = err?.message || 'Erro ao carregar veículos do Traccar';
       setDevices([]);
@@ -191,7 +219,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     } finally {
       setLoading(false);
     }
-  }, [fetchIgnitionOffEvents, getCredentials]);
+  }, [updateIgnitionOffTimes, getCredentials]);
 
   useEffect(() => {
     void fetchDevices();
@@ -206,7 +234,6 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     };
   }, [fetchDevices]);
 
-  // Re-render a cada 30s para atualizar contadores de tempo parado
   useEffect(() => {
     const timer = setInterval(() => setTick((v) => v + 1), 30000);
     return () => clearInterval(timer);
@@ -327,31 +354,13 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
             const speed = pos?.speed ?? 0;
             const sat = pos?.attributes?.sat;
             const power = pos?.attributes?.power;
-
-            // Regras de status conforme especificação:
-            // speed > 5 → "Em movimento"
-            // speed <= 5 E ignition == false E existe ignitionOff → mostrar tempo parado
-            // Caso contrário → "Parado (sem histórico)"
-            const isMoving = speed > 5;
-
-            // eventTime do último ignitionOff vindo do Traccar (UTC)
-            const ignitionOffEventTime = ignitionOffEvents[String(device.id)];
-
-            // Fallback: se não há evento, usar pos.fixTime
-            const fallbackTime = pos?.fixTime;
-
-            let stoppedLabel = '';
-            if (isMoving) {
-              stoppedLabel = '';
-            } else if (ignition === false && ignitionOffEventTime) {
-              // Tempo parado = agora - eventTime do Traccar (ambos em UTC/epoch)
-              stoppedLabel = formatStoppedDuration(ignitionOffEventTime);
-            } else if (!isMoving && fallbackTime && ignition === false) {
-              // Fallback usando fixTime
-              stoppedLabel = formatStoppedDuration(fallbackTime);
-            } else {
-              stoppedLabel = 'sem histórico';
-            }
+            const isMoving = speed > 0;
+            const ignitionOffAt = ignitionOffTimesRef.current[device.id];
+            const stoppedTime = !isMoving && ignition === false && ignitionOffAt
+              ? formatStoppedDuration(ignitionOffAt)
+              : !isMoving
+                ? 'Parado'
+                : '';
 
             return (
               <div
@@ -396,9 +405,9 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                     <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
                       <Clock className="h-3.5 w-3.5" /> Em movimento
                     </span>
-                  ) : stoppedLabel && stoppedLabel !== 'sem histórico' ? (
+                  ) : stoppedTime && stoppedTime !== 'Parado' ? (
                     <span className="flex items-center gap-1 text-[11px] font-bold text-red-400">
-                      <Clock className="h-3.5 w-3.5" /> Parado {stoppedLabel}
+                      <Clock className="h-3.5 w-3.5" /> Parado {stoppedTime}
                     </span>
                   ) : (
                     <span className="flex items-center gap-1 text-[11px] font-bold text-red-400">
