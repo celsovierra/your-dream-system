@@ -132,7 +132,7 @@ const App = () => {
                 <Route path="/mensagens" element={<MensagensPage />} />
                 <Route path="/contratos" element={<ContratosPage />} />
                 <Route path="/configuracoes" element={<ConfiguracoesPage />} />
-                <Route path="*" element={<NotFound />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </ErrorBoundary>
           </AppLayout>
