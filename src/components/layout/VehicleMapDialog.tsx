@@ -55,20 +55,12 @@ const VehicleMapDialog = ({ open, onOpenChange, device, position }: VehicleMapDi
 
       const course = position.course ?? 0;
       const icon = L.divIcon({
-        html: `<div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;transform:rotate(${course}deg);">
-          <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <g filter="url(#shadow2)">
-              <path d="M50 8 L68 45 L65 48 L62 46 L62 82 C62 86 58 90 50 90 C42 90 38 86 38 82 L38 46 L35 48 L32 45 Z" fill="hsl(var(--primary))" stroke="white" stroke-width="3"/>
-              <circle cx="42" cy="75" r="4" fill="rgba(255,255,255,0.5)"/>
-              <circle cx="58" cy="75" r="4" fill="rgba(255,255,255,0.5)"/>
-              <rect x="43" y="30" width="14" height="10" rx="2" fill="rgba(255,255,255,0.3)"/>
-            </g>
-            <defs><filter id="shadow2"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.4"/></filter></defs>
-          </svg>
+        html: `<div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;transform:rotate(${course}deg);filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+          <img src="/images/car-top-view.png" style="width:40px;height:40px;object-fit:contain;" />
         </div>`,
         className: '',
-        iconSize: [40, 40],
-        iconAnchor: [20, 20],
+        iconSize: [44, 44],
+        iconAnchor: [22, 22],
       });
 
       L.marker([position.latitude, position.longitude], { icon })
