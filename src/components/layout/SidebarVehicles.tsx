@@ -328,9 +328,9 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
             const sat = pos?.attributes?.sat;
             const power = pos?.attributes?.power;
             const isMoving = speed > 0;
-            const ignitionOffAt = ignitionOffEvents[device.id];
+            const ignitionOffAt = ignitionOffTimesRef.current[device.id];
             const stoppedTime = !isMoving && ignition === false && ignitionOffAt
-              ? formatStoppedTimeFromEvent(ignitionOffAt)
+              ? formatStoppedDuration(ignitionOffAt)
               : !isMoving
                 ? 'Parado'
                 : '';
