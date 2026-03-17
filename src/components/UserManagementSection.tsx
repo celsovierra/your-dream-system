@@ -236,8 +236,6 @@ export default function UserManagementSection() {
                     Nenhum usuário cadastrado
                   </TableCell>
                 </TableRow>
-                  </TableCell>
-                </TableRow>
               )}
             </TableBody>
           </Table>
