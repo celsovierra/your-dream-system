@@ -89,7 +89,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
-          <Sonner />
+          <Sonner position="top-center" />
           <LoginPage onLogin={handleLogin} />
         </TooltipProvider>
       </QueryClientProvider>
@@ -102,7 +102,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Sonner />
+        <Sonner position="top-center" />
         <BrowserRouter>
           <AppLayout onLogout={handleLogout}>
             <ErrorBoundary>
