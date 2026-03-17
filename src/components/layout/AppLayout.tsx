@@ -62,6 +62,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [hasUpdate, setHasUpdate] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
   const [deployCheckError, setDeployCheckError] = useState<string | null>(null);
+  const [runningVersion, setRunningVersion] = useState<string | null>(null);
   const showVehicleMap = location.pathname === '/' && Boolean(selectedVehicle);
 
   function isLovableHost() {
@@ -154,6 +155,10 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       if (res.ok && data.success) {
         setHasUpdate(Boolean(data.hasUpdate));
         setDeployCheckError(null);
+
+        if (data.runningCommit) {
+          setRunningVersion(data.runningCommit);
+        }
 
         if (data.runningStartedAt) {
           localStorage.setItem('last_deploy_at', data.runningStartedAt);
@@ -527,6 +532,11 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
                       ? `✅ Atualizado em ${new Date(lastDeployAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
                       : '✅ Nenhuma atualização disponível'}
             </p>
+            {runningVersion && (
+              <p className="text-[10px] text-sidebar-foreground/40 text-center font-mono mt-1">
+                build {runningVersion}
+              </p>
+            )}
           </div>
         )}
       </aside>
