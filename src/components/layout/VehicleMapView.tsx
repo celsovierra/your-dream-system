@@ -332,8 +332,8 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
                       if (anchorCircleRef.current) anchorCircleRef.current.remove();
                       anchorCircleRef.current = L.circle([livePosition.latitude, livePosition.longitude], {
                         radius: 50,
-                        color: '#3b82f6',
-                        fillColor: '#3b82f6',
+                        color: '#ef4444',
+                        fillColor: '#ef4444',
                         fillOpacity: 0.15,
                         weight: 2,
                       }).addTo(mapInstanceRef.current);
