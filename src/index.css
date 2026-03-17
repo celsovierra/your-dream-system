@@ -8,6 +8,19 @@
 .leaflet-div-icon {
   background: transparent !important;
   border: none !important;
+  box-shadow: none !important;
+}
+
+.vehicle-map-marker,
+.vehicle-map-marker div,
+.vehicle-map-marker img {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.vehicle-map-marker img {
+  display: block;
 }
 
 @tailwind components;

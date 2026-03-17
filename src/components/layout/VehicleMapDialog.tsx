@@ -65,7 +65,7 @@ const VehicleMapDialog = ({ open, onOpenChange, device, position }: VehicleMapDi
         html: `<div style="width:${iconW}px;height:${iconH}px;display:flex;align-items:center;justify-content:center;transform:rotate(${course}deg);filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
           <img src="${iconImg}" style="width:${iconW - 4}px;height:${iconH - 4}px;object-fit:contain;" />
         </div>`,
-        className: '',
+        className: 'vehicle-map-marker',
         iconSize: [iconW, iconH],
         iconAnchor: [iconW / 2, iconH / 2],
       });
