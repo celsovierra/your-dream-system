@@ -285,7 +285,7 @@ const FinanceiroPage = () => {
                       <Label>Categoria</Label>
                       <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
                         <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="pointer-events-auto z-[9999]">
                           {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                         </SelectContent>
                       </Select>
@@ -297,7 +297,7 @@ const FinanceiroPage = () => {
                       <Label>Tipo de Pagamento</Label>
                       <Select value={form.payment_type} onValueChange={v => setForm({ ...form, payment_type: v as 'single' | 'installment' })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="pointer-events-auto z-[9999]">
                           <SelectItem value="single">Vencimento Único</SelectItem>
                           <SelectItem value="installment">Parcelado</SelectItem>
                         </SelectContent>
@@ -333,7 +333,7 @@ const FinanceiroPage = () => {
                           {form.due_date ? format(form.due_date, "dd/MM/yyyy", { locale: ptBR }) : "Selecione a data"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 pointer-events-auto z-[9999]" align="start">
                         <Calendar mode="single" selected={form.due_date} onSelect={d => setForm({ ...form, due_date: d })} className="p-3 pointer-events-auto" />
                       </PopoverContent>
                     </Popover>
