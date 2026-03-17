@@ -307,7 +307,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                 </div>
 
                 <div className="mt-2 flex items-center gap-2.5 text-[10px]">
-                  <span className={cn('font-semibold', ignition ? 'text-emerald-400' : 'text-red-400')}>⚡{ignition ? 'Lig' : 'Des'}</span>
+                  <span className={cn('font-semibold', ignition ? 'text-green-400' : 'text-orange-400')}>⚡{ignition ? 'Lig' : 'Des'}</span>
                   <span className="text-[hsl(180,5%,50%)]"><Wifi className="mr-1 inline h-3 w-3" />OK</span>
                   <span className="text-[hsl(180,5%,50%)]">⏱ {Math.round(speed)} km/h</span>
                   {sat !== undefined && <span className="text-[hsl(180,5%,50%)]">📡 {sat}</span>}
