@@ -19,7 +19,7 @@ function getLast12Months() {
 const DashboardPage = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  
 
   useEffect(() => {
     fetchDashboardStats()
