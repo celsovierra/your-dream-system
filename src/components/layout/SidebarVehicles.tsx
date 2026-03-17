@@ -220,6 +220,16 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: Sideba
         <div className="flex items-center justify-center p-4">
           <Loader2 className="h-5 w-5 animate-spin text-sidebar-foreground/50" />
         </div>
+      ) : error && devices.length === 0 ? (
+        <div className="space-y-2 p-4 text-center">
+          <p className="text-xs text-destructive">{error}</p>
+          <button
+            onClick={() => fetchDevices()}
+            className="w-full rounded-md border border-sidebar-border px-3 py-2 text-xs text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+          >
+            Tentar novamente
+          </button>
+        </div>
       ) : filteredDevices.length === 0 ? (
         <p className="text-xs text-sidebar-foreground/50 text-center p-4">
           {devices.length === 0 ? 'Nenhum veículo encontrado' : 'Nenhum resultado'}

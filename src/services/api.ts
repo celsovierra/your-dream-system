@@ -288,7 +288,32 @@ class ApiService {
 
   // ===== TRACCAR =====
   async traccarProxy(params: { traccar_url: string; traccar_user: string; traccar_password: string; endpoint?: string; method?: string; body?: any }) {
-    return this.request<{ data: any }>('/traccar/proxy', { method: 'POST', body: JSON.stringify(params) });
+    const directResult = await this.request<{ data: any }>('/traccar/proxy', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+
+    if (directResult.success) {
+      return directResult;
+    }
+
+    console.warn('[api.traccarProxy] Falling back to Lovable Cloud proxy:', directResult.error);
+
+    const { data, error } = await supabase.functions.invoke('traccar-proxy', {
+      body: params,
+    });
+
+    if (error) {
+      return {
+        success: false,
+        error: directResult.error || error.message || 'Erro ao consultar Traccar',
+      };
+    }
+
+    return {
+      success: true,
+      data: data as any,
+    };
   }
 
   // ===== CONFIGURAÇÕES =====
