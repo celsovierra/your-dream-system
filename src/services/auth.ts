@@ -2,13 +2,18 @@
 // Suporta localStorage (Lovable/cloud) e API backend (VPS)
 
 import api from '@/services/api';
+import type { SaasUser } from '@/services/api';
 
 export interface AppUser {
   id: string;
   email: string;
   password: string;
   name: string;
+  phone?: string;
   role: 'admin' | 'user';
+  client_limit?: number;
+  expires_at?: string | null;
+  permissions?: string[];
   createdAt: string;
 }
 
