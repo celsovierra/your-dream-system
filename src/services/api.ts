@@ -130,21 +130,28 @@ class ApiService {
 
   // ===== AUTH =====
   async login(email: string, password: string) {
-    return this.request<{ token: string; user: { id: string; name: string; email: string; role: string } }>('/auth/login', {
+    return this.request<{ token: string; user: SaasUser }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
   }
 
-  async register(name: string, email: string, password: string) {
-    return this.request<{ user: { id: string; name: string; email: string; role: string } }>('/auth/register', {
+  async register(data: { name: string; email: string; password: string; phone?: string; client_limit?: number; expires_at?: string | null; permissions?: string[] }) {
+    return this.request<{ user: SaasUser }>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify(data),
     });
   }
 
   async getUsers() {
-    return this.request<{ id: string; name: string; email: string; role: string; createdAt: string }[]>('/auth/users');
+    return this.request<SaasUser[]>('/auth/users');
+  }
+
+  async updateUser(id: string, data: Partial<{ name: string; email: string; phone: string; password: string; client_limit: number; expires_at: string | null; permissions: string[]; is_active: boolean }>) {
+    return this.request<SaasUser>(`/auth/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   }
 
   async deleteUser(id: string) {
