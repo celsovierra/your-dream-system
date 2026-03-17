@@ -30,6 +30,7 @@ interface UserForm {
   client_limit: number;
   expires_at: string;
   permissions: string[];
+  slug: string;
 }
 
 const emptyForm: UserForm = {
@@ -40,6 +41,7 @@ const emptyForm: UserForm = {
   client_limit: 0,
   expires_at: '',
   permissions: ALL_PERMISSIONS.map(p => p.key),
+  slug: '',
 };
 
 export default function UserManagementSection() {
@@ -82,6 +84,7 @@ export default function UserManagementSection() {
       client_limit: user.client_limit || 0,
       expires_at: user.expires_at ? user.expires_at.split('T')[0] : '',
       permissions: user.permissions || ALL_PERMISSIONS.map(p => p.key),
+      slug: user.slug || '',
     });
     setShowPassword(false);
     setDialogOpen(true);
@@ -107,6 +110,7 @@ export default function UserManagementSection() {
           client_limit: form.client_limit,
           expires_at: form.expires_at || null,
           permissions: form.permissions,
+          slug: form.slug || null,
         };
         if (form.password) updateData.password = form.password;
         await updateUserVps(editingUser.id, updateData as any);
@@ -177,6 +181,7 @@ export default function UserManagementSection() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Slug</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead className="text-center">Limite</TableHead>
                 <TableHead>Validade</TableHead>
@@ -194,6 +199,7 @@ export default function UserManagementSection() {
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{user.email}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm font-mono">{user.slug ? `/${user.slug}` : '—'}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">{user.phone || '—'}</TableCell>
                   <TableCell className="text-center">{user.client_limit || '∞'}</TableCell>
                   <TableCell>
@@ -226,7 +232,7 @@ export default function UserManagementSection() {
               ))}
               {users.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     Nenhum usuário cadastrado
                   </TableCell>
                 </TableRow>
@@ -258,6 +264,21 @@ export default function UserManagementSection() {
             <div>
               <Label>Email *</Label>
               <Input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="usuario@email.com" />
+            </div>
+
+            <div>
+              <Label>Slug (URL personalizada)</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">/</span>
+                <Input
+                  value={form.slug}
+                  onChange={e => setForm(p => ({ ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '') }))}
+                  placeholder="meu-slug"
+                  maxLength={50}
+                  className="font-mono text-sm"
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">URL de login personalizada do usuário</p>
             </div>
 
             <div>
