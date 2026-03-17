@@ -75,10 +75,6 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [, setTick] = useState(0);
-  const ignitionOffTimesRef = useRef<Record<number, number>>(loadIgnitionOffTimes());
-  // Track previous ignition state per device to detect transitions (ON→OFF)
-  const prevIgnitionRef = useRef<Record<number, boolean | undefined>>({});
-  const isFirstLoadRef = useRef(true);
 
   const getCredentials = useCallback(() => {
     const traccar_url = userStorageGet('traccar_url');
