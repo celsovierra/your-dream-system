@@ -308,7 +308,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         {sidebarCollapsed && (
           <div className="flex items-center justify-center py-3 border-b border-sidebar-border">
             <button
-              onClick={() => setSidebarCollapsed(false)}
+              onClick={() => { setSidebarCollapsed(false); setHasAutoOpenedMap(false); }}
               title="Expandir menu"
               className="flex items-center justify-center rounded-xl h-10 w-10 transition-all duration-300 bg-gradient-to-b from-sidebar-primary/80 to-sidebar-primary text-white shadow-lg hover:shadow-sidebar-primary/40 hover:scale-110 active:scale-95"
             >
