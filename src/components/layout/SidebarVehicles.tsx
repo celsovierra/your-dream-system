@@ -93,6 +93,12 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: Sideba
     }
   };
 
+  const filteredDevices = useMemo(() => {
+    if (!search.trim()) return devices;
+    const q = search.toLowerCase();
+    return devices.filter((d) => d.name.toLowerCase().includes(q));
+  }, [devices, search]);
+
   const handleClick = (device: TraccarDevice) => {
     onSelectDevice?.(device, getDevicePosition(device.id));
   };
@@ -134,12 +140,6 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: Sideba
       </div>
     );
   }
-
-  const filteredDevices = useMemo(() => {
-    if (!search.trim()) return devices;
-    const q = search.toLowerCase();
-    return devices.filter((d) => d.name.toLowerCase().includes(q));
-  }, [devices, search]);
 
   return (
     <div className="flex flex-col h-full">
