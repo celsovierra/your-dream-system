@@ -524,17 +524,11 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
                 </span>
               </button>
             </div>
-            <p className="text-[11px] text-sidebar-foreground/50 text-center">
-              {!deployApiConfigured
-                ? '⚙️ Esse botão funciona na instalação da VPS'
-                : deployCheckError
-                  ? `⚠️ Falha ao verificar: ${deployCheckError}`
-                  : hasUpdate
-                    ? '🔴 Nova versão disponível'
-                    : lastDeployAt
-                      ? `✅ Atualizado em ${new Date(lastDeployAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
-                      : '✅ Nenhuma atualização disponível'}
-            </p>
+            {deployCheckError && (
+              <p className="text-[11px] text-sidebar-foreground/50 text-center">
+                ⚠️ {deployCheckError}
+              </p>
+            )}
             {runningVersion && (
               <p className="text-xs text-sidebar-foreground/60 text-center font-mono mt-2 bg-sidebar-accent/30 rounded px-2 py-1">
                 v{runningVersion}
