@@ -63,15 +63,23 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: Sideba
 
     try {
       const devResult = await api.traccarProxy({ ...creds, endpoint: '/api/devices', method: 'GET' });
-      if (!devResult.success || !Array.isArray(devResult.data?.data)) throw new Error('Erro');
-      setDevices(devResult.data.data);
+      console.log('[SidebarVehicles] devices response:', JSON.stringify(devResult).slice(0, 300));
+      
+      // Handle both response shapes: { data: { data: [...] } } and { data: [...] }
+      const devData = devResult.data?.data ?? devResult.data;
+      if (!devResult.success || !Array.isArray(devData)) {
+        console.error('[SidebarVehicles] Unexpected devices format:', devResult);
+        throw new Error(devResult.error || 'Formato inesperado');
+      }
+      setDevices(devData);
 
       const posResult = await api.traccarProxy({ ...creds, endpoint: '/api/positions', method: 'GET' });
-      if (posResult.success && Array.isArray(posResult.data?.data)) {
-        setPositions(posResult.data.data);
+      const posData = posResult.data?.data ?? posResult.data;
+      if (posResult.success && Array.isArray(posData)) {
+        setPositions(posData);
       }
     } catch (err: any) {
-      console.error('Traccar devices error:', err);
+      console.error('[SidebarVehicles] Traccar error:', err?.message || err);
     } finally {
       setLoading(false);
     }
