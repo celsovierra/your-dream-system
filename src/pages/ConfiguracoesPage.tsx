@@ -606,7 +606,7 @@ const ConfiguracoesPage = () => {
             </CardContent>
           </CollapsibleContent>
         </Card>
-      </Collapsible>}
+      </Collapsible>
 
       {userIsAdmin && <Collapsible open={openSection === 'logs'} onOpenChange={() => toggleSection('logs')}>
         <Card>
