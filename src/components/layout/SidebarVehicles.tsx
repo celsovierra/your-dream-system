@@ -130,8 +130,6 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
       }
       setPositions(Array.isArray(posData) ? (posData as TraccarPosition[]) : []);
 
-      // Buscar eventos ignitionOff em paralelo (usa cache de 5 min)
-      void fetchIgnitionOffEvents();
     } catch (err: any) {
       const message = err?.message || 'Erro ao carregar veículos do Traccar';
       setDevices([]);
