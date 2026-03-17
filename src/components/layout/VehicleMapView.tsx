@@ -86,7 +86,8 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
 
       if (!mapRef.current) return;
 
-      const map = L.map(mapRef.current).setView([position.latitude, position.longitude], 15);
+      const map = L.map(mapRef.current, { zoomControl: false }).setView([position.latitude, position.longitude], 15);
+      L.control.zoom({ position: 'topright' }).addTo(map);
 
       L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
         attribution: '© Google Maps',
