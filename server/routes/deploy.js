@@ -47,6 +47,7 @@ function buildDeployCommand() {
   return `
     cd ${projectDir} &&
     BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo main) &&
+    OLD_VERSION=$(cat dist/version.json 2>/dev/null || echo '{"version":"0.0.0.0"}') &&
     git stash push --include-untracked -m "auto-deploy-$(date +%s)" >/dev/null 2>&1 || true &&
     git fetch origin "$BRANCH" &&
     git pull --rebase origin "$BRANCH" &&
@@ -56,11 +57,14 @@ function buildDeployCommand() {
     node -e "
       const fs = require('fs');
       const p = 'dist/version.json';
-      let v = [0,0,0,0];
-      try { v = JSON.parse(fs.readFileSync(p,'utf8')).version.split('.').map(Number); } catch {}
+      let old = '0.0.0.0';
+      try { old = JSON.parse(process.argv[1]).version; } catch {}
+      const v = old.split('.').map(Number);
+      while (v.length < 4) v.push(0);
       v[3] = (v[3]||0) + 1;
       fs.writeFileSync(p, JSON.stringify({version: v.join('.')}));
-    " &&
+      console.log('Version:', v.join('.'));
+    " -- "$OLD_VERSION" &&
     MYSQL_PWD=${dbPass} mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} ${dbName} < database/schema.sql &&
     (pm2 restart cobranca-api || pm2 start server/index.js --name cobranca-api) &&
     sudo systemctl restart nginx
