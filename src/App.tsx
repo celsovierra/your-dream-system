@@ -12,6 +12,7 @@ import LogsPage from "./pages/LogsPage";
 import FilaPage from "./pages/FilaPage";
 import MensagensPage from "./pages/MensagensPage";
 import ContratosPage from "./pages/ContratosPage";
+import FinanceiroPage from "./pages/FinanceiroPage";
 import ConfiguracoesPage from "./pages/ConfiguracoesPage";
 import NotFound from "./pages/NotFound";
 import { clearCurrentUser, getCurrentUser, isAdmin } from '@/services/auth';
