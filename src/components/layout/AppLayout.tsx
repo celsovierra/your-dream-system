@@ -312,11 +312,11 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           </div>
           <Link
             to="/"
-            onClick={() => setSidebarOpen(false)}
+            onClick={() => { setSidebarOpen(false); setSelectedVehicle(null); }}
             title="Financeiro"
             className={cn(
               'flex items-center justify-center rounded-md h-8 w-8 transition-colors',
-              location.pathname === '/' || location.pathname === '/financeiro'
+              (location.pathname === '/' || location.pathname === '/financeiro') && !selectedVehicle
                 ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                 : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
             )}
