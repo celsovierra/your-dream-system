@@ -210,28 +210,29 @@ export default function UserManagementSection() {
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{user.email}</TableCell>
                   <TableCell className="text-sm">
-                    {user.slug ? (
-                      <div className="flex items-center gap-1">
-                        <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]" title={`${window.location.origin}/${user.slug}`}>
-                          /{user.slug}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          title="Copiar URL de login"
-                          onClick={() => {
-                            const url = `${window.location.origin}/${user.slug}`;
-                            navigator.clipboard.writeText(url);
-                            toast.success(`URL copiada: ${url}`);
-                          }}
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-xs">—</span>
-                    )}
+                    {(() => {
+                      const slug = user.slug || user.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+                      const url = `${window.location.origin}/${slug}`;
+                      return (
+                        <div className="flex items-center gap-1">
+                          <span className="text-muted-foreground font-mono text-xs truncate max-w-[120px]" title={url}>
+                            /{slug}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            title="Copiar URL de login"
+                            onClick={() => {
+                              navigator.clipboard.writeText(url);
+                              toast.success(`URL copiada: ${url}`);
+                            }}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{user.phone || '—'}</TableCell>
                   <TableCell className="text-center">{user.client_limit || '∞'}</TableCell>
