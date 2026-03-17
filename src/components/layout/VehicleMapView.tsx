@@ -132,7 +132,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
 
       if (!mapRef.current) return;
 
-      const map = L.map(mapRef.current, { zoomControl: false }).setView([livePosition.latitude, livePosition.longitude], 15);
+      const map = L.map(mapRef.current, { zoomControl: false }).setView([livePosition.latitude, livePosition.longitude], 18);
       L.control.zoom({ position: 'topright' }).addTo(map);
 
       const tileUrl = mapType === 'satellite'
