@@ -156,10 +156,6 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         setHasUpdate(Boolean(data.hasUpdate));
         setDeployCheckError(null);
 
-        if (data.runningCommit) {
-          setRunningVersion(data.runningCommit);
-        }
-
         if (data.runningStartedAt) {
           localStorage.setItem('last_deploy_at', data.runningStartedAt);
           setLastDeployAt(data.runningStartedAt);
@@ -255,6 +251,13 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       setSelectedVehicle(null);
     }
   }, [location.pathname]);
+
+  useEffect(() => {
+    fetch(`/version.json?t=${Date.now()}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.version) setRunningVersion(d.version); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const confirmPendingDeploy = async () => {
@@ -534,7 +537,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             </p>
             {runningVersion && (
               <p className="text-[10px] text-sidebar-foreground/40 text-center font-mono mt-1">
-                build {runningVersion}
+                v{runningVersion}
               </p>
             )}
           </div>

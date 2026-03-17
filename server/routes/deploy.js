@@ -53,6 +53,14 @@ function buildDeployCommand() {
     rm -rf node_modules package-lock.json &&
     npm install --legacy-peer-deps &&
     npm run build &&
+    node -e "
+      const fs = require('fs');
+      const p = 'dist/version.json';
+      let v = [0,0,0,0];
+      try { v = JSON.parse(fs.readFileSync(p,'utf8')).version.split('.').map(Number); } catch {}
+      v[3] = (v[3]||0) + 1;
+      fs.writeFileSync(p, JSON.stringify({version: v.join('.')}));
+    " &&
     MYSQL_PWD=${dbPass} mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} ${dbName} < database/schema.sql &&
     (pm2 restart cobranca-api || pm2 start server/index.js --name cobranca-api) &&
     sudo systemctl restart nginx
