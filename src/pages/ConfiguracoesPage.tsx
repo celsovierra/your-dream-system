@@ -628,7 +628,7 @@ const ConfiguracoesPage = () => {
             </CardContent>
           </CollapsibleContent>
         </Card>
-      </Collapsible>}
+      </Collapsible>
     </div>
   );
 };
