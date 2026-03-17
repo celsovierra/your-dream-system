@@ -1,6 +1,6 @@
 import { useState, useEffect, Component, type ReactNode, type ErrorInfo } from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -52,6 +52,20 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 
 const queryClient = new QueryClient();
 
+// Known app routes that should NOT be treated as slugs
+const APP_ROUTES = ['financeiro', 'clientes', 'logs', 'fila', 'mensagens', 'contratos', 'configuracoes', 'login'];
+
+function SlugLoginWrapper({ onLogin }: { onLogin: (token: string) => void }) {
+  const { slug } = useParams<{ slug: string }>();
+  
+  // If it matches an app route, show NotFound
+  if (slug && APP_ROUTES.includes(slug.toLowerCase())) {
+    return <NotFound />;
+  }
+  
+  return <LoginPage onLogin={onLogin} slug={slug} />;
+}
+
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -90,13 +104,16 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner position="top-center" />
-          <LoginPage onLogin={handleLogin} />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/:slug" element={<SlugLoginWrapper onLogin={handleLogin} />} />
+              <Route path="*" element={<LoginPage onLogin={handleLogin} />} />
+            </Routes>
+          </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
     );
   }
-
-  const userIsAdmin = isAdmin();
 
   return (
     <QueryClientProvider client={queryClient}>
