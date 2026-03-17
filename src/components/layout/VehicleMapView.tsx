@@ -23,7 +23,8 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
   const [cardCollapsed, setCardCollapsed] = useState(false);
   const [blockedMap, setBlockedMap] = useState<Record<number, boolean>>({});
   const [blocking, setBlocking] = useState(false);
-  const [mapType, setMapType] = useState<'satellite' | 'roadmap'>('satellite');
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const [mapType, setMapType] = useState<'satellite' | 'roadmap'>(isMobile ? 'roadmap' : 'satellite');
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const anchorCircleRef = useRef<L.Circle | null>(null);
   const [anchorMap, setAnchorMap] = useState<Record<number, boolean>>({});
