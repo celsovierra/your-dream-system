@@ -50,7 +50,8 @@ function buildDeployCommand() {
     git stash push --include-untracked -m "auto-deploy-$(date +%s)" >/dev/null 2>&1 || true &&
     git fetch origin "$BRANCH" &&
     git pull --rebase origin "$BRANCH" &&
-    npm install &&
+    rm -rf node_modules package-lock.json &&
+    npm install --legacy-peer-deps &&
     npm run build &&
     MYSQL_PWD=${dbPass} mysql -h ${dbHost} -P ${dbPort} -u ${dbUser} ${dbName} < database/schema.sql &&
     (pm2 restart cobranca-api || pm2 start server/index.js --name cobranca-api) &&
