@@ -28,12 +28,15 @@ interface LayoutProps {
   onLogout?: () => void;
 }
 
-const navItems = [
+const headerNavItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard, color: 'text-blue-400' },
   { path: '/clientes', label: 'Clientes', icon: Users, color: 'text-emerald-400' },
   { path: '/fila', label: 'Fila de Envio', icon: ListTodo, color: 'text-purple-400' },
   { path: '/mensagens', label: 'Mensagens', icon: MessageSquare, color: 'text-green-400' },
   { path: '/contratos', label: 'Contratos', icon: FileText, color: 'text-orange-400' },
+];
+
+const navItems = [
   { path: '/financeiro', label: 'Financeiro', icon: DollarSign, color: 'text-yellow-400' },
 ];
 
@@ -417,8 +420,28 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
               <Menu className="h-5 w-5" />
             </button>
             <h2 className="text-lg font-semibold text-card-foreground">
-              {[...navItems, ...bottomNavItems].find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
+              {[...headerNavItems, ...navItems, ...bottomNavItems].find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
             </h2>
+            <nav className="hidden md:flex items-center gap-1 ml-4">
+              {headerNavItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
           <div className="flex items-center gap-2">
             <button
