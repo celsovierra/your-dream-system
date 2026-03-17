@@ -24,6 +24,7 @@ import {
   ScrollText,
 } from 'lucide-react';
 import TraccarUsersDialog from './TraccarUsersDialog';
+import MobileBottomNav from './MobileBottomNav';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
