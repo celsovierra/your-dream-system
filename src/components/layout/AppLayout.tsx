@@ -168,8 +168,31 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   };
 
   const waitForDeployCompletion = async (previousRunningCommit?: string, previousRunningStartedAt?: string | null) => {
+    const apiUrl = resolveDeployApiUrl();
+
     for (let attempt = 0; attempt < 90; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, attempt < 3 ? 2000 : 3000));
+
+      // Check deploy-status first to detect failures early
+      if (apiUrl) {
+        try {
+          const statusRes = await proxyFetch(`${apiUrl}/deploy-status?t=${Date.now()}`, { cache: 'no-store' });
+          const statusData = await parseApiResponse(statusRes);
+          if (statusRes.ok && statusData.success) {
+            if (statusData.status === 'error') {
+              const errorMsg = statusData.error || 'Erro desconhecido durante o deploy';
+              console.error('[deploy-status] Deploy falhou:', errorMsg);
+              toast.error(`Falha na atualização: ${errorMsg.slice(0, 200)}`);
+              return false;
+            }
+            if (statusData.status === 'success') {
+              // Deploy script finished, now wait for process restart confirmation
+            }
+          }
+        } catch {
+          // API may be restarting, ignore and continue polling
+        }
+      }
 
       const checkData = await checkForUpdates();
       if (!checkData) {
