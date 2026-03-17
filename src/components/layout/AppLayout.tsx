@@ -355,7 +355,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
               </button>
               <Link
                 to="/"
-                onClick={() => { setSidebarOpen(false); setSelectedVehicle(null); setSidebarCollapsed(true); }}
+                onClick={() => { setSidebarOpen(false); setSelectedVehicle(null); setSidebarCollapsed(true); setHasAutoOpenedMap(true); }}
                 title="Financeiro"
                 className={cn(
                   'flex items-center justify-center rounded-lg h-9 w-9 shrink-0 transition-all duration-200',
@@ -395,7 +395,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             </button>
             <Link
               to="/"
-              onClick={() => { setSidebarOpen(false); setSelectedVehicle(null); setSidebarCollapsed(true); }}
+              onClick={() => { setSidebarOpen(false); setSelectedVehicle(null); setSidebarCollapsed(true); setHasAutoOpenedMap(true); }}
               title="Financeiro"
               className={cn(
                 'flex items-center justify-center rounded-lg h-8 w-8 transition-all duration-200',
