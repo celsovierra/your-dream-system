@@ -18,6 +18,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import api from '@/services/api';
 import type { Client, MessageTemplate, DashboardStats } from '@/types/billing';
+import { mockTemplates } from '@/services/mock-data';
 import { addOperationLog } from '@/services/operation-logger';
 import { getCurrentOwnerId, isAdmin, userStorageGet, userStorageSet } from '@/services/auth';
 
