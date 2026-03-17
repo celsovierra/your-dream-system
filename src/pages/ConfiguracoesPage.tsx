@@ -34,6 +34,7 @@ const ConfiguracoesPage = () => {
   const [traccarUrl, setTraccarUrl] = useState(() => userStorageGet('traccar_url') || '');
   const [traccarUser, setTraccarUser] = useState(() => userStorageGet('traccar_user') || '');
   const [traccarPassword, setTraccarPassword] = useState(() => userStorageGet('traccar_password') || '');
+  const [traccarTesting, setTraccarTesting] = useState(false);
 
   useEffect(() => {
     if (!qrCode || !whatsapp.api_url || !whatsapp.api_key || !whatsapp.instance_name) return;
