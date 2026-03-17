@@ -2,13 +2,18 @@
 // Suporta localStorage (Lovable/cloud) e API backend (VPS)
 
 import api from '@/services/api';
+import type { SaasUser } from '@/services/api';
 
 export interface AppUser {
   id: string;
   email: string;
   password: string;
   name: string;
+  phone?: string;
   role: 'admin' | 'user';
+  client_limit?: number;
+  expires_at?: string | null;
+  permissions?: string[];
   createdAt: string;
 }
 
@@ -153,7 +158,7 @@ export async function loginVps(email: string, password: string): Promise<AppUser
   const res = await api.login(email, password);
   if (!res.success || !res.data) throw new Error(res.error || 'Erro ao fazer login');
 
-  const payload = unwrapApiData<{ token: string; user: { id: string; name: string; email: string; role: string; createdAt?: string } }>(res.data);
+  const payload = unwrapApiData<{ token: string; user: SaasUser }>(res.data);
   const { token, user } = payload;
 
   if (!token || !user?.id) {
@@ -165,7 +170,11 @@ export async function loginVps(email: string, password: string): Promise<AppUser
     email: user.email,
     password: '',
     name: user.name,
-    role: (user.role as 'admin' | 'user') || 'user',
+    phone: user.phone,
+    role: user.role || 'user',
+    client_limit: user.client_limit,
+    expires_at: user.expires_at,
+    permissions: user.permissions,
     createdAt: user.createdAt || '',
   };
 
@@ -176,8 +185,8 @@ export async function loginVps(email: string, password: string): Promise<AppUser
   return appUser;
 }
 
-export async function registerVps(name: string, email: string, password: string): Promise<void> {
-  const res = await api.register(name, email, password);
+export async function registerVps(data: { name: string; email: string; password: string; phone?: string; client_limit?: number; expires_at?: string | null; permissions?: string[] }): Promise<void> {
+  const res = await api.register(data);
   if (!res.success) throw new Error(res.error || 'Erro ao registrar');
 }
 
@@ -185,17 +194,25 @@ export async function fetchUsersVps(): Promise<AppUser[]> {
   const res = await api.getUsers();
   if (!res.success || !res.data) throw new Error(res.error || 'Erro ao listar usuários');
 
-  const users = unwrapApiData<Array<{ id: string; email: string; name: string; role: string; createdAt?: string }>>(res.data);
+  const users = unwrapApiData<SaasUser[]>(res.data);
   return users.map(u => ({
     id: String(u.id),
     email: u.email,
     password: '',
     name: u.name,
-    role: (u.role as 'admin' | 'user') || 'user',
+    phone: u.phone,
+    role: u.role || 'user',
+    client_limit: u.client_limit,
+    expires_at: u.expires_at,
+    permissions: u.permissions,
     createdAt: u.createdAt || '',
   }));
 }
 
+export async function updateUserVps(id: string, data: Partial<{ name: string; email: string; phone: string; password: string; client_limit: number; expires_at: string | null; permissions: string[]; is_active: boolean }>): Promise<void> {
+  const res = await api.updateUser(id, data);
+  if (!res.success) throw new Error(res.error || 'Erro ao atualizar usuário');
+}
 export async function deleteUserVps(id: string): Promise<void> {
   const res = await api.deleteUser(id);
   if (!res.success) throw new Error(res.error || 'Erro ao remover usuário');

@@ -22,6 +22,19 @@ import { supabase } from '@/integrations/supabase/client';
 // Base URL configurável - prioriza URL salva da VPS no navegador
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
+export interface SaasUser {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: 'admin' | 'user';
+  client_limit: number;
+  expires_at: string | null;
+  permissions: string[];
+  is_active: boolean;
+  createdAt: string;
+}
+
 class ApiService {
   private baseUrl: string;
   private token: string | null = null;
@@ -127,24 +140,32 @@ class ApiService {
       return { success: false, error: `Erro de conexão com o servidor: ${message}` };
     }
   }
-
   // ===== AUTH =====
+  // SaaS user type
+  // { id, name, email, phone, role, client_limit, expires_at, permissions, is_active, createdAt }
   async login(email: string, password: string) {
-    return this.request<{ token: string; user: { id: string; name: string; email: string; role: string } }>('/auth/login', {
+    return this.request<{ token: string; user: SaasUser }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
   }
 
-  async register(name: string, email: string, password: string) {
-    return this.request<{ user: { id: string; name: string; email: string; role: string } }>('/auth/register', {
+  async register(data: { name: string; email: string; password: string; phone?: string; client_limit?: number; expires_at?: string | null; permissions?: string[] }) {
+    return this.request<{ user: SaasUser }>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify(data),
     });
   }
 
   async getUsers() {
-    return this.request<{ id: string; name: string; email: string; role: string; createdAt: string }[]>('/auth/users');
+    return this.request<SaasUser[]>('/auth/users');
+  }
+
+  async updateUser(id: string, data: Partial<{ name: string; email: string; phone: string; password: string; client_limit: number; expires_at: string | null; permissions: string[]; is_active: boolean }>) {
+    return this.request<SaasUser>(`/auth/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   }
 
   async deleteUser(id: string) {

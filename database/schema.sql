@@ -5,12 +5,17 @@ SET NAMES utf8mb4;
 CREATE DATABASE IF NOT EXISTS cobranca_pro CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE cobranca_pro;
 
--- Usuários do sistema (admin)
+-- Usuários do sistema (SaaS)
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
+  phone VARCHAR(20),
+  role ENUM('admin','user') DEFAULT 'user',
+  client_limit INT DEFAULT 0,
+  expires_at DATE NULL,
+  permissions JSON,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -233,9 +238,19 @@ UPDATE billing_settings SET owner_id = '__global__' WHERE owner_id IS NULL;
 -- Se a tabela já existia com owner_id nullable, corrige para NOT NULL DEFAULT '__global__'
 ALTER TABLE billing_settings MODIFY COLUMN owner_id VARCHAR(100) NOT NULL DEFAULT '__global__';
 
+-- Migrações SaaS: campos extras na tabela users
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(20) AFTER password_hash;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role ENUM('admin','user') DEFAULT 'user' AFTER phone;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS client_limit INT DEFAULT 0 AFTER role;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS expires_at DATE NULL AFTER client_limit;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSON AFTER expires_at;
+
+-- Definir primeiro usuário como admin
+UPDATE users SET role = 'admin' WHERE id = (SELECT min_id FROM (SELECT MIN(id) AS min_id FROM users) AS t);
+
 -- Dados iniciais - admin padrão (senha: admin123 -> SHA256)
-INSERT IGNORE INTO users (name, email, password_hash) VALUES
-('Administrador', 'admin@cobranca.com', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9');
+INSERT IGNORE INTO users (name, email, password_hash, role) VALUES
+('Administrador', 'admin@cobranca.com', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'admin');
 
 -- ===== LIMPAR TEMPLATES DUPLICADOS (manter apenas 1 por tipo onde owner_id IS NULL) =====
 DELETE t1 FROM message_templates t1
