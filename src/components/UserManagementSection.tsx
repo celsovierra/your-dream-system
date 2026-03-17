@@ -103,6 +103,7 @@ export default function UserManagementSection() {
     setSaving(true);
     try {
       if (editingUser) {
+        const autoSlug = form.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '').trim() || null;
         const updateData: Record<string, unknown> = {
           name: form.name,
           email: form.email,
@@ -110,7 +111,7 @@ export default function UserManagementSection() {
           client_limit: form.client_limit,
           expires_at: form.expires_at || null,
           permissions: form.permissions,
-          slug: form.slug || null,
+          slug: autoSlug,
         };
         if (form.password) updateData.password = form.password;
         await updateUserVps(editingUser.id, updateData as any);
