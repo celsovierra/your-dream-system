@@ -8,6 +8,7 @@ import {
   LogOut,
   LayoutDashboard,
   Users,
+  UserCircle,
   MessageSquare,
   ListTodo,
   FileText,
@@ -22,6 +23,7 @@ import {
   DollarSign,
   ScrollText,
 } from 'lucide-react';
+import TraccarUsersDialog from './TraccarUsersDialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
