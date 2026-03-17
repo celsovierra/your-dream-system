@@ -315,7 +315,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             onClick={() => { setSidebarOpen(false); setSelectedVehicle(null); }}
             title="Financeiro"
             className={cn(
-              'flex items-center justify-center rounded-lg h-9 w-9 shrink-0 mr-1 transition-all duration-200',
+              'flex items-center justify-center rounded-lg h-9 w-9 shrink-0 mr-4 transition-all duration-200',
               (location.pathname === '/' || location.pathname === '/financeiro') && !selectedVehicle
                 ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 text-white shadow-[0_4px_6px_-1px_rgba(16,185,129,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] scale-105'
                 : 'bg-gradient-to-b from-emerald-500/80 to-emerald-700/80 text-white/90 shadow-[0_2px_4px_-1px_rgba(16,185,129,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:from-emerald-400 hover:to-emerald-600 hover:shadow-[0_4px_6px_-1px_rgba(16,185,129,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 active:shadow-[0_1px_2px_rgba(16,185,129,0.3),inset_0_1px_3px_rgba(0,0,0,0.2)]'
