@@ -21,6 +21,15 @@ export interface TraccarPosition {
   course: number;
   address?: string;
   fixTime: string;
+  attributes?: {
+    batteryLevel?: number;
+    ignition?: boolean;
+    totalDistance?: number;
+    motion?: boolean;
+    sat?: number;
+    power?: number;
+    [key: string]: any;
+  };
 }
 
 interface SidebarVehiclesProps {
