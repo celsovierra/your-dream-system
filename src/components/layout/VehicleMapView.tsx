@@ -160,6 +160,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
       marker.on('click', () => {
         setCardOpen(true);
         setCardCollapsed(false);
+        map.flyTo([livePosition.latitude, livePosition.longitude], 18, { duration: 0.5 });
       });
 
       mapInstanceRef.current = map;
