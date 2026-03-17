@@ -54,6 +54,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: Sideba
 
   const fetchDevices = useCallback(async () => {
     const creds = getCredentials();
+    console.log('[SidebarVehicles] creds check:', { url: !!creds.traccar_url, user: !!creds.traccar_user, pass: !!creds.traccar_password });
     if (!creds.traccar_url || !creds.traccar_user || !creds.traccar_password) {
       setConfigured(false);
       return;
