@@ -247,9 +247,25 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
 
             {/* Action buttons - always visible */}
             <div className="flex items-center gap-1.5 px-4 pb-3">
-              <button className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg px-3 py-2 text-[11px] font-bold transition-colors">
-                <Lock className="h-3.5 w-3.5" />
-                BLOQUEAR
+              <button
+                onClick={handleToggleBlock}
+                disabled={blocking}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-bold transition-colors",
+                  blocked
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    : "bg-red-600 hover:bg-red-700 text-white",
+                  blocking && "opacity-70 cursor-not-allowed"
+                )}
+              >
+                {blocking ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : blocked ? (
+                  <Unlock className="h-3.5 w-3.5" />
+                ) : (
+                  <Lock className="h-3.5 w-3.5" />
+                )}
+                {blocking ? 'ENVIANDO...' : blocked ? 'DESBLOQUEAR' : 'BLOQUEAR'}
               </button>
               <button title="Âncora" className="flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors">
                 <Anchor className="h-4 w-4" />
