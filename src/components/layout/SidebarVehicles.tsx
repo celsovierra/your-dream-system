@@ -36,6 +36,7 @@ interface SidebarVehiclesProps {
   collapsed: boolean;
   onSelectDevice?: (device: TraccarDevice, position?: TraccarPosition) => void;
   selectedDeviceId?: number | null;
+  autoSelectFirst?: boolean;
 }
 
 const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: SidebarVehiclesProps) => {
