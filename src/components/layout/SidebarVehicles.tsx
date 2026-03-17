@@ -44,6 +44,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: Sideba
   const [loading, setLoading] = useState(false);
   const [configured, setConfigured] = useState(false);
   const [search, setSearch] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const getCredentials = useCallback(() => {
     const traccar_url = userStorageGet('traccar_url');
@@ -52,35 +53,60 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: Sideba
     return { traccar_url, traccar_user, traccar_password };
   }, []);
 
+  const unwrapProxyPayload = (payload: unknown) => {
+    if (payload && typeof payload === 'object' && 'data' in payload) {
+      const nested = (payload as { data: unknown }).data;
+      if (nested && typeof nested === 'object' && 'data' in nested) {
+        return (nested as { data: unknown }).data;
+      }
+      return nested;
+    }
+
+    return payload;
+  };
+
   const fetchDevices = useCallback(async () => {
     const creds = getCredentials();
     console.log('[SidebarVehicles] creds check:', { url: !!creds.traccar_url, user: !!creds.traccar_user, pass: !!creds.traccar_password });
+
     if (!creds.traccar_url || !creds.traccar_user || !creds.traccar_password) {
       setConfigured(false);
+      setError(null);
+      setDevices([]);
+      setPositions([]);
       return;
     }
+
     setConfigured(true);
     setLoading(true);
+    setError(null);
 
     try {
       const devResult = await api.traccarProxy({ ...creds, endpoint: '/api/devices', method: 'GET' });
       console.log('[SidebarVehicles] devices response:', JSON.stringify(devResult).slice(0, 300));
-      
-      // Handle both response shapes: { data: { data: [...] } } and { data: [...] }
-      const devData = devResult.data?.data ?? devResult.data;
+
+      const devData = unwrapProxyPayload(devResult.data);
       if (!devResult.success || !Array.isArray(devData)) {
         console.error('[SidebarVehicles] Unexpected devices format:', devResult);
-        throw new Error(devResult.error || 'Formato inesperado');
+        throw new Error(devResult.error || 'Não foi possível carregar os veículos do Traccar');
       }
-      setDevices(devData);
+
+      setDevices(devData as TraccarDevice[]);
 
       const posResult = await api.traccarProxy({ ...creds, endpoint: '/api/positions', method: 'GET' });
-      const posData = posResult.data?.data ?? posResult.data;
-      if (posResult.success && Array.isArray(posData)) {
-        setPositions(posData);
+      const posData = unwrapProxyPayload(posResult.data);
+
+      if (!posResult.success) {
+        throw new Error(posResult.error || 'Não foi possível carregar as posições do Traccar');
       }
+
+      setPositions(Array.isArray(posData) ? (posData as TraccarPosition[]) : []);
     } catch (err: any) {
-      console.error('[SidebarVehicles] Traccar error:', err?.message || err);
+      const message = err?.message || 'Erro ao carregar veículos do Traccar';
+      console.error('[SidebarVehicles] Traccar error:', message);
+      setDevices([]);
+      setPositions([]);
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -89,16 +115,27 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: Sideba
   useEffect(() => {
     fetchDevices();
     const interval = setInterval(fetchDevices, 60000);
-    return () => clearInterval(interval);
+    const handleRefresh = () => {
+      void fetchDevices();
+    };
+
+    window.addEventListener('traccar-config-updated', handleRefresh);
+    window.addEventListener('focus', handleRefresh);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('traccar-config-updated', handleRefresh);
+      window.removeEventListener('focus', handleRefresh);
+    };
   }, [fetchDevices]);
 
   const getDevicePosition = (deviceId: number) => positions.find((p) => p.deviceId === deviceId);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'online': return 'bg-green-500';
-      case 'offline': return 'bg-red-500';
-      default: return 'bg-yellow-500';
+      case 'online': return 'bg-success';
+      case 'offline': return 'bg-destructive';
+      default: return 'bg-warning';
     }
   };
 

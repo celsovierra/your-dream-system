@@ -17,6 +17,7 @@ import type {
   PaymentGatewayConfig,
   DashboardStats,
 } from '@/types/billing';
+import { supabase } from '@/integrations/supabase/client';
 
 // Base URL configurável - prioriza URL salva da VPS no navegador
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
