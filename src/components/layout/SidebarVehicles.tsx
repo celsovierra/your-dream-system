@@ -272,7 +272,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
             const power = pos?.attributes?.power;
             const isMoving = speed > 0;
 
-            const { formattedDuration } = useVehicleStopTime({
+            const { formattedDuration } = getVehicleStopTime({
               position: pos ? { ...pos, deviceId: device.id } : null,
             });
 
