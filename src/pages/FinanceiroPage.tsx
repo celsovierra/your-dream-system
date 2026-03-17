@@ -333,7 +333,7 @@ const FinanceiroPage = () => {
                           {form.due_date ? format(form.due_date, "dd/MM/yyyy", { locale: ptBR }) : "Selecione a data"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 pointer-events-auto z-[9999]" align="start">
                         <Calendar mode="single" selected={form.due_date} onSelect={d => setForm({ ...form, due_date: d })} className="p-3 pointer-events-auto" />
                       </PopoverContent>
                     </Popover>
