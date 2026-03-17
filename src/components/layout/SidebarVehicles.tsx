@@ -162,6 +162,29 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     };
   }, [fetchDevices]);
 
+
+  // Track ignition state changes and record when ignition turns OFF
+  useEffect(() => {
+    const map = ignitionOffTimesRef.current;
+    for (const device of devices) {
+      const pos = positions.find(p => p.deviceId === device.id);
+      const ignition = pos?.attributes?.ignition;
+      if (ignition === false) {
+        if (!map.has(device.id)) {
+          map.set(device.id, Date.now());
+        }
+      } else {
+        map.delete(device.id);
+      }
+    }
+  }, [devices, positions]);
+
+  // Tick every 30s to update stopped time counters live
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
   const getDevicePosition = (deviceId: number) => positions.find((p) => p.deviceId === deviceId);
 
   const filteredDevices = useMemo(() => {
