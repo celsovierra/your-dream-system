@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, MapPin, Calendar, Battery, Satellite, Gauge, Power, ChevronDown, ChevronUp, Car } from 'lucide-react';
+import { X, MapPin, Calendar, Battery, Satellite, Gauge, Power, ChevronDown, ChevronUp, Car, Lock, Anchor, Route, Map, Pencil, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -183,6 +183,29 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
                     <Gauge className="h-3 w-3" />
                     <span className="text-[10px] font-bold">{getStatusLabel()}</span>
                   </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-1.5 pt-1 border-t border-white/10">
+                  <button className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg px-3 py-2 text-[11px] font-bold transition-colors">
+                    <Lock className="h-3.5 w-3.5" />
+                    BLOQUEAR
+                  </button>
+                  <button title="Âncora" className="flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors">
+                    <Anchor className="h-4 w-4" />
+                  </button>
+                  <button title="Rota" className="flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors">
+                    <Route className="h-4 w-4" />
+                  </button>
+                  <button title="Street View" className="flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors">
+                    <Map className="h-4 w-4" />
+                  </button>
+                  <button title="Histórico" className="flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors">
+                    <History className="h-4 w-4" />
+                  </button>
+                  <button title="Editar" className="flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors">
+                    <Pencil className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             )}
