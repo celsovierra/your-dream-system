@@ -340,6 +340,11 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                   </span>
                 </div>
               </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 };
 
