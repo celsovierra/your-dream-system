@@ -302,6 +302,19 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
               </span>
             )}
           </div>
+          <Link
+            to="/"
+            onClick={() => setSidebarOpen(false)}
+            title="Financeiro"
+            className={cn(
+              'flex items-center justify-center rounded-md h-8 w-8 transition-colors',
+              location.pathname === '/' || location.pathname === '/financeiro'
+                ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+            )}
+          >
+            <DollarSign className="h-5 w-5" />
+          </Link>
         </div>
 
         {/* Collapse/expand toggle - outside sidebar edge */}
