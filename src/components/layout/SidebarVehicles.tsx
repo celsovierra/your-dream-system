@@ -94,57 +94,6 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     return payload;
   };
 
-  // Track ignition state changes locally - when ignition TRANSITIONS from ON to OFF, record Date.now() (Brasília)
-  // This completely ignores GPS timestamps
-  const updateIgnitionOffTimes = useCallback((deviceList: TraccarDevice[], positionList: TraccarPosition[]) => {
-    const map = { ...ignitionOffTimesRef.current };
-    const prevIgnition = prevIgnitionRef.current;
-    const firstLoad = isFirstLoadRef.current;
-    let changed = false;
-
-    deviceList.forEach((device) => {
-      const pos = positionList.find((p) => p.deviceId === device.id);
-      const ignition = pos?.attributes?.ignition;
-
-      if (firstLoad) {
-        // On first load: only populate map for devices that already have a saved timestamp
-        // Don't create new entries — we don't know when they actually turned off
-        prevIgnition[device.id] = ignition;
-        // If ignition is now ON but we had a saved off time, clear it
-        if (ignition === true && map[device.id]) {
-          delete map[device.id];
-          changed = true;
-        }
-      } else {
-        const wasOn = prevIgnition[device.id] === true;
-        const wasUndefined = prevIgnition[device.id] === undefined;
-
-        if (ignition === false && wasOn) {
-          // TRANSITION: Ignition just turned OFF — record current local time (Brasília)
-          map[device.id] = Date.now();
-          changed = true;
-        } else if (ignition === true && map[device.id]) {
-          // Ignition turned ON — clear the record
-          delete map[device.id];
-          changed = true;
-        } else if (ignition === false && wasUndefined && !map[device.id]) {
-          // New device detected with ignition off, no prior state — skip (don't assume just stopped)
-        }
-
-        prevIgnition[device.id] = ignition;
-      }
-    });
-
-    if (firstLoad) {
-      isFirstLoadRef.current = false;
-    }
-
-    if (changed) {
-      ignitionOffTimesRef.current = map;
-      saveIgnitionOffTimes(map);
-    }
-  }, []);
-
   const fetchDevices = useCallback(async () => {
     const creds = getCredentials();
     if (!creds.traccar_url || !creds.traccar_user || !creds.traccar_password) {
