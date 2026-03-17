@@ -419,7 +419,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <h2 className="text-lg font-semibold text-card-foreground">
+            <h2 className="text-lg font-semibold text-card-foreground lg:hidden">
               {[...headerNavItems, ...navItems, ...bottomNavItems].find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
             </h2>
             <nav className="hidden md:flex items-center gap-1 ml-4">
