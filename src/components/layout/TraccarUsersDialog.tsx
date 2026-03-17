@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
-import { Search, User, Mail, ShieldCheck, Pencil, Plug, X, Save, Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Search, User, Mail, ShieldCheck, Pencil, Plug, X, Save, Loader2, Car } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userStorageGet } from '@/services/auth';
 import api from '@/services/api';
@@ -21,7 +22,13 @@ interface TraccarUser {
   deviceLimit?: number;
   expirationTime?: string;
   phone?: string;
-  password?: string;
+}
+
+interface TraccarDevice {
+  id: number;
+  name: string;
+  uniqueId: string;
+  status: string;
 }
 
 interface TraccarUsersDialogProps {
@@ -40,6 +47,13 @@ export default function TraccarUsersDialog({ open, onOpenChange }: TraccarUsersD
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedUser, setSelectedUser] = useState<TraccarUser | null>(null);
   const [editForm, setEditForm] = useState<Partial<TraccarUser>>({});
+
+  // Connection state
+  const [allDevices, setAllDevices] = useState<TraccarDevice[]>([]);
+  const [linkedDeviceIds, setLinkedDeviceIds] = useState<Set<number>>(new Set());
+  const [loadingDevices, setLoadingDevices] = useState(false);
+  const [togglingDevice, setTogglingDevice] = useState<number | null>(null);
+  const [deviceSearch, setDeviceSearch] = useState('');
 
   const getCredentials = () => {
     const url = userStorageGet('traccar_url');
@@ -79,9 +93,66 @@ export default function TraccarUsersDialog({ open, onOpenChange }: TraccarUsersD
     setViewMode('edit');
   };
 
-  const handleConnection = (u: TraccarUser) => {
+  const handleConnection = async (u: TraccarUser) => {
     setSelectedUser(u);
     setViewMode('connection');
+    setDeviceSearch('');
+    setLoadingDevices(true);
+
+    const creds = getCredentials();
+    if (!creds) { setLoadingDevices(false); return; }
+
+    try {
+      // Fetch all devices and user's linked devices in parallel
+      const [allRes, userDevicesRes] = await Promise.all([
+        api.traccarProxy({ ...creds, endpoint: '/api/devices', method: 'GET' }),
+        api.traccarProxy({ ...creds, endpoint: `/api/devices?userId=${u.id}`, method: 'GET' }),
+      ]);
+
+      if (allRes.success && allRes.data?.data) {
+        setAllDevices(allRes.data.data);
+      }
+      if (userDevicesRes.success && userDevicesRes.data?.data) {
+        setLinkedDeviceIds(new Set(userDevicesRes.data.data.map((d: TraccarDevice) => d.id)));
+      }
+    } catch {
+      toast.error('Erro ao carregar veículos');
+    } finally {
+      setLoadingDevices(false);
+    }
+  };
+
+  const handleToggleDevice = async (deviceId: number) => {
+    if (!selectedUser) return;
+    const creds = getCredentials();
+    if (!creds) return;
+
+    const isLinked = linkedDeviceIds.has(deviceId);
+    setTogglingDevice(deviceId);
+
+    try {
+      const res = await api.traccarProxy({
+        ...creds,
+        endpoint: '/api/permissions',
+        method: isLinked ? 'DELETE' : 'POST',
+        body: { userId: selectedUser.id, deviceId },
+      });
+
+      if (res.success) {
+        setLinkedDeviceIds(prev => {
+          const next = new Set(prev);
+          if (isLinked) next.delete(deviceId); else next.add(deviceId);
+          return next;
+        });
+        toast.success(isLinked ? 'Veículo desvinculado' : 'Veículo vinculado');
+      } else {
+        toast.error(res.error || 'Erro ao alterar vínculo');
+      }
+    } catch {
+      toast.error('Erro ao alterar vínculo');
+    } finally {
+      setTogglingDevice(null);
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -111,30 +182,14 @@ export default function TraccarUsersDialog({ open, onOpenChange }: TraccarUsersD
     }
   };
 
-  const handleToggleDisabled = async (u: TraccarUser) => {
-    const creds = getCredentials();
-    if (!creds) return;
-    try {
-      const res = await api.traccarProxy({
-        ...creds,
-        endpoint: `/api/users/${u.id}`,
-        method: 'PUT',
-        body: { ...u, disabled: !u.disabled },
-      });
-      if (res.success) {
-        toast.success(u.disabled ? 'Usuário ativado' : 'Usuário desativado');
-        fetchUsers();
-      } else {
-        toast.error(res.error || 'Erro ao alterar status');
-      }
-    } catch {
-      toast.error('Erro ao alterar status');
-    }
-  };
-
   const filtered = users.filter(u =>
     u.name?.toLowerCase().includes(search.toLowerCase()) ||
     u.email?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const filteredDevices = allDevices.filter(d =>
+    d.name?.toLowerCase().includes(deviceSearch.toLowerCase()) ||
+    d.uniqueId?.toLowerCase().includes(deviceSearch.toLowerCase())
   );
 
   // ===== EDIT VIEW =====
@@ -185,58 +240,74 @@ export default function TraccarUsersDialog({ open, onOpenChange }: TraccarUsersD
     );
   }
 
-  // ===== CONNECTION VIEW =====
+  // ===== CONNECTION VIEW (vincular veículos) =====
   if (viewMode === 'connection' && selectedUser) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plug className="h-4 w-4 text-primary" />
-              Conexão — {selectedUser.name}
+              Veículos — {selectedUser.name}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">ID</span>
-                <span className="font-mono">{selectedUser.id}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Email</span>
-                <span className="font-mono text-xs">{selectedUser.email}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Status</span>
-                <span className={cn('font-semibold text-xs', selectedUser.disabled ? 'text-destructive' : 'text-emerald-500')}>
-                  {selectedUser.disabled ? 'Desativado' : 'Ativo'}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Admin</span>
-                <span>{selectedUser.administrator ? 'Sim' : 'Não'}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Limite disp.</span>
-                <span>{selectedUser.deviceLimit === -1 ? 'Ilimitado' : selectedUser.deviceLimit}</span>
-              </div>
-              {selectedUser.expirationTime && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Expiração</span>
-                  <span className="text-xs">{new Date(selectedUser.expirationTime).toLocaleDateString('pt-BR')}</span>
-                </div>
-              )}
-            </div>
-            <div className="flex items-center justify-between rounded-lg border border-border p-3">
-              <span className="text-sm font-medium">{selectedUser.disabled ? 'Ativar usuário' : 'Desativar usuário'}</span>
-              <Switch checked={!selectedUser.disabled} onCheckedChange={() => handleToggleDisabled(selectedUser)} />
-            </div>
+
+          <p className="text-xs text-muted-foreground -mt-2">
+            Marque os veículos que deseja vincular a este usuário.
+          </p>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Buscar veículo..." value={deviceSearch} onChange={e => setDeviceSearch(e.target.value)} className="pl-9" />
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setViewMode('list')}>
+
+          <div className="flex-1 overflow-y-auto space-y-1 min-h-0 pr-1">
+            {loadingDevices && Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
+
+            {!loadingDevices && filteredDevices.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhum veículo encontrado</p>
+            )}
+
+            {!loadingDevices && filteredDevices.map(d => {
+              const isLinked = linkedDeviceIds.has(d.id);
+              const isToggling = togglingDevice === d.id;
+              return (
+                <div
+                  key={d.id}
+                  onClick={() => !isToggling && handleToggleDevice(d.id)}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors',
+                    isLinked ? 'border-primary/40 bg-primary/5' : 'border-border bg-card hover:bg-accent/50'
+                  )}
+                >
+                  {isToggling ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+                  ) : (
+                    <Checkbox checked={isLinked} className="shrink-0 pointer-events-none" />
+                  )}
+                  <Car className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-medium truncate block">{d.name}</span>
+                    <span className="text-xs text-muted-foreground">{d.uniqueId}</span>
+                  </div>
+                  <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded',
+                    d.status === 'online' ? 'bg-emerald-500/15 text-emerald-600' : 'bg-muted text-muted-foreground'
+                  )}>
+                    {d.status === 'online' ? 'Online' : d.status === 'offline' ? 'Offline' : d.status}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <p className="text-xs text-muted-foreground">
+              {linkedDeviceIds.size} vinculado(s) de {allDevices.length}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => setViewMode('list')}>
               <X className="h-4 w-4 mr-1" /> Voltar
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     );
@@ -280,7 +351,7 @@ export default function TraccarUsersDialog({ open, onOpenChange }: TraccarUsersD
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                <button onClick={() => handleConnection(u)} title="Conexão" className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                <button onClick={() => handleConnection(u)} title="Vincular veículos" className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
                   <Plug className="h-4 w-4" />
                 </button>
                 <button onClick={() => handleEdit(u)} title="Editar" className="rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
