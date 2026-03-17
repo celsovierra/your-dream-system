@@ -152,13 +152,7 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
 
   return (
     <div className="relative flex flex-col h-full">
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        className="absolute top-3 right-3 z-[1000] rounded-full p-2 bg-slate-900/80 backdrop-blur-sm shadow-lg hover:bg-slate-900 text-white transition-colors"
-      >
-        <X className="h-5 w-5" />
-      </button>
+      {/* Close button removed - user closes via sidebar navigation */}
 
       {/* Vehicle info card */}
       {cardOpen && position && (
