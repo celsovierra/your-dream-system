@@ -316,19 +316,19 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
 
                 <div className="mt-2 flex items-center justify-between">
                   {isMoving ? (
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                    <span className="flex items-center gap-1 text-xs font-bold text-emerald-400">
                       <Clock className="h-3.5 w-3.5" /> Em movimento
                     </span>
                   ) : formattedDuration ? (
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-red-400">
+                    <span className="flex items-center gap-1 text-xs font-bold text-red-400">
                       <Clock className="h-3.5 w-3.5" /> Parado {formattedDuration}
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-red-400">
+                    <span className="flex items-center gap-1 text-xs font-bold text-red-400">
                       <Clock className="h-3.5 w-3.5" /> Parado
                     </span>
                   )}
-                  <span className="text-[10px] text-[hsl(180,5%,40%)]">{formatDateTime(device.lastUpdate)}</span>
+                  <span className="text-xs text-[hsl(180,5%,45%)]">{formatDateTime(device.lastUpdate)}</span>
                 </div>
               </div>
             );
