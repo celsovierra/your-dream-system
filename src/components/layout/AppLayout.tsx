@@ -532,6 +532,11 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
                       ? `✅ Atualizado em ${new Date(lastDeployAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}`
                       : '✅ Nenhuma atualização disponível'}
             </p>
+            {runningVersion && (
+              <p className="text-[10px] text-sidebar-foreground/40 text-center font-mono mt-1">
+                build {runningVersion}
+              </p>
+            )}
           </div>
         )}
       </aside>
