@@ -108,6 +108,24 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
   const prevIgnitionRef = useRef<Record<number, boolean | undefined>>({});
   const isFirstLoadRef = useRef(true);
 
+  const getCredentials = useCallback(() => {
+    const traccar_url = userStorageGet('traccar_url');
+    const traccar_user = userStorageGet('traccar_user');
+    const traccar_password = userStorageGet('traccar_password');
+    return { traccar_url, traccar_user, traccar_password };
+  }, []);
+
+  const unwrapProxyPayload = (payload: unknown) => {
+    if (payload && typeof payload === 'object' && 'data' in payload) {
+      const nested = (payload as { data: unknown }).data;
+      if (nested && typeof nested === 'object' && 'data' in nested) {
+        return (nested as { data: unknown }).data;
+      }
+      return nested;
+    }
+    return payload;
+  };
+
   // Track ignition state changes locally - when ignition TRANSITIONS from ON to OFF, record Date.now() (Brasília)
   // This completely ignores GPS timestamps
   const updateIgnitionOffTimes = useCallback((deviceList: TraccarDevice[], positionList: TraccarPosition[]) => {
