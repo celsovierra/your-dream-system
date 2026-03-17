@@ -328,7 +328,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             <div className="flex shrink-0 gap-1.5 items-center">
               <Link
                 to="/configuracoes"
-                onClick={() => setSidebarOpen(false)}
+                onClick={() => { setSidebarOpen(false); setSelectedVehicle(null); }}
                 title="Configurações"
                 className={cn(
                   'flex items-center justify-center rounded-lg h-9 w-9 shrink-0 transition-all duration-200',
