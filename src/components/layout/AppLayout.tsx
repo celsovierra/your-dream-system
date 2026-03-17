@@ -38,7 +38,7 @@ const headerNavItems = [
 ];
 
 const navItems = [
-  { path: '/financeiro', label: 'Financeiro', icon: DollarSign, color: 'text-yellow-400' },
+  { path: '/', label: 'Financeiro', icon: DollarSign, color: 'text-yellow-400' },
 ];
 
 const allBottomNavItems = [
