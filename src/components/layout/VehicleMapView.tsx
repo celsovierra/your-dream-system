@@ -24,6 +24,8 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
   const [blocking, setBlocking] = useState(false);
   const [mapType, setMapType] = useState<'satellite' | 'roadmap'>('satellite');
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const anchorCircleRef = useRef<L.Circle | null>(null);
+  const [anchorActive, setAnchorActive] = useState(false);
   const [livePosition, setLivePosition] = useState<TraccarPosition | undefined>(initialPosition);
   const [liveDevice, setLiveDevice] = useState<TraccarDevice>(initialDevice);
 
