@@ -407,6 +407,18 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         )}
       </aside>
 
+      <button
+        onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+        title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+        style={{ left: sidebarCollapsed ? '3rem' : '16.5rem' }}
+        className={cn(
+          "absolute top-4 z-[70] hidden lg:flex items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-xl hover:bg-accent hover:text-accent-foreground hover:scale-110 active:scale-95 transition-all duration-200",
+          sidebarCollapsed ? 'h-12 w-12' : 'h-8 w-8'
+        )}
+      >
+        {sidebarCollapsed ? <PanelLeft className="h-6 w-6" /> : <PanelLeftClose className="h-4 w-4" />}
+      </button>
+
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {!selectedVehicle && (
