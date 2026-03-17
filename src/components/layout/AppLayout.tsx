@@ -29,7 +29,7 @@ interface LayoutProps {
 }
 
 const headerNavItems = [
-  { path: '/financeiro', label: 'Financeiro', icon: DollarSign, color: 'text-yellow-400' },
+  { path: '/financeiro', label: 'Contas', icon: DollarSign, color: 'text-yellow-400' },
   { path: '/', label: 'Dashboard', icon: LayoutDashboard, color: 'text-blue-400' },
   { path: '/clientes', label: 'Clientes', icon: Users, color: 'text-emerald-400' },
   { path: '/fila', label: 'Fila de Envio', icon: ListTodo, color: 'text-purple-400' },
