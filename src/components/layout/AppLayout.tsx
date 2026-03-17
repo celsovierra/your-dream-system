@@ -292,7 +292,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       <aside
         className={cn(
           'fixed inset-y-0 left-0 z-40 flex flex-col bg-sidebar text-sidebar-foreground transition-all lg:static lg:translate-x-0',
-          sidebarCollapsed ? 'w-16' : 'w-64',
+          sidebarCollapsed ? 'w-16' : 'w-72',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
