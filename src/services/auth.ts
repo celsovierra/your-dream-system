@@ -176,6 +176,7 @@ export async function loginVps(email: string, password: string): Promise<AppUser
     client_limit: user.client_limit,
     expires_at: user.expires_at,
     permissions: user.permissions,
+    slug: user.slug,
     createdAt: user.createdAt || '',
   };
 
