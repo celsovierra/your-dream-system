@@ -88,6 +88,10 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
   const [configured, setConfigured] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Stores the timestamp (Date.now()) when each device's ignition turned OFF
+  const ignitionOffTimesRef = useRef<Map<number, number>>(new Map());
+  // Tick counter to force re-render every minute for live countdown
+  const [, setTick] = useState(0);
 
   const getCredentials = useCallback(() => {
     const traccar_url = userStorageGet('traccar_url');
