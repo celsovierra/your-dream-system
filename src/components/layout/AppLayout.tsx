@@ -536,7 +536,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
                       : '✅ Nenhuma atualização disponível'}
             </p>
             {runningVersion && (
-              <p className="text-[10px] text-sidebar-foreground/40 text-center font-mono mt-1">
+              <p className="text-xs text-sidebar-foreground/60 text-center font-mono mt-2 bg-sidebar-accent/30 rounded px-2 py-1">
                 v{runningVersion}
               </p>
             )}
