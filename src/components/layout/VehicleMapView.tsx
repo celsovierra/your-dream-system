@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, MapPin, Calendar, Battery, Satellite, Gauge, Power, ChevronDown, ChevronUp, Car, Lock, Unlock, Anchor, Route, Map, Pencil, History, Loader2 } from 'lucide-react';
+import { MapPin, Calendar, Battery, Satellite, Gauge, Power, ChevronDown, ChevronUp, Car, Lock, Unlock, Anchor, Route, Map as MapIcon, Pencil, History, Loader2, Layers, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
