@@ -59,10 +59,13 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
       if (!traccar_url || !traccar_user || !traccar_password) return;
 
       try {
-        const [posRes, devRes] = await Promise.all([
-          api.traccarProxy({ traccar_url, traccar_user, traccar_password, endpoint: '/api/positions', method: 'GET' }),
-          api.traccarProxy({ traccar_url, traccar_user, traccar_password, endpoint: `/api/devices?id=${initialDevice.id}`, method: 'GET' }),
-        ]);
+        const posRes = await api.traccarProxy({
+          traccar_url,
+          traccar_user,
+          traccar_password,
+          endpoint: '/api/positions',
+          method: 'GET',
+        });
 
         if (posRes.success) {
           const posData = posRes.data?.data || posRes.data;
@@ -73,17 +76,31 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
             if (markerRef.current) markerRef.current.setLatLng([myPos.latitude, myPos.longitude]);
           }
         }
+      } catch {
+        // silent
+      }
+
+      try {
+        const devRes = await api.traccarProxy({
+          traccar_url,
+          traccar_user,
+          traccar_password,
+          endpoint: `/api/devices?id=${initialDevice.id}`,
+          method: 'GET',
+        });
 
         if (devRes.success) {
           const devData = devRes.data?.data || devRes.data;
           const devArr = Array.isArray(devData) ? devData as TraccarDevice[] : [];
           if (devArr.length > 0) setLiveDevice(devArr[0]);
         }
-      } catch { /* silent */ }
+      } catch {
+        // silent
+      }
     };
 
     void fetchLive();
-    const interval = setInterval(fetchLive, 3000);
+    const interval = setInterval(() => void fetchLive(), 10000);
     return () => clearInterval(interval);
   }, [initialDevice.id]);
 

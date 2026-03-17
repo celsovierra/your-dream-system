@@ -330,48 +330,62 @@ class ApiService {
 
   // ===== TRACCAR =====
   async traccarProxy(params: { traccar_url: string; traccar_user: string; traccar_password: string; endpoint?: string; method?: string; body?: any }) {
-    const directResult = await this.request<{ data: any }>('/traccar/proxy', {
-      method: 'POST',
-      body: JSON.stringify(params),
-    });
+    const method = params.method || 'GET';
+    const cacheTtl = this.getTraccarCacheTtl(params.endpoint, method);
+    const cacheKey = this.getTraccarCacheKey(params);
 
-    if (directResult.success) {
-      return directResult;
+    if (cacheTtl > 0) {
+      const cached = this.traccarGetCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) {
+        return cached.result;
+      }
+
+      const inFlight = this.traccarInFlight.get(cacheKey);
+      if (inFlight) {
+        return inFlight;
+      }
     }
 
-    console.warn('[api.traccarProxy] Falling back to Lovable Cloud proxy:', directResult.error);
+    const requestPromise = this.performTraccarProxyRequest(params)
+      .then((result) => {
+        if (cacheTtl > 0 && result.success) {
+          this.traccarGetCache.set(cacheKey, {
+            expiresAt: Date.now() + cacheTtl,
+            result,
+          });
+        }
 
-    const { data, error } = await supabase.functions.invoke('traccar-proxy', {
-      body: params,
-    });
+        if (!result.success) {
+          console.warn('[api.traccarProxy] VPS request failed:', result.error);
+        }
 
-    if (error) {
-      return {
-        success: false,
-        error: directResult.error || error.message || 'Erro ao consultar Traccar',
-      };
+        return result;
+      })
+      .finally(() => {
+        if (cacheTtl > 0) {
+          this.traccarInFlight.delete(cacheKey);
+        }
+      });
+
+    if (cacheTtl > 0) {
+      this.traccarInFlight.set(cacheKey, requestPromise);
     }
 
-    return {
-      success: true,
-      data: data as any,
-    };
+    return requestPromise;
   }
 
   // Buscar eventos ignitionOff em lote (com cache server-side de 5 min)
   async getIgnitionOffEvents(params: { traccar_url: string; traccar_user: string; traccar_password: string }) {
-    const directResult = await this.request<{ data: Record<string, string>; cached?: boolean }>('/traccar/ignition-events', {
+    const result = await this.request<{ data: Record<string, string>; cached?: boolean }>('/traccar/ignition-events', {
       method: 'POST',
       body: JSON.stringify(params),
     });
 
-    if (directResult.success) {
-      return directResult;
+    if (!result.success) {
+      console.warn('[api.getIgnitionOffEvents] VPS request failed:', result.error);
     }
 
-    // Fallback: sem endpoint VPS, retorna vazio
-    console.warn('[api.getIgnitionOffEvents] Failed:', directResult.error);
-    return { success: false, error: directResult.error, data: undefined };
+    return result;
   }
 
   // ===== CONFIGURAÇÕES =====
