@@ -8,6 +8,10 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'cobranca-pro-jwt-secret-2024';
 const JWT_EXPIRES_IN = '30d';
 
+const ALL_PERMISSIONS = [
+  'dashboard', 'clientes', 'fila', 'mensagens', 'contratos', 'financeiro', 'configuracoes', 'logs',
+];
+
 function hashPassword(password) {
   return crypto.createHash('sha256').update(password).digest('hex');
 }
@@ -18,6 +22,27 @@ function generateToken(user) {
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
+}
+
+function parsePermissions(raw) {
+  if (!raw) return ALL_PERMISSIONS;
+  if (Array.isArray(raw)) return raw;
+  try { return JSON.parse(raw); } catch { return ALL_PERMISSIONS; }
+}
+
+function formatUser(u) {
+  return {
+    id: String(u.id),
+    name: u.name,
+    email: u.email,
+    phone: u.phone || '',
+    role: u.role || 'user',
+    client_limit: u.client_limit ?? 0,
+    expires_at: u.expires_at || null,
+    permissions: parsePermissions(u.permissions),
+    is_active: u.is_active,
+    createdAt: u.created_at,
+  };
 }
 
 // POST /api/auth/login
@@ -57,24 +82,22 @@ router.post('/login', async (req, res) => {
 
     const user = matchingUsers[0];
 
-    // Determine role: first user is admin, rest are 'user'
-    const allUsers = await query('SELECT id FROM users ORDER BY id ASC');
-    const validUsers = allUsers.filter(r => r && typeof r === 'object' && 'id' in r);
-    const role = validUsers.length > 0 && String(validUsers[0].id) === String(user.id) ? 'admin' : 'user';
+    // Check expiration
+    if (user.expires_at) {
+      const expDate = new Date(user.expires_at);
+      if (expDate < new Date()) {
+        return res.status(403).json({ success: false, error: 'Sua conta expirou. Entre em contato com o administrador.' });
+      }
+    }
 
+    const role = user.role || 'user';
     const token = generateToken({ ...user, role });
 
     res.json({
       success: true,
       data: {
         token,
-        user: {
-          id: String(user.id),
-          email: user.email,
-          name: user.name,
-          role,
-          createdAt: user.created_at,
-        },
+        user: formatUser(user),
       },
     });
   } catch (err) {
@@ -83,10 +106,10 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// POST /api/auth/register
+// POST /api/auth/register — only admin can create users now
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, phone, client_limit, expires_at, permissions } = req.body;
     if (!email || !password || !name) {
       return res.status(400).json({ success: false, error: 'Nome, email e senha são obrigatórios' });
     }
@@ -101,17 +124,23 @@ router.post('/register', async (req, res) => {
     }
 
     const hashed = hashPassword(password);
+    const permsJson = permissions ? JSON.stringify(permissions) : JSON.stringify(ALL_PERMISSIONS);
+
     const result = await query(
-      'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
-      [name, email.toLowerCase().trim(), hashed]
+      'INSERT INTO users (name, email, password_hash, phone, role, client_limit, expires_at, permissions) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        name,
+        email.toLowerCase().trim(),
+        hashed,
+        phone || null,
+        'user',
+        client_limit || 0,
+        expires_at || null,
+        permsJson,
+      ]
     );
 
     const insertId = Number(result.insertId ?? result[0]?.insertId ?? 0);
-
-    // Determine role
-    const allUsers = await query('SELECT id FROM users ORDER BY id ASC');
-    const validUsers = allUsers.filter(r => r && typeof r === 'object' && 'id' in r);
-    const role = validUsers.length > 0 && validUsers[0].id === insertId ? 'admin' : 'user';
 
     res.status(201).json({
       success: true,
@@ -120,7 +149,11 @@ router.post('/register', async (req, res) => {
           id: String(insertId),
           email: email.toLowerCase().trim(),
           name,
-          role,
+          phone: phone || '',
+          role: 'user',
+          client_limit: client_limit || 0,
+          expires_at: expires_at || null,
+          permissions: permissions || ALL_PERMISSIONS,
         },
       },
     });
@@ -130,35 +163,55 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// GET /api/auth/users — lista todos os usuários (apenas admin)
+// GET /api/auth/users — list all users
 router.get('/users', async (req, res) => {
   try {
-    const rows = await query('SELECT id, name, email, is_active, created_at FROM users ORDER BY id ASC');
+    const rows = await query('SELECT * FROM users ORDER BY id ASC');
     const users = rows.filter(r => r && typeof r === 'object' && 'id' in r);
-
-    const data = users.map((u, index) => ({
-      id: String(u.id),
-      name: u.name,
-      email: u.email,
-      role: index === 0 ? 'admin' : 'user',
-      is_active: u.is_active,
-      createdAt: u.created_at,
-    }));
-
-    res.json({ success: true, data });
+    res.json({ success: true, data: users.map(formatUser) });
   } catch (err) {
     console.error('GET /auth/users error:', err);
     res.status(500).json({ success: false, error: 'Erro ao listar usuários' });
   }
 });
 
-// DELETE /api/auth/users/:id — remove usuário
+// PUT /api/auth/users/:id — update user
+router.put('/users/:id', async (req, res) => {
+  try {
+    const { name, email, phone, password, client_limit, expires_at, permissions, is_active } = req.body;
+
+    const fields = [];
+    const values = [];
+
+    if (name !== undefined) { fields.push('name = ?'); values.push(name); }
+    if (email !== undefined) { fields.push('email = ?'); values.push(email.toLowerCase().trim()); }
+    if (phone !== undefined) { fields.push('phone = ?'); values.push(phone || null); }
+    if (password) { fields.push('password_hash = ?'); values.push(hashPassword(password)); }
+    if (client_limit !== undefined) { fields.push('client_limit = ?'); values.push(client_limit); }
+    if (expires_at !== undefined) { fields.push('expires_at = ?'); values.push(expires_at || null); }
+    if (permissions !== undefined) { fields.push('permissions = ?'); values.push(JSON.stringify(permissions)); }
+    if (is_active !== undefined) { fields.push('is_active = ?'); values.push(is_active ? 1 : 0); }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ success: false, error: 'Nenhum campo para atualizar' });
+    }
+
+    values.push(req.params.id);
+    await query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
+
+    const [updated] = await query('SELECT * FROM users WHERE id = ?', [req.params.id]);
+    res.json({ success: true, data: formatUser(updated) });
+  } catch (err) {
+    console.error('PUT /auth/users/:id error:', err);
+    res.status(500).json({ success: false, error: 'Erro ao atualizar usuário' });
+  }
+});
+
+// DELETE /api/auth/users/:id
 router.delete('/users/:id', async (req, res) => {
   try {
-    // Don't allow deleting the first user (admin)
-    const allUsers = await query('SELECT id FROM users ORDER BY id ASC');
-    const validUsers = allUsers.filter(r => r && typeof r === 'object' && 'id' in r);
-    if (validUsers.length > 0 && String(validUsers[0].id) === String(req.params.id)) {
+    const [user] = await query('SELECT role FROM users WHERE id = ?', [req.params.id]);
+    if (user && user.role === 'admin') {
       return res.status(403).json({ success: false, error: 'Não é possível remover o administrador' });
     }
 
