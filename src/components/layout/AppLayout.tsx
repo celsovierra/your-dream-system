@@ -297,7 +297,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="flex h-16 items-center border-b border-sidebar-border px-3 gap-2">
+        <div className={cn("flex items-center border-b border-sidebar-border px-3 gap-2", sidebarCollapsed ? "h-12 justify-center" : "h-16")}>
           <div className={cn("flex items-center gap-2 flex-1 min-w-0", sidebarCollapsed && "justify-center")}>
             {(() => {
               const customLogo = localStorage.getItem('layout_logo');
@@ -311,49 +311,83 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
               </span>
             )}
           </div>
-          <div className={cn(
-            "flex shrink-0 gap-1.5",
-            sidebarCollapsed ? "flex-col items-center" : "flex-row items-center"
-          )}>
+          {!sidebarCollapsed && (
+            <div className="flex shrink-0 gap-1.5 items-center">
+              <Link
+                to="/configuracoes"
+                onClick={() => setSidebarOpen(false)}
+                title="Configurações"
+                className={cn(
+                  'flex items-center justify-center rounded-lg h-9 w-9 shrink-0 transition-all duration-200',
+                  location.pathname === '/configuracoes'
+                    ? 'bg-gradient-to-b from-rose-400 to-rose-600 text-white shadow-[0_4px_6px_-1px_rgba(244,63,94,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] scale-105'
+                    : 'bg-gradient-to-b from-rose-500/80 to-rose-700/80 text-white/90 shadow-[0_2px_4px_-1px_rgba(244,63,94,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:from-rose-400 hover:to-rose-600 hover:scale-105 active:scale-95'
+                )}
+              >
+                <Settings className="h-5 w-5 drop-shadow-sm" />
+              </Link>
+              <button
+                onClick={() => setShowTraccarUsers(true)}
+                title="Usuários Traccar"
+                className="flex items-center justify-center rounded-lg h-9 w-9 shrink-0 transition-all duration-200 bg-gradient-to-b from-sky-500/80 to-sky-700/80 text-white/90 shadow-[0_2px_4px_-1px_rgba(14,165,233,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:from-sky-400 hover:to-sky-600 hover:scale-105 active:scale-95"
+              >
+                <UserCircle className="h-5 w-5 drop-shadow-sm" />
+              </button>
+              <Link
+                to="/"
+                onClick={() => { setSidebarOpen(false); setSelectedVehicle(null); setSidebarCollapsed(true); }}
+                title="Financeiro"
+                className={cn(
+                  'flex items-center justify-center rounded-lg h-9 w-9 shrink-0 transition-all duration-200',
+                  (location.pathname === '/' || location.pathname === '/financeiro') && !selectedVehicle
+                    ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 text-white shadow-[0_4px_6px_-1px_rgba(16,185,129,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] scale-105'
+                    : 'bg-gradient-to-b from-emerald-500/80 to-emerald-700/80 text-white/90 shadow-[0_2px_4px_-1px_rgba(16,185,129,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:from-emerald-400 hover:to-emerald-600 hover:scale-105 active:scale-95'
+                )}
+              >
+                <DollarSign className="h-5 w-5 drop-shadow-sm" />
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Collapsed icon buttons */}
+        {sidebarCollapsed && (
+          <div className="flex flex-col items-center gap-2 py-3 border-b border-sidebar-border">
             <Link
               to="/configuracoes"
               onClick={() => setSidebarOpen(false)}
               title="Configurações"
               className={cn(
-                'flex items-center justify-center rounded-lg h-9 w-9 shrink-0 transition-all duration-200',
+                'flex items-center justify-center rounded-lg h-8 w-8 transition-all duration-200',
                 location.pathname === '/configuracoes'
-                  ? 'bg-gradient-to-b from-rose-400 to-rose-600 text-white shadow-[0_4px_6px_-1px_rgba(244,63,94,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] scale-105'
-                  : 'bg-gradient-to-b from-rose-500/80 to-rose-700/80 text-white/90 shadow-[0_2px_4px_-1px_rgba(244,63,94,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:from-rose-400 hover:to-rose-600 hover:shadow-[0_4px_6px_-1px_rgba(244,63,94,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95'
+                  ? 'bg-gradient-to-b from-rose-400 to-rose-600 text-white scale-105'
+                  : 'bg-gradient-to-b from-rose-500/80 to-rose-700/80 text-white/90 hover:from-rose-400 hover:to-rose-600 hover:scale-105 active:scale-95'
               )}
             >
-              <Settings className="h-5 w-5 drop-shadow-sm" />
+              <Settings className="h-4 w-4" />
             </Link>
             <button
               onClick={() => setShowTraccarUsers(true)}
               title="Usuários Traccar"
-              className={cn(
-                'flex items-center justify-center rounded-lg h-9 w-9 shrink-0 transition-all duration-200',
-                'bg-gradient-to-b from-sky-500/80 to-sky-700/80 text-white/90 shadow-[0_2px_4px_-1px_rgba(14,165,233,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:from-sky-400 hover:to-sky-600 hover:shadow-[0_4px_6px_-1px_rgba(14,165,233,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95'
-              )}
+              className="flex items-center justify-center rounded-lg h-8 w-8 transition-all duration-200 bg-gradient-to-b from-sky-500/80 to-sky-700/80 text-white/90 hover:from-sky-400 hover:to-sky-600 hover:scale-105 active:scale-95"
             >
-              <UserCircle className="h-5 w-5 drop-shadow-sm" />
+              <UserCircle className="h-4 w-4" />
             </button>
             <Link
               to="/"
               onClick={() => { setSidebarOpen(false); setSelectedVehicle(null); setSidebarCollapsed(true); }}
               title="Financeiro"
               className={cn(
-                'flex items-center justify-center rounded-lg h-9 w-9 shrink-0 transition-all duration-200',
+                'flex items-center justify-center rounded-lg h-8 w-8 transition-all duration-200',
                 (location.pathname === '/' || location.pathname === '/financeiro') && !selectedVehicle
-                  ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 text-white shadow-[0_4px_6px_-1px_rgba(16,185,129,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] scale-105'
-                  : 'bg-gradient-to-b from-emerald-500/80 to-emerald-700/80 text-white/90 shadow-[0_2px_4px_-1px_rgba(16,185,129,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:from-emerald-400 hover:to-emerald-600 hover:shadow-[0_4px_6px_-1px_rgba(16,185,129,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 active:shadow-[0_1px_2px_rgba(16,185,129,0.3),inset_0_1px_3px_rgba(0,0,0,0.2)]'
+                  ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 text-white scale-105'
+                  : 'bg-gradient-to-b from-emerald-500/80 to-emerald-700/80 text-white/90 hover:from-emerald-400 hover:to-emerald-600 hover:scale-105 active:scale-95'
               )}
             >
-              <DollarSign className="h-5 w-5 drop-shadow-sm" />
+              <DollarSign className="h-4 w-4" />
             </Link>
           </div>
-        </div>
-
+        )}
 
         <nav className="flex-1 overflow-y-auto p-2">
           {!sidebarCollapsed && (
