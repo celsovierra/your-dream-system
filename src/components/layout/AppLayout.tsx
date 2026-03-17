@@ -50,6 +50,7 @@ const allBottomNavItems: { path: string; label: string; icon: any; color: string
 const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const userIsAdmin = isAdmin();
   const bottomNavItems = allBottomNavItems;
+  const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === 'true');
