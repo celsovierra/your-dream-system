@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { invokeEvolutionProxy } from '@/services/data-layer';
+import api from '@/services/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Wifi, WifiOff, CreditCard, Save, Download, Upload, ChevronDown, Copy, QrCode, Palette, ImageIcon, MapPin, Server } from 'lucide-react';
+import { Wifi, WifiOff, CreditCard, Save, Download, Upload, ChevronDown, Copy, QrCode, Palette, ImageIcon, MapPin, Server, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import asaasLogo from '@/assets/asaas.png';
 import mercadoPagoLogo from '@/assets/mercado-pago.png';
@@ -33,6 +34,7 @@ const ConfiguracoesPage = () => {
   const [traccarUrl, setTraccarUrl] = useState(() => userStorageGet('traccar_url') || '');
   const [traccarUser, setTraccarUser] = useState(() => userStorageGet('traccar_user') || '');
   const [traccarPassword, setTraccarPassword] = useState(() => userStorageGet('traccar_password') || '');
+  const [traccarTesting, setTraccarTesting] = useState(false);
 
   useEffect(() => {
     if (!qrCode || !whatsapp.api_url || !whatsapp.api_key || !whatsapp.instance_name) return;
@@ -110,6 +112,47 @@ const ConfiguracoesPage = () => {
 
   const toggleSection = (key: string) => {
     setOpenSection(prev => (prev === key ? null : key));
+  };
+
+  const handleTestTraccar = async () => {
+    const url = traccarUrl.trim().replace(/\/+$/, '');
+    const user = traccarUser.trim();
+    const password = traccarPassword;
+
+    if (!url || !user || !password) {
+      toast.error('Preencha a URL, usuário e senha do Traccar');
+      return;
+    }
+
+    if (/^https:\/\/\d{1,3}(\.\d{1,3}){3}(:\d+)?$/i.test(url)) {
+      toast.warning('HTTPS com IP costuma falhar por certificado. Se possível, use http://IP:PORTA ou um domínio com SSL válido.');
+    }
+
+    setTraccarTesting(true);
+
+    try {
+      const result = await api.traccarProxy({
+        traccar_url: url,
+        traccar_user: user,
+        traccar_password: password,
+        endpoint: '/api/devices',
+        method: 'GET',
+      });
+
+      const devices = result.data && typeof result.data === 'object' && 'data' in result.data
+        ? (result.data as { data?: unknown }).data
+        : result.data;
+
+      if (!result.success || !Array.isArray(devices)) {
+        throw new Error(result.error || 'Resposta inválida do Traccar');
+      }
+
+      toast.success(`Conexão com Traccar OK: ${devices.length} veículo(s) encontrado(s).`);
+    } catch (err: any) {
+      toast.error(`Falha no Traccar: ${err?.message || 'erro desconhecido'}`);
+    } finally {
+      setTraccarTesting(false);
+    }
   };
 
   return (
@@ -364,6 +407,9 @@ const ConfiguracoesPage = () => {
               <div>
                 <Label>URL do Servidor Traccar</Label>
                 <Input value={traccarUrl} onChange={(e) => setTraccarUrl(e.target.value)} placeholder="https://traccar.seudominio.com.br" />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Se estiver usando IP, prefira <span className="font-medium">http://IP:PORTA</span>. <span className="font-medium">https://IP</span> costuma falhar por certificado inválido.
+                </p>
               </div>
               <div>
                 <Label>Usuário / Email</Label>
@@ -373,19 +419,25 @@ const ConfiguracoesPage = () => {
                 <Label>Senha</Label>
                 <Input type="password" value={traccarPassword} onChange={(e) => setTraccarPassword(e.target.value)} placeholder="Senha do Traccar" />
               </div>
-              <Button size="sm" onClick={() => {
-                if (!traccarUrl || !traccarUser || !traccarPassword) {
-                  toast.error('Preencha todos os campos do Traccar');
-                  return;
-                }
-                userStorageSet('traccar_url', traccarUrl);
-                userStorageSet('traccar_user', traccarUser);
-                userStorageSet('traccar_password', traccarPassword);
-                window.dispatchEvent(new Event('traccar-config-updated'));
-                toast.success('Configuração do Traccar salva!');
-              }}>
-                <Save className="mr-2 h-3 w-3" /> Salvar
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => {
+                  if (!traccarUrl || !traccarUser || !traccarPassword) {
+                    toast.error('Preencha todos os campos do Traccar');
+                    return;
+                  }
+                  userStorageSet('traccar_url', traccarUrl.trim().replace(/\/+$/, ''));
+                  userStorageSet('traccar_user', traccarUser.trim());
+                  userStorageSet('traccar_password', traccarPassword);
+                  window.dispatchEvent(new Event('traccar-config-updated'));
+                  toast.success('Configuração do Traccar salva!');
+                }}>
+                  <Save className="mr-2 h-3 w-3" /> Salvar
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleTestTraccar} disabled={traccarTesting}>
+                  {traccarTesting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <MapPin className="mr-2 h-3 w-3" />}
+                  Testar conexão
+                </Button>
+              </div>
             </CardContent>
           </CollapsibleContent>
         </Card>
