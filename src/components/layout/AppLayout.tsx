@@ -314,6 +314,16 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
               </span>
             )}
           </div>
+          <button
+            onClick={() => setShowTraccarUsers(true)}
+            title="Usuários Traccar"
+            className={cn(
+              'flex items-center justify-center rounded-lg h-9 w-9 shrink-0 transition-all duration-200',
+              'bg-gradient-to-b from-sky-500/80 to-sky-700/80 text-white/90 shadow-[0_2px_4px_-1px_rgba(14,165,233,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:from-sky-400 hover:to-sky-600 hover:shadow-[0_4px_6px_-1px_rgba(14,165,233,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95'
+            )}
+          >
+            <UserCircle className="h-5 w-5 drop-shadow-sm" />
+          </button>
           <Link
             to="/"
             onClick={() => { setSidebarOpen(false); setSelectedVehicle(null); setSidebarCollapsed(true); }}
