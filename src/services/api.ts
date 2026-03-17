@@ -63,6 +63,47 @@ class ApiService {
     localStorage.removeItem('auth_token');
   }
 
+  private sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private isRetriableProxyError(message?: string) {
+    return RETRIABLE_PROXY_ERROR.test(message || '');
+  }
+
+  private getTraccarCacheTtl(endpoint = '', method = 'GET') {
+    if (method !== 'GET') return 0;
+    if (endpoint.startsWith('/api/positions')) return 2500;
+    if (endpoint.startsWith('/api/devices?id=')) return 4000;
+    if (endpoint.startsWith('/api/devices')) return 15000;
+    return 0;
+  }
+
+  private getTraccarCacheKey(params: { traccar_url: string; traccar_user: string; endpoint?: string; method?: string; body?: any }) {
+    return JSON.stringify({
+      traccar_url: params.traccar_url,
+      traccar_user: params.traccar_user,
+      endpoint: params.endpoint || '/api/users',
+      method: params.method || 'GET',
+      body: (params.method || 'GET') === 'GET' ? undefined : params.body,
+    });
+  }
+
+  private async performTraccarProxyRequest(params: { traccar_url: string; traccar_user: string; traccar_password: string; endpoint?: string; method?: string; body?: any }) {
+    const requestOptions = {
+      method: 'POST',
+      body: JSON.stringify(params),
+    } satisfies RequestInit;
+
+    const firstAttempt = await this.request<{ data: any }>('/traccar/proxy', requestOptions);
+    if (firstAttempt.success || !this.isRetriableProxyError(firstAttempt.error)) {
+      return firstAttempt;
+    }
+
+    await this.sleep(700);
+    return this.request<{ data: any }>('/traccar/proxy', requestOptions);
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
