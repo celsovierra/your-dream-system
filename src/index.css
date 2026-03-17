@@ -1,4 +1,10 @@
 @tailwind base;
+
+/* Ensure Leaflet maps handle touch gestures on mobile */
+.leaflet-container {
+  touch-action: none;
+}
+
 @tailwind components;
 @tailwind utilities;
 
