@@ -110,6 +110,7 @@ export default function UserManagementSection() {
           client_limit: form.client_limit,
           expires_at: form.expires_at || null,
           permissions: form.permissions,
+          slug: form.slug || null,
         };
         if (form.password) updateData.password = form.password;
         await updateUserVps(editingUser.id, updateData as any);
