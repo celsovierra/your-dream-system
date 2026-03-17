@@ -301,9 +301,11 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
             const sat = pos?.attributes?.sat;
             const power = pos?.attributes?.power;
             const isStopped = ignition === false;
-            // Use device.lastUpdate as reference for when ignition turned off
-            // fixTime updates constantly; lastUpdate is more stable for stopped calc
-            const stoppedTime = isStopped ? formatStoppedTime(device.lastUpdate) : '';
+            // Use locally stored timestamp of when ignition turned OFF
+            const ignitionOffAt = ignitionOffTimesRef.current.get(device.id);
+            const stoppedTime = isStopped && ignitionOffAt
+              ? formatStoppedTime(new Date(ignitionOffAt).toISOString())
+              : '';
 
             return (
               <div
