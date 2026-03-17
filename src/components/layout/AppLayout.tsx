@@ -330,11 +330,13 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
           className={cn(
-            "absolute top-5 z-50 hidden lg:flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-lg hover:bg-accent hover:text-accent-foreground transition-all duration-200",
-            sidebarCollapsed ? '-right-5' : '-right-3.5'
+            "absolute z-50 hidden lg:flex items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-xl hover:bg-accent hover:text-accent-foreground hover:scale-110 active:scale-95 transition-all duration-200",
+            sidebarCollapsed
+              ? 'top-4 -right-6 h-12 w-12 shadow-[0_4px_12px_rgba(0,0,0,0.3)]'
+              : 'top-5 -right-3.5 h-8 w-8'
           )}
         >
-          {sidebarCollapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          {sidebarCollapsed ? <PanelLeft className="h-6 w-6" /> : <PanelLeftClose className="h-4 w-4" />}
         </button>
 
         <nav className="flex-1 overflow-y-auto p-2">
