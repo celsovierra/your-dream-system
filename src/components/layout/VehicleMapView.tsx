@@ -160,7 +160,16 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
 
   return (
     <div className="relative flex flex-col h-full">
-      {/* Close button removed - user closes via sidebar navigation */}
+      {/* Map type selector */}
+      <button
+        onClick={() => setMapType(mapType === 'satellite' ? 'roadmap' : 'satellite')}
+        className="absolute top-3 right-14 z-[1000] rounded-lg px-3 py-2 bg-slate-900/80 backdrop-blur-sm shadow-lg hover:bg-slate-900 text-white transition-colors flex items-center gap-1.5 text-xs font-medium"
+        title={mapType === 'satellite' ? 'Mapa normal' : 'Satélite'}
+      >
+        <Layers className="h-4 w-4" />
+        {mapType === 'satellite' ? 'Mapa' : 'Satélite'}
+      </button>
+
 
       {/* Vehicle info card */}
       {cardOpen && position && (
