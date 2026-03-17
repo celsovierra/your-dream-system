@@ -103,6 +103,7 @@ export default function UserManagementSection() {
     setSaving(true);
     try {
       if (editingUser) {
+        const autoSlug = form.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '').trim() || null;
         const updateData: Record<string, unknown> = {
           name: form.name,
           email: form.email,
@@ -110,12 +111,13 @@ export default function UserManagementSection() {
           client_limit: form.client_limit,
           expires_at: form.expires_at || null,
           permissions: form.permissions,
-          slug: form.slug || null,
+          slug: autoSlug,
         };
         if (form.password) updateData.password = form.password;
         await updateUserVps(editingUser.id, updateData as any);
         toast.success('Usuário atualizado!');
       } else {
+        const autoSlugNew = form.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '').trim();
         await registerVps({
           name: form.name,
           email: form.email,
@@ -125,6 +127,14 @@ export default function UserManagementSection() {
           expires_at: form.expires_at || null,
           permissions: form.permissions,
         });
+        // Set slug after creation
+        if (autoSlugNew) {
+          const users = await fetchUsersVps();
+          const created = users.find(u => u.email === form.email.toLowerCase().trim());
+          if (created) {
+            await updateUserVps(created.id, { slug: autoSlugNew } as any);
+          }
+        }
         toast.success('Usuário criado!');
       }
       setDialogOpen(false);
@@ -290,18 +300,10 @@ export default function UserManagementSection() {
             </div>
 
             <div>
-              <Label>Slug (URL personalizada)</Label>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground whitespace-nowrap">/</span>
-                <Input
-                  value={form.slug}
-                  onChange={e => setForm(p => ({ ...p, slug: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '') }))}
-                  placeholder="meu-slug"
-                  maxLength={50}
-                  className="font-mono text-sm"
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">URL de login personalizada do usuário</p>
+              <Label className="text-xs text-muted-foreground">URL de login (gerada automaticamente pelo nome)</Label>
+              <p className="text-sm font-mono text-muted-foreground mt-1">
+                {window.location.origin}/{form.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '') || 'nome-do-usuario'}
+              </p>
             </div>
 
             <div>
