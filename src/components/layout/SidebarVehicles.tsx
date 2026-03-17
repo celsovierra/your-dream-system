@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Car, Loader2, WifiOff, RefreshCw, Search, Share2, Pencil, ShieldOff, Wifi, Gauge, Radio, Battery, Clock } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Car, Loader2, WifiOff, RefreshCw, Search, Share2, Pencil, Wifi, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userStorageGet } from '@/services/auth';
 import api from '@/services/api';
@@ -22,6 +22,8 @@ export interface TraccarPosition {
   course: number;
   address?: string;
   fixTime: string;
+  deviceTime?: string;
+  serverTime?: string;
   attributes?: {
     batteryLevel?: number;
     ignition?: boolean;
@@ -33,6 +35,13 @@ export interface TraccarPosition {
   };
 }
 
+interface TraccarEvent {
+  deviceId: number;
+  type?: string;
+  eventTime?: string;
+  serverTime?: string;
+}
+
 interface SidebarVehiclesProps {
   collapsed: boolean;
   onSelectDevice?: (device: TraccarDevice, position?: TraccarPosition) => void;
@@ -40,19 +49,14 @@ interface SidebarVehiclesProps {
   autoSelectFirst?: boolean;
 }
 
-function getBrasiliaTime(): number {
-  // Current time in UTC-3 (Brasília) as a timestamp
-  // We compare timestamps so we just use Date.now() since the reference times
-  // from Traccar are already in UTC and the diff is timezone-independent
-  return Date.now();
-}
+function formatStoppedTimeFromEvent(eventTime?: string): string {
+  if (!eventTime) return '';
+  const offMs = new Date(eventTime).getTime();
+  if (Number.isNaN(offMs)) return '';
 
-function formatStoppedTime(referenceTime: string): string {
-  if (!referenceTime) return '';
-  const refMs = new Date(referenceTime).getTime();
-  const nowMs = getBrasiliaTime();
-  const diff = nowMs - refMs;
-  if (diff < 0) return '0min';
+  const diff = Date.now() - offMs;
+  if (diff <= 0) return '0min';
+
   const mins = Math.floor(diff / 60000);
   if (mins < 60) return `${mins}min`;
   const hours = Math.floor(mins / 60);
@@ -62,35 +66,37 @@ function formatStoppedTime(referenceTime: string): string {
   return `${days}d ${hours % 24}h`;
 }
 
-function formatDateTime(dateStr: string): string {
+function formatDateTime(dateStr: string) {
   if (!dateStr) return '';
   const d = new Date(dateStr);
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ', ' +
-    d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return `${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}, ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 }
 
-function getCategoryIcon(category?: string): string {
+function getCategoryIcon(category?: string) {
   switch (category?.toLowerCase()) {
-    case 'motorcycle': return '🏍️';
-    case 'car': return '🚗';
-    case 'truck': return '🚛';
-    case 'bus': return '🚌';
-    case 'bicycle': return '🚲';
-    case 'boat': return '🚤';
-    default: return '🚗';
+    case 'motorcycle':
+      return '🏍️';
+    case 'truck':
+      return '🚛';
+    case 'bus':
+      return '🚌';
+    case 'bicycle':
+      return '🚲';
+    case 'boat':
+      return '🚤';
+    default:
+      return '🚗';
   }
 }
 
 const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSelectFirst = false }: SidebarVehiclesProps) => {
   const [devices, setDevices] = useState<TraccarDevice[]>([]);
   const [positions, setPositions] = useState<TraccarPosition[]>([]);
+  const [ignitionOffEvents, setIgnitionOffEvents] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(false);
   const [configured, setConfigured] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
-  // Stores the timestamp (Date.now()) when each device's ignition turned OFF
-  const ignitionOffTimesRef = useRef<Map<number, number>>(new Map());
-  // Tick counter to force re-render every minute for live countdown
   const [, setTick] = useState(0);
 
   const getCredentials = useCallback(() => {
@@ -111,6 +117,34 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     return payload;
   };
 
+  const fetchIgnitionOffEvents = useCallback(async (deviceList: TraccarDevice[]) => {
+    const creds = getCredentials();
+    if (!creds.traccar_url || !creds.traccar_user || !creds.traccar_password || deviceList.length === 0) return;
+
+    const to = new Date().toISOString();
+    const from = new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString();
+
+    try {
+      const eventEntries = await Promise.all(
+        deviceList.map(async (device) => {
+          const endpoint = `/api/reports/events?deviceId=${device.id}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+          const result = await api.traccarProxy({ ...creds, endpoint, method: 'GET' });
+          const raw = unwrapProxyPayload(result.data);
+          const events = Array.isArray(raw) ? (raw as TraccarEvent[]) : [];
+          const ignitionOff = [...events]
+            .filter((event) => event.type === 'ignitionOff')
+            .sort((a, b) => new Date(b.eventTime || b.serverTime || 0).getTime() - new Date(a.eventTime || a.serverTime || 0).getTime())[0];
+
+          return [device.id, ignitionOff?.eventTime || ignitionOff?.serverTime || ''] as const;
+        })
+      );
+
+      setIgnitionOffEvents(Object.fromEntries(eventEntries.filter(([, value]) => Boolean(value))));
+    } catch {
+      // silent fail to avoid breaking UI
+    }
+  }, [getCredentials]);
+
   const fetchDevices = useCallback(async () => {
     const creds = getCredentials();
     if (!creds.traccar_url || !creds.traccar_user || !creds.traccar_password) {
@@ -118,6 +152,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
       setError(null);
       setDevices([]);
       setPositions([]);
+      setIgnitionOffEvents({});
       return;
     }
 
@@ -131,7 +166,9 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
       if (!devResult.success || !Array.isArray(devData)) {
         throw new Error(devResult.error || 'Não foi possível carregar os veículos do Traccar');
       }
-      setDevices(devData as TraccarDevice[]);
+
+      const nextDevices = devData as TraccarDevice[];
+      setDevices(nextDevices);
 
       const posResult = await api.traccarProxy({ ...creds, endpoint: '/api/positions', method: 'GET' });
       const posData = unwrapProxyPayload(posResult.data);
@@ -139,20 +176,23 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
         throw new Error(posResult.error || 'Não foi possível carregar as posições do Traccar');
       }
       setPositions(Array.isArray(posData) ? (posData as TraccarPosition[]) : []);
+
+      void fetchIgnitionOffEvents(nextDevices);
     } catch (err: any) {
       const message = err?.message || 'Erro ao carregar veículos do Traccar';
       setDevices([]);
       setPositions([]);
+      setIgnitionOffEvents({});
       setError(message);
     } finally {
       setLoading(false);
     }
-  }, [getCredentials]);
+  }, [fetchIgnitionOffEvents, getCredentials]);
 
   useEffect(() => {
-    fetchDevices();
-    const interval = setInterval(fetchDevices, 60000);
-    const handleRefresh = () => { void fetchDevices(); };
+    void fetchDevices();
+    const interval = setInterval(() => void fetchDevices(), 60000);
+    const handleRefresh = () => void fetchDevices();
     window.addEventListener('traccar-config-updated', handleRefresh);
     window.addEventListener('focus', handleRefresh);
     return () => {
@@ -162,26 +202,8 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     };
   }, [fetchDevices]);
 
-
-  // Track ignition state changes and record when ignition turns OFF
   useEffect(() => {
-    const map = ignitionOffTimesRef.current;
-    for (const device of devices) {
-      const pos = positions.find(p => p.deviceId === device.id);
-      const ignition = pos?.attributes?.ignition;
-      if (ignition === false) {
-        if (!map.has(device.id)) {
-          map.set(device.id, Date.now());
-        }
-      } else {
-        map.delete(device.id);
-      }
-    }
-  }, [devices, positions]);
-
-  // Tick every 30s to update stopped time counters live
-  useEffect(() => {
-    const timer = setInterval(() => setTick(t => t + 1), 30000);
+    const timer = setInterval(() => setTick((v) => v + 1), 30000);
     return () => clearInterval(timer);
   }, []);
 
@@ -208,7 +230,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
       <div className="flex flex-col items-center justify-center p-4 text-center">
         {!collapsed && (
           <p className="text-xs text-sidebar-foreground/50">
-            <WifiOff className="h-4 w-4 mx-auto mb-1" />
+            <WifiOff className="mx-auto mb-1 h-4 w-4" />
             Traccar não configurado
           </p>
         )}
@@ -230,12 +252,12 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                 onClick={() => handleClick(device)}
                 title={`${device.name} (${device.status})`}
                 className={cn(
-                  "relative flex items-center justify-center rounded-md h-8 w-8 hover:bg-sidebar-accent transition-colors",
-                  selectedDeviceId === device.id && "bg-sidebar-primary text-sidebar-primary-foreground"
+                  'relative flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-sidebar-accent',
+                  selectedDeviceId === device.id && 'bg-sidebar-primary text-sidebar-primary-foreground'
                 )}
               >
                 <Car className="h-4 w-4 text-sidebar-foreground/70" />
-                <span className={cn("absolute top-0.5 right-0.5 h-2 w-2 rounded-full", isOnline ? 'bg-emerald-500' : 'bg-destructive')} />
+                <span className={cn('absolute right-0.5 top-0.5 h-2 w-2 rounded-full', isOnline ? 'bg-emerald-500' : 'bg-destructive')} />
               </button>
             );
           })
@@ -245,29 +267,29 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-3 py-2">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
           Veículos ({filteredDevices.length})
         </span>
         <button
-          onClick={fetchDevices}
+          onClick={() => void fetchDevices()}
           disabled={loading}
-          className="rounded p-1 hover:bg-sidebar-accent transition-colors text-sidebar-foreground/50 hover:text-sidebar-foreground"
+          className="rounded p-1 text-sidebar-foreground/50 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
         >
-          <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+          <RefreshCw className={cn('h-3 w-3', loading && 'animate-spin')} />
         </button>
       </div>
 
       <div className="px-2 pb-2">
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sidebar-foreground/40" />
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-sidebar-foreground/40" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar veículo..."
-            className="w-full rounded-lg bg-sidebar-accent/50 border border-sidebar-border pl-8 pr-3 py-1.5 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-sidebar-primary"
+            className="w-full rounded-lg border border-sidebar-border bg-sidebar-accent/50 py-1.5 pl-8 pr-3 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-sidebar-primary"
           />
         </div>
       </div>
@@ -280,18 +302,18 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
         <div className="space-y-2 p-4 text-center">
           <p className="text-xs text-destructive">{error}</p>
           <button
-            onClick={() => fetchDevices()}
+            onClick={() => void fetchDevices()}
             className="w-full rounded-md border border-sidebar-border px-3 py-2 text-xs text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
           >
             Tentar novamente
           </button>
         </div>
       ) : filteredDevices.length === 0 ? (
-        <p className="text-xs text-sidebar-foreground/50 text-center p-4">
+        <p className="p-4 text-center text-xs text-sidebar-foreground/50">
           {devices.length === 0 ? 'Nenhum veículo encontrado' : 'Nenhum resultado'}
         </p>
       ) : (
-        <div className="flex-1 overflow-y-auto space-y-2 px-2 pb-2">
+        <div className="flex-1 space-y-2 overflow-y-auto px-2 pb-2">
           {filteredDevices.map((device) => {
             const pos = getDevicePosition(device.id);
             const isSelected = selectedDeviceId === device.id;
@@ -300,64 +322,48 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
             const speed = pos?.speed ?? 0;
             const sat = pos?.attributes?.sat;
             const power = pos?.attributes?.power;
-            const isStopped = ignition === false;
-            // Use locally stored timestamp of when ignition turned OFF
-            const ignitionOffAt = ignitionOffTimesRef.current.get(device.id);
-            const stoppedTime = isStopped && ignitionOffAt
-              ? formatStoppedTime(new Date(ignitionOffAt).toISOString())
-              : '';
+            const ignitionOffAt = ignitionOffEvents[device.id];
+            const stoppedTime = ignition === false ? formatStoppedTimeFromEvent(ignitionOffAt) : '';
 
             return (
               <div
                 key={device.id}
                 onClick={() => handleClick(device)}
                 className={cn(
-                  "rounded-xl border p-3 cursor-pointer transition-all duration-200",
+                  'cursor-pointer rounded-xl border p-3 transition-all duration-200',
                   isSelected
-                    ? "border-emerald-500/50 bg-[hsl(180,15%,12%)] shadow-[0_0_12px_-3px_rgba(16,185,129,0.3)]"
-                    : "border-[hsl(180,10%,18%)] bg-[hsl(180,10%,10%)] hover:border-emerald-500/30 hover:bg-[hsl(180,10%,13%)]"
+                    ? 'border-emerald-500/50 bg-[hsl(180,15%,12%)] shadow-[0_0_12px_-3px_rgba(16,185,129,0.3)]'
+                    : 'border-[hsl(180,10%,18%)] bg-[hsl(180,10%,10%)] hover:border-emerald-500/30 hover:bg-[hsl(180,10%,13%)]'
                 )}
               >
-                {/* Row 1: Image + Name/Model + Actions + Status */}
                 <div className="flex items-start gap-2.5">
-                  <span className="text-2xl leading-none mt-0.5 shrink-0">{getCategoryIcon(device.category)}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-[12px] text-white truncate leading-tight">{device.name}</p>
-                    {device.model && (
-                      <p className="text-[10px] text-[hsl(180,5%,50%)] truncate leading-tight">{device.model}</p>
-                    )}
+                  <span className="mt-0.5 shrink-0 text-2xl leading-none">{getCategoryIcon(device.category)}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[12px] font-bold leading-tight text-white">{device.name}</p>
+                    {device.model && <p className="truncate text-[10px] leading-tight text-[hsl(180,5%,50%)]">{device.model}</p>}
                   </div>
                   <div className="flex items-center gap-0.5 shrink-0">
-                    <button onClick={e => e.stopPropagation()} title="Compartilhar" className="rounded-md p-1.5 text-[hsl(180,5%,45%)] hover:text-white hover:bg-white/10 transition-colors">
+                    <button onClick={(e) => e.stopPropagation()} title="Compartilhar" className="rounded-md p-1.5 text-[hsl(180,5%,45%)] transition-colors hover:bg-white/10 hover:text-white">
                       <Share2 className="h-3.5 w-3.5" />
                     </button>
-                    <button onClick={e => e.stopPropagation()} title="Editar" className="rounded-md p-1.5 text-[hsl(180,5%,45%)] hover:text-white hover:bg-white/10 transition-colors">
+                    <button onClick={(e) => e.stopPropagation()} title="Editar" className="rounded-md p-1.5 text-[hsl(180,5%,45%)] transition-colors hover:bg-white/10 hover:text-white">
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                  <span className={cn(
-                    "text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0",
-                    isOnline
-                      ? "bg-emerald-500/20 text-emerald-400"
-                      : "bg-red-500/20 text-red-400"
-                  )}>
+                  <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold', isOnline ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400')}>
                     {isOnline ? 'Online' : 'Offline'}
                   </span>
                 </div>
 
-                {/* Row 2: Telemetry */}
-                <div className="flex items-center gap-2.5 mt-2 text-[10px]">
-                  <span className={cn("font-semibold", ignition ? "text-emerald-400" : "text-red-400")}>
-                    ⚡{ignition ? 'Lig' : 'Des'}
-                  </span>
-                  <span className="text-[hsl(180,5%,50%)]">📶 OK</span>
+                <div className="mt-2 flex items-center gap-2.5 text-[10px]">
+                  <span className={cn('font-semibold', ignition ? 'text-emerald-400' : 'text-red-400')}>⚡{ignition ? 'Lig' : 'Des'}</span>
+                  <span className="text-[hsl(180,5%,50%)]"><Wifi className="mr-1 inline h-3 w-3" />OK</span>
                   <span className="text-[hsl(180,5%,50%)]">⏱ {Math.round(speed)} km/h</span>
                   {sat !== undefined && <span className="text-[hsl(180,5%,50%)]">📡 {sat}</span>}
                   {power !== undefined && <span className="text-[hsl(180,5%,50%)]">🔋 {power.toFixed(1)}V</span>}
                 </div>
 
-                {/* Row 3: Stopped time + datetime */}
-                <div className="flex items-center justify-between mt-2">
+                <div className="mt-2 flex items-center justify-between">
                   {stoppedTime ? (
                     <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
                       <Clock className="h-3.5 w-3.5" /> Parado {stoppedTime}
@@ -367,9 +373,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                       <Clock className="h-3.5 w-3.5" /> Em movimento
                     </span>
                   )}
-                  <span className="text-[10px] text-[hsl(180,5%,40%)]">
-                    {formatDateTime(pos?.fixTime || device.lastUpdate)}
-                  </span>
+                  <span className="text-[10px] text-[hsl(180,5%,40%)]">{formatDateTime(device.lastUpdate)}</span>
                 </div>
               </div>
             );
