@@ -442,17 +442,25 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       <div className="flex flex-1 flex-col overflow-hidden">
         {!selectedVehicle && (
           <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <button
-                onClick={() => setSidebarOpen(true)}
-                className="rounded-md p-2 text-muted-foreground hover:bg-secondary lg:hidden"
+                onClick={() => {
+                  if (window.innerWidth >= 1024) {
+                    setSidebarCollapsed((prev) => !prev);
+                    setSidebarOpen(true);
+                    return;
+                  }
+                  setSidebarOpen(true);
+                }}
+                title={sidebarCollapsed ? 'Mostrar veículos' : 'Ocultar veículos'}
+                className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               >
-                <Menu className="h-5 w-5" />
+                {sidebarCollapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
               </button>
-              <h2 className="text-lg font-semibold text-card-foreground lg:hidden">
+              <h2 className="text-lg font-semibold text-card-foreground md:hidden">
                 {[...headerNavItems, ...navItems, ...bottomNavItems].find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
               </h2>
-              <nav className="hidden md:flex items-center gap-1 ml-4">
+              <nav className="hidden md:flex items-center gap-1 ml-2">
                 {headerNavItems.map((item) => {
                   const isActive = location.pathname === item.path;
                   return (
