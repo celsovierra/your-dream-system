@@ -153,11 +153,6 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     };
   }, [fetchDevices]);
 
-  // Re-render a cada 30s para atualizar contadores de tempo parado
-  useEffect(() => {
-    const timer = setInterval(() => setTick((v) => v + 1), 30000);
-    return () => clearInterval(timer);
-  }, []);
 
   const getDevicePosition = (deviceId: number) => positions.find((p) => p.deviceId === deviceId);
 
