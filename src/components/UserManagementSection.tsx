@@ -199,6 +199,7 @@ export default function UserManagementSection() {
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{user.email}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm font-mono">{user.slug ? `/${user.slug}` : '—'}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">{user.phone || '—'}</TableCell>
                   <TableCell className="text-center">{user.client_limit || '∞'}</TableCell>
                   <TableCell>
