@@ -43,6 +43,10 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: Sideba
   const [positions, setPositions] = useState<TraccarPosition[]>([]);
   const [loading, setLoading] = useState(false);
   const [configured, setConfigured] = useState(false);
+  const [search, setSearch] = useState('');
+  const [positions, setPositions] = useState<TraccarPosition[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [configured, setConfigured] = useState(false);
 
   const getCredentials = useCallback(() => {
     const traccar_url = userStorageGet('traccar_url');
