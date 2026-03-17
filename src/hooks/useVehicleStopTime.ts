@@ -1,12 +1,5 @@
-/**
- * Hook to calculate the stop time of a vehicle.
- * Rule: start counting from ignition OFF and never reset on each GPS refresh.
- */
 import { parseIgnition } from "@/lib/vehicle-utils";
 
-/**
- * Format the stop duration into a human-readable string
- */
 export function formatStopDuration(minutes: number): string {
   if (minutes < 1) return "menos de 1 min";
   if (minutes < 60) return `${minutes} min`;
@@ -24,22 +17,22 @@ export function formatStopDuration(minutes: number): string {
   return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`;
 }
 
-interface TraccarPositionWithStopTime {
+export interface TraccarPositionWithStopTime {
   deviceId?: number;
   speed: number;
   fixTime?: string;
   deviceTime?: string;
   attributes?: {
-    ignition?: boolean;
-    motion?: boolean;
-    stopped?: number;
-    lastStoppedTime?: number;
-    lastMotionChange?: number;
+    ignition?: unknown;
+    motion?: unknown;
+    stopped?: unknown;
+    lastStoppedTime?: unknown;
+    lastMotionChange?: unknown;
     [key: string]: unknown;
   };
 }
 
-interface UseVehicleStopTimeResult {
+interface VehicleStopTimeResult {
   formattedDuration: string | null;
   loading: boolean;
   stopStartTime: Date | null;
@@ -47,21 +40,14 @@ interface UseVehicleStopTimeResult {
 
 const MAX_STOP_MINUTES = 43200; // 30 days
 const MIN_MOVING_SPEED_KNOTS = 0.5;
-
-// Persists the moment ignition went OFF per device (module-level state)
 const ignitionOffSinceByDevice = new Map<number, number>();
+const lastStoppedStateByDevice = new Map<number, boolean>();
 
 function hasExplicitTimezone(value: string): boolean {
   return /(?:Z|[+-]\d{2}:?\d{2})$/.test(value);
 }
 
-/**
- * Parse device/fix time to epoch ms.
- * If tracker time comes without timezone suffix, interpret as Brasília time.
- */
-function parsePositionTimeMs(value?: string): number | null {
-  if (!value) return null;
-
+function parseBrasiliaDateMs(value: string): number | null {
   const parsedWithNative = new Date(value).getTime();
   if (!Number.isNaN(parsedWithNative) && hasExplicitTimezone(value)) {
     return parsedWithNative;
@@ -76,9 +62,20 @@ function parsePositionTimeMs(value?: string): number | null {
 }
 
 function normalizeEpochMs(value: unknown): number | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    const numericValue = Number(trimmed);
+    if (Number.isFinite(numericValue)) {
+      return normalizeEpochMs(numericValue);
+    }
+
+    return parseBrasiliaDateMs(trimmed);
+  }
+
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
 
-  // Accept seconds or milliseconds
   if (value > 1_000_000_000_000) return Math.floor(value);
   if (value > 1_000_000_000) return Math.floor(value * 1000);
   return null;
@@ -92,30 +89,26 @@ function getIgnitionOffTimestampMs(position: TraccarPositionWithStopTime): numbe
   const candidates = [
     normalizeEpochMs(attrs.lastStoppedTime),
     normalizeEpochMs(attrs.lastMotionChange),
-  ].filter((t): t is number => t !== null);
+  ].filter((timestamp): timestamp is number => timestamp !== null);
 
-  // Keep only sane timestamps
-  const sane = candidates.filter((t) => t > 0 && t <= nowMs + 5 * 60 * 1000);
-  if (sane.length === 0) return null;
+  const saneCandidates = candidates.filter(
+    (timestamp) => timestamp > 0 && timestamp <= nowMs + 5 * 60 * 1000,
+  );
 
-  // Most recent stop-related timestamp from tracker
-  return Math.max(...sane);
+  if (saneCandidates.length === 0) return null;
+
+  return Math.max(...saneCandidates);
 }
 
 function isMoving(position: TraccarPositionWithStopTime): boolean {
   const ignition = parseIgnition(position.attributes?.ignition);
   const motion = position.attributes?.motion;
 
-  // Priority rule: ignition OFF means vehicle is considered stopped for this timer,
-  // even if motion attribute is noisy/inconsistent.
   if (ignition === false) return false;
   if (ignition === true) return true;
-
-  // Fallback only when ignition is unknown
   if (motion === true) return true;
-  if (position.speed > MIN_MOVING_SPEED_KNOTS) return true;
 
-  return false;
+  return position.speed > MIN_MOVING_SPEED_KNOTS;
 }
 
 function isStopped(position: TraccarPositionWithStopTime): boolean {
@@ -124,71 +117,71 @@ function isStopped(position: TraccarPositionWithStopTime): boolean {
 
   if (ignition === false) return true;
   if (ignition === true) return false;
-
-  // Fallback only when ignition is unknown
   if (motion === false) return true;
 
   return position.speed <= MIN_MOVING_SPEED_KNOTS;
 }
 
-/**
- * Stop duration based on ignition OFF event (not on GPS refresh time).
- */
-export function useVehicleStopTime({
+export function getVehicleStopTime({
   position,
 }: {
   position: TraccarPositionWithStopTime | null;
-}): UseVehicleStopTimeResult {
+}): VehicleStopTimeResult {
   if (!position) {
     return { formattedDuration: null, loading: false, stopStartTime: null };
   }
 
   const deviceId = position.deviceId;
+  const nowMs = Date.now();
   const moving = isMoving(position);
   const stopped = isStopped(position);
-
   const attrStopMs = getIgnitionOffTimestampMs(position);
-  const fallbackPositionMs =
-    parsePositionTimeMs(position.deviceTime) ?? parsePositionTimeMs(position.fixTime) ?? Date.now();
+  const previousStopped = typeof deviceId === "number"
+    ? lastStoppedStateByDevice.get(deviceId) === true
+    : false;
 
-  if (typeof deviceId === "number") {
-    const persistedStopMs = ignitionOffSinceByDevice.get(deviceId);
+  let stopStartMs = typeof deviceId === "number"
+    ? ignitionOffSinceByDevice.get(deviceId) ?? null
+    : null;
 
-    if (moving) {
-      // Vehicle moved/ignition on => clear old stop baseline
+  if (moving) {
+    if (typeof deviceId === "number") {
       ignitionOffSinceByDevice.delete(deviceId);
-    } else if (stopped) {
-      if (!persistedStopMs) {
-        // First known stop moment
-        ignitionOffSinceByDevice.set(deviceId, attrStopMs ?? fallbackPositionMs);
-      } else if (attrStopMs && attrStopMs < persistedStopMs) {
-        // Correct baseline only if tracker gives an older/more accurate OFF timestamp
-        ignitionOffSinceByDevice.set(deviceId, attrStopMs);
-      }
+      lastStoppedStateByDevice.set(deviceId, false);
     }
-  }
 
-  // Only render stop timer when actually stopped
-  if (!stopped) {
     return { formattedDuration: null, loading: false, stopStartTime: null };
   }
 
-  let stopStartMs: number | null = null;
+  if (!stopped) {
+    if (typeof deviceId === "number") {
+      lastStoppedStateByDevice.set(deviceId, false);
+    }
 
-  if (typeof deviceId === "number") {
-    stopStartMs = ignitionOffSinceByDevice.get(deviceId) ?? null;
+    return { formattedDuration: null, loading: false, stopStartTime: null };
   }
 
-  // If no persisted baseline yet, prefer tracker OFF timestamp (do not keep resetting from GPS time)
-  if (!stopStartMs) {
-    stopStartMs = attrStopMs ?? fallbackPositionMs;
+  if (attrStopMs && (!stopStartMs || attrStopMs < stopStartMs)) {
+    stopStartMs = attrStopMs;
+  }
 
-    if (typeof deviceId === "number" && !ignitionOffSinceByDevice.has(deviceId)) {
+  if (!stopStartMs && typeof deviceId === "number" && !previousStopped) {
+    stopStartMs = nowMs;
+  }
+
+  if (typeof deviceId === "number") {
+    lastStoppedStateByDevice.set(deviceId, true);
+
+    if (stopStartMs) {
       ignitionOffSinceByDevice.set(deviceId, stopStartMs);
     }
   }
 
-  const durationMinutes = Math.floor((Date.now() - stopStartMs) / 60000);
+  if (!stopStartMs) {
+    return { formattedDuration: null, loading: false, stopStartTime: null };
+  }
+
+  const durationMinutes = Math.floor((nowMs - stopStartMs) / 60000);
   if (durationMinutes < 0 || durationMinutes > MAX_STOP_MINUTES) {
     return { formattedDuration: null, loading: false, stopStartTime: null };
   }
@@ -198,4 +191,8 @@ export function useVehicleStopTime({
     loading: false,
     stopStartTime: new Date(stopStartMs),
   };
+}
+
+export function useVehicleStopTime(args: { position: TraccarPositionWithStopTime | null }) {
+  return getVehicleStopTime(args);
 }

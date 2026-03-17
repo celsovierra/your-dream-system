@@ -3,7 +3,7 @@ import { Car, Loader2, WifiOff, RefreshCw, Search, Share2, Pencil, Wifi, Clock }
 import { cn } from '@/lib/utils';
 import { userStorageGet } from '@/services/auth';
 import api from '@/services/api';
-import { useVehicleStopTime } from '@/hooks/useVehicleStopTime';
+import { getVehicleStopTime } from '@/hooks/useVehicleStopTime';
 
 export interface TraccarDevice {
   id: number;
@@ -272,7 +272,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
             const power = pos?.attributes?.power;
             const isMoving = speed > 0;
 
-            const { formattedDuration } = useVehicleStopTime({
+            const { formattedDuration } = getVehicleStopTime({
               position: pos ? { ...pos, deviceId: device.id } : null,
             });
 
