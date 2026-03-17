@@ -145,10 +145,12 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       if (res.ok && data.success) {
         setHasUpdate(Boolean(data.hasUpdate));
         setDeployCheckError(null);
-        if (data.lastCommitDate) {
-          localStorage.setItem('last_deploy_at', data.lastCommitDate);
-          setLastDeployAt(data.lastCommitDate);
+
+        if (data.runningStartedAt) {
+          localStorage.setItem('last_deploy_at', data.runningStartedAt);
+          setLastDeployAt(data.runningStartedAt);
         }
+
         return data;
       }
 
@@ -162,7 +164,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
     }
   };
 
-  const waitForDeployCompletion = async (apiUrl: string, previousRemoteCommit?: string) => {
+  const waitForDeployCompletion = async (previousRunningCommit?: string, previousRunningStartedAt?: string | null) => {
     for (let attempt = 0; attempt < 90; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, attempt < 3 ? 2000 : 3000));
 
@@ -171,25 +173,30 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         continue;
       }
 
-      const localCommit = checkData.localCommit;
+      const runningCommit = checkData.runningCommit;
       const remoteCommit = checkData.remoteCommit;
-      const updated = !checkData.hasUpdate && Boolean(localCommit) && localCommit === remoteCommit;
-      const remoteChanged = Boolean(previousRemoteCommit && remoteCommit && remoteCommit !== previousRemoteCommit);
+      const runningStartedAt = checkData.runningStartedAt;
+      const commitMatchesRemote = Boolean(runningCommit) && Boolean(remoteCommit) && runningCommit === remoteCommit;
+      const processRestarted = Boolean(runningStartedAt) && runningStartedAt !== previousRunningStartedAt;
+      const commitChanged = Boolean(previousRunningCommit) && Boolean(runningCommit) && runningCommit !== previousRunningCommit;
 
-      if (updated || remoteChanged) {
-        // Salva flag pendente — o timestamp real será registrado após o reload confirmar
+      if (commitMatchesRemote && (processRestarted || commitChanged)) {
         localStorage.setItem('deploy_pending', 'true');
-        localStorage.removeItem('last_deploy_at');
-        setLastDeployAt(null);
         setHasUpdate(false);
         setDeployCheckError(null);
+
+        if (runningStartedAt) {
+          localStorage.setItem('last_deploy_at', runningStartedAt);
+          setLastDeployAt(runningStartedAt);
+        }
+
         toast.success('Atualização concluída com sucesso. Recarregando...');
         setTimeout(() => window.location.reload(), 1200);
         return true;
       }
     }
 
-    toast.warning('O deploy foi iniciado, mas ainda não consegui confirmar a atualização no Git da VPS.');
+    toast.warning('O deploy foi iniciado, mas ainda não consegui confirmar a atualização real da VPS.');
     return false;
   };
 
