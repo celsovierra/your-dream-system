@@ -42,23 +42,6 @@ interface SidebarVehiclesProps {
   autoSelectFirst?: boolean;
 }
 
-// ===== Cálculo de tempo parado usando eventTime UTC do Traccar =====
-// NÃO usa Date.now() como início — usa o eventTime do último ignitionOff
-function formatStoppedDuration(eventTimeISO: string): string {
-  const eventMs = new Date(eventTimeISO).getTime(); // UTC correto
-  if (Number.isNaN(eventMs)) return '';
-
-  const diff = Date.now() - eventMs;
-  if (diff <= 0) return '0min';
-
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}min`;
-  const hours = Math.floor(mins / 60);
-  const remMins = mins % 60;
-  if (hours < 24) return `${hours}h ${remMins}min`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ${hours % 24}h`;
-}
 
 function formatDateTime(dateStr: string) {
   if (!dateStr) return '';
