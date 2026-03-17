@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Car, Loader2, WifiOff, RefreshCw, Search, Share2, Pencil, Wifi } from 'lucide-react';
+import { Car, Loader2, WifiOff, RefreshCw, Search, Share2, Pencil, Wifi, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userStorageGet } from '@/services/auth';
 import api from '@/services/api';
@@ -42,6 +42,23 @@ interface SidebarVehiclesProps {
   autoSelectFirst?: boolean;
 }
 
+// ===== Cálculo de tempo parado usando eventTime UTC do Traccar =====
+// NÃO usa Date.now() como início — usa o eventTime do último ignitionOff
+function formatStoppedDuration(eventTimeISO: string): string {
+  const eventMs = new Date(eventTimeISO).getTime(); // UTC correto
+  if (Number.isNaN(eventMs)) return '';
+
+  const diff = Date.now() - eventMs;
+  if (diff <= 0) return '0min';
+
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}min`;
+  const hours = Math.floor(mins / 60);
+  const remMins = mins % 60;
+  if (hours < 24) return `${hours}h ${remMins}min`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ${hours % 24}h`;
+}
 
 function formatDateTime(dateStr: string) {
   if (!dateStr) return '';
@@ -72,13 +89,19 @@ function getCategoryIcon(category?: string) {
   }
 }
 
+// ===== Cache em memória para eventos ignitionOff (5 min) =====
+let ignitionEventsCache: { data: Record<string, string>; timestamp: number } | null = null;
+const FRONTEND_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
 const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSelectFirst = false }: SidebarVehiclesProps) => {
   const [devices, setDevices] = useState<TraccarDevice[]>([]);
   const [positions, setPositions] = useState<TraccarPosition[]>([]);
+  const [ignitionOffEvents, setIgnitionOffEvents] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [configured, setConfigured] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [, setTick] = useState(0);
 
   const getCredentials = useCallback(() => {
     const traccar_url = userStorageGet('traccar_url');
@@ -98,6 +121,34 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     return payload;
   };
 
+  // Buscar eventos ignitionOff em lote (com cache de 5 min)
+  const fetchIgnitionOffEvents = useCallback(async () => {
+    // Verificar cache frontend
+    if (ignitionEventsCache && Date.now() - ignitionEventsCache.timestamp < FRONTEND_CACHE_TTL) {
+      setIgnitionOffEvents(ignitionEventsCache.data);
+      return;
+    }
+
+    const creds = getCredentials();
+    if (!creds.traccar_url || !creds.traccar_user || !creds.traccar_password) return;
+
+    try {
+      const result = await api.getIgnitionOffEvents({
+        traccar_url: creds.traccar_url,
+        traccar_user: creds.traccar_user,
+        traccar_password: creds.traccar_password,
+      });
+
+      if (result.success && result.data) {
+        const eventsData = (result.data as any).data || result.data;
+        const events = typeof eventsData === 'object' && eventsData !== null ? eventsData as Record<string, string> : {};
+        ignitionEventsCache = { data: events, timestamp: Date.now() };
+        setIgnitionOffEvents(events);
+      }
+    } catch {
+      // Silencioso — não quebra a UI
+    }
+  }, [getCredentials]);
 
   const fetchDevices = useCallback(async () => {
     const creds = getCredentials();
@@ -130,6 +181,8 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
       }
       setPositions(Array.isArray(posData) ? (posData as TraccarPosition[]) : []);
 
+      // Buscar eventos ignitionOff em paralelo (usa cache de 5 min)
+      void fetchIgnitionOffEvents();
     } catch (err: any) {
       const message = err?.message || 'Erro ao carregar veículos do Traccar';
       setDevices([]);
@@ -138,7 +191,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     } finally {
       setLoading(false);
     }
-  }, [getCredentials]);
+  }, [fetchIgnitionOffEvents, getCredentials]);
 
   useEffect(() => {
     void fetchDevices();
@@ -153,6 +206,11 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     };
   }, [fetchDevices]);
 
+  // Re-render a cada 30s para atualizar contadores de tempo parado
+  useEffect(() => {
+    const timer = setInterval(() => setTick((v) => v + 1), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const getDevicePosition = (deviceId: number) => positions.find((p) => p.deviceId === deviceId);
 
@@ -270,8 +328,30 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
             const sat = pos?.attributes?.sat;
             const power = pos?.attributes?.power;
 
+            // Regras de status conforme especificação:
+            // speed > 5 → "Em movimento"
+            // speed <= 5 E ignition == false E existe ignitionOff → mostrar tempo parado
+            // Caso contrário → "Parado (sem histórico)"
             const isMoving = speed > 5;
-            const movementLabel = isMoving ? 'Em movimento' : 'Parado';
+
+            // eventTime do último ignitionOff vindo do Traccar (UTC)
+            const ignitionOffEventTime = ignitionOffEvents[String(device.id)];
+
+            // Fallback: se não há evento, usar pos.fixTime
+            const fallbackTime = pos?.fixTime;
+
+            let stoppedLabel = '';
+            if (isMoving) {
+              stoppedLabel = '';
+            } else if (ignition === false && ignitionOffEventTime) {
+              // Tempo parado = agora - eventTime do Traccar (ambos em UTC/epoch)
+              stoppedLabel = formatStoppedDuration(ignitionOffEventTime);
+            } else if (!isMoving && fallbackTime && ignition === false) {
+              // Fallback usando fixTime
+              stoppedLabel = formatStoppedDuration(fallbackTime);
+            } else {
+              stoppedLabel = 'sem histórico';
+            }
 
             return (
               <div
@@ -312,9 +392,19 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                 </div>
 
                 <div className="mt-2 flex items-center justify-between">
-                  <span className={cn('text-[11px] font-bold', isMoving ? 'text-emerald-400' : 'text-red-400')}>
-                    {movementLabel}
-                  </span>
+                  {isMoving ? (
+                    <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-400">
+                      <Clock className="h-3.5 w-3.5" /> Em movimento
+                    </span>
+                  ) : stoppedLabel && stoppedLabel !== 'sem histórico' ? (
+                    <span className="flex items-center gap-1 text-[11px] font-bold text-red-400">
+                      <Clock className="h-3.5 w-3.5" /> Parado {stoppedLabel}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-[11px] font-bold text-red-400">
+                      <Clock className="h-3.5 w-3.5" /> Parado
+                    </span>
+                  )}
                   <span className="text-[10px] text-[hsl(180,5%,40%)]">{formatDateTime(device.lastUpdate)}</span>
                 </div>
               </div>

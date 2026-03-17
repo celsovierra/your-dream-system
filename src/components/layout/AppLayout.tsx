@@ -427,48 +427,32 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       </aside>
 
       <button
-        onClick={() => {
-          if (window.innerWidth >= 1024) {
-            setSidebarCollapsed((prev) => !prev);
-            return;
-          }
-
-          setSidebarOpen((prev) => !prev);
-          setSidebarCollapsed(false);
-        }}
+        onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
         title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
-        style={{ left: sidebarCollapsed ? '1rem' : '19rem' }}
+        style={{ left: sidebarCollapsed ? '4.5rem' : '19rem' }}
         className={cn(
-          "fixed top-4 z-[1100] flex items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-2xl hover:bg-accent hover:text-accent-foreground hover:scale-110 active:scale-95 transition-all duration-200",
+          "fixed top-4 z-[1001] hidden lg:flex items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-2xl hover:bg-accent hover:text-accent-foreground hover:scale-110 active:scale-95 transition-all duration-200",
           sidebarCollapsed ? 'h-12 w-12' : 'h-8 w-8'
         )}
       >
-        {sidebarCollapsed || window.innerWidth < 1024 ? <PanelLeft className="h-6 w-6" /> : <PanelLeftClose className="h-4 w-4" />}
+        {sidebarCollapsed ? <PanelLeft className="h-6 w-6" /> : <PanelLeftClose className="h-4 w-4" />}
       </button>
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {!selectedVehicle && (
           <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-4">
               <button
-                onClick={() => {
-                  if (window.innerWidth >= 1024) {
-                    setSidebarCollapsed((prev) => !prev);
-                    setSidebarOpen(true);
-                    return;
-                  }
-                  setSidebarOpen(true);
-                }}
-                title={sidebarCollapsed ? 'Mostrar veículos' : 'Ocultar veículos'}
-                className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                onClick={() => setSidebarOpen(true)}
+                className="rounded-md p-2 text-muted-foreground hover:bg-secondary lg:hidden"
               >
-                {sidebarCollapsed ? <PanelLeft className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+                <Menu className="h-5 w-5" />
               </button>
-              <h2 className="text-lg font-semibold text-card-foreground md:hidden">
+              <h2 className="text-lg font-semibold text-card-foreground lg:hidden">
                 {[...headerNavItems, ...navItems, ...bottomNavItems].find((i) => i.path === location.pathname)?.label || 'Sistema de Cobrança'}
               </h2>
-              <nav className="hidden md:flex items-center gap-1 ml-2">
+              <nav className="hidden md:flex items-center gap-1 ml-4">
                 {headerNavItems.map((item) => {
                   const isActive = location.pathname === item.path;
                   return (

@@ -17,15 +17,14 @@ import type {
   PaymentGatewayConfig,
   DashboardStats,
 } from '@/types/billing';
+import { supabase } from '@/integrations/supabase/client';
+
 // Base URL configurável - prioriza URL salva da VPS no navegador
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-const RETRIABLE_PROXY_ERROR = /\b(502|503|504)\b|bad gateway|gateway timeout/i;
 
 class ApiService {
   private baseUrl: string;
   private token: string | null = null;
-  private traccarGetCache = new Map<string, { expiresAt: number; result: ApiResponse<any> }>();
-  private traccarInFlight = new Map<string, Promise<ApiResponse<any>>>();
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -61,47 +60,6 @@ class ApiService {
   clearToken() {
     this.token = null;
     localStorage.removeItem('auth_token');
-  }
-
-  private sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  private isRetriableProxyError(message?: string) {
-    return RETRIABLE_PROXY_ERROR.test(message || '');
-  }
-
-  private getTraccarCacheTtl(endpoint = '', method = 'GET') {
-    if (method !== 'GET') return 0;
-    if (endpoint.startsWith('/api/positions')) return 2500;
-    if (endpoint.startsWith('/api/devices?id=')) return 4000;
-    if (endpoint.startsWith('/api/devices')) return 15000;
-    return 0;
-  }
-
-  private getTraccarCacheKey(params: { traccar_url: string; traccar_user: string; endpoint?: string; method?: string; body?: any }) {
-    return JSON.stringify({
-      traccar_url: params.traccar_url,
-      traccar_user: params.traccar_user,
-      endpoint: params.endpoint || '/api/users',
-      method: params.method || 'GET',
-      body: (params.method || 'GET') === 'GET' ? undefined : params.body,
-    });
-  }
-
-  private async performTraccarProxyRequest(params: { traccar_url: string; traccar_user: string; traccar_password: string; endpoint?: string; method?: string; body?: any }) {
-    const requestOptions = {
-      method: 'POST',
-      body: JSON.stringify(params),
-    } satisfies RequestInit;
-
-    const firstAttempt = await this.request<{ data: any }>('/traccar/proxy', requestOptions);
-    if (firstAttempt.success || !this.isRetriableProxyError(firstAttempt.error)) {
-      return firstAttempt;
-    }
-
-    await this.sleep(700);
-    return this.request<{ data: any }>('/traccar/proxy', requestOptions);
   }
 
   private async request<T>(
@@ -330,50 +288,49 @@ class ApiService {
 
   // ===== TRACCAR =====
   async traccarProxy(params: { traccar_url: string; traccar_user: string; traccar_password: string; endpoint?: string; method?: string; body?: any }) {
-    const method = params.method || 'GET';
-    const cacheTtl = this.getTraccarCacheTtl(params.endpoint, method);
-    const cacheKey = this.getTraccarCacheKey(params);
+    const directResult = await this.request<{ data: any }>('/traccar/proxy', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
 
-    if (cacheTtl > 0) {
-      const cached = this.traccarGetCache.get(cacheKey);
-      if (cached && cached.expiresAt > Date.now()) {
-        return cached.result;
-      }
-
-      const inFlight = this.traccarInFlight.get(cacheKey);
-      if (inFlight) {
-        return inFlight;
-      }
+    if (directResult.success) {
+      return directResult;
     }
 
-    const requestPromise = this.performTraccarProxyRequest(params)
-      .then((result) => {
-        if (cacheTtl > 0 && result.success) {
-          this.traccarGetCache.set(cacheKey, {
-            expiresAt: Date.now() + cacheTtl,
-            result,
-          });
-        }
+    console.warn('[api.traccarProxy] Falling back to Lovable Cloud proxy:', directResult.error);
 
-        if (!result.success) {
-          console.warn('[api.traccarProxy] VPS request failed:', result.error);
-        }
+    const { data, error } = await supabase.functions.invoke('traccar-proxy', {
+      body: params,
+    });
 
-        return result;
-      })
-      .finally(() => {
-        if (cacheTtl > 0) {
-          this.traccarInFlight.delete(cacheKey);
-        }
-      });
-
-    if (cacheTtl > 0) {
-      this.traccarInFlight.set(cacheKey, requestPromise);
+    if (error) {
+      return {
+        success: false,
+        error: directResult.error || error.message || 'Erro ao consultar Traccar',
+      };
     }
 
-    return requestPromise;
+    return {
+      success: true,
+      data: data as any,
+    };
   }
 
+  // Buscar eventos ignitionOff em lote (com cache server-side de 5 min)
+  async getIgnitionOffEvents(params: { traccar_url: string; traccar_user: string; traccar_password: string }) {
+    const directResult = await this.request<{ data: Record<string, string>; cached?: boolean }>('/traccar/ignition-events', {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+
+    if (directResult.success) {
+      return directResult;
+    }
+
+    // Fallback: sem endpoint VPS, retorna vazio
+    console.warn('[api.getIgnitionOffEvents] Failed:', directResult.error);
+    return { success: false, error: directResult.error, data: undefined };
+  }
 
   // ===== CONFIGURAÇÕES =====
   async getWhatsAppConfig() {
