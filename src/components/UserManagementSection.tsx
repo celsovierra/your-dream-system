@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { UserPlus, Pencil, Trash2, Eye, EyeOff, Shield, User, Loader2 } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, Eye, EyeOff, Shield, User, Loader2, Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { fetchUsersVps, registerVps, updateUserVps, deleteUserVps, type AppUser } from '@/services/auth';
 
