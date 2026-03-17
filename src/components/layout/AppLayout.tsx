@@ -156,6 +156,10 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         setHasUpdate(Boolean(data.hasUpdate));
         setDeployCheckError(null);
 
+        if (data.runningCommit) {
+          setRunningVersion(data.runningCommit);
+        }
+
         if (data.runningStartedAt) {
           localStorage.setItem('last_deploy_at', data.runningStartedAt);
           setLastDeployAt(data.runningStartedAt);
