@@ -213,6 +213,7 @@ export async function updateUserVps(id: string, data: Partial<{ name: string; em
   const res = await api.updateUser(id, data);
   if (!res.success) throw new Error(res.error || 'Erro ao atualizar usuário');
 }
+export async function deleteUserVps(id: string): Promise<void> {
   const res = await api.deleteUser(id);
   if (!res.success) throw new Error(res.error || 'Erro ao remover usuário');
 }
