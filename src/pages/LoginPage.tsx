@@ -1,23 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Receipt, Eye, EyeOff, LogIn, Shield, Zap, BarChart3, FileText } from 'lucide-react';
+import { Receipt, Eye, EyeOff, LogIn, Shield, Zap, BarChart3, FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getStoredUsers, isVpsMode, loginVps, setCurrentUser } from '@/services/auth';
+import api from '@/services/api';
 
 interface LoginPageProps {
   onLogin: (token: string) => void;
+  slug?: string;
 }
 
-const LoginPage = ({ onLogin }: LoginPageProps) => {
+interface TenantBranding {
+  slug: string;
+  company_name: string;
+  logo: string | null;
+  primary_color: string | null;
+  owner_id: string;
+}
+
+const LoginPage = ({ onLogin, slug }: LoginPageProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [branding, setBranding] = useState<TenantBranding | null>(null);
+  const [brandingLoading, setBrandingLoading] = useState(!!slug);
 
-  const companyName = localStorage.getItem('layout_company_name') || 'CobrançaPro';
-  const customLogo = localStorage.getItem('layout_logo');
+  // Load tenant branding from backend if slug is provided
+  useEffect(() => {
+    if (!slug) return;
+    setBrandingLoading(true);
+    api.getBranding(slug).then(res => {
+      if (res.success && res.data) {
+        // Unwrap nested data
+        const payload = (res.data as any)?.data || res.data;
+        setBranding(payload);
+      }
+    }).catch(() => {}).finally(() => setBrandingLoading(false));
+  }, [slug]);
+
+  const companyName = branding?.company_name || localStorage.getItem('layout_company_name') || 'CobrançaPro';
+  const customLogo = branding?.logo || localStorage.getItem('layout_logo');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +55,10 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
     try {
       if (isVpsMode()) {
         await loginVps(email.trim(), password);
+        // Store the slug context for the session
+        if (slug) {
+          localStorage.setItem('login_slug', slug);
+        }
         onLogin(localStorage.getItem('auth_token') || `token-${Date.now()}`);
         toast.success('Login realizado com sucesso!');
         return;
@@ -55,6 +84,14 @@ const LoginPage = ({ onLogin }: LoginPageProps) => {
       setLoading(false);
     }
   };
+
+  if (brandingLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen">

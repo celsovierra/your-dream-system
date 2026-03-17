@@ -28,6 +28,8 @@ const ConfiguracoesPage = () => {
   const [layoutCompanyName, setLayoutCompanyName] = useState(() => localStorage.getItem('layout_company_name') || 'CobrançaPro');
   const [layoutPrimaryColor, setLayoutPrimaryColor] = useState(() => localStorage.getItem('layout_primary_color') || '#3b82f6');
   const [layoutLogo, setLayoutLogo] = useState<string | null>(() => localStorage.getItem('layout_logo'));
+  const [layoutSlug, setLayoutSlug] = useState('');
+  const [slugSaving, setSlugSaving] = useState(false);
   const [apiBaseUrl, setApiBaseUrl] = useState(() => localStorage.getItem('api_base_url') || '');
   const configuredWebhookBase = (apiBaseUrl || window.location.origin).trim().replace(/\/+$/, '').replace(/\/api$/, '');
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +112,25 @@ const ConfiguracoesPage = () => {
       }
     } catch {}
   }, [autoInstanceName]);
+
+  // Load current user's branding/slug from backend
+  useEffect(() => {
+    const currentUser = JSON.parse(localStorage.getItem('current_user') || '{}');
+    if (currentUser?.slug) {
+      setLayoutSlug(currentUser.slug);
+    }
+    // Try to load branding from user's own slug
+    if (currentUser?.slug) {
+      api.getBranding(currentUser.slug).then(res => {
+        if (res.success && res.data) {
+          const payload = (res.data as any)?.data || res.data;
+          if (payload.company_name) setLayoutCompanyName(payload.company_name);
+          if (payload.logo) setLayoutLogo(payload.logo);
+          if (payload.primary_color) setLayoutPrimaryColor(payload.primary_color);
+        }
+      }).catch(() => {});
+    }
+  }, []);
 
   const toggleSection = (key: string) => {
     setOpenSection(prev => (prev === key ? null : key));
@@ -523,6 +544,23 @@ const ConfiguracoesPage = () => {
           <CollapsibleContent>
             <CardContent className="space-y-5 pt-0">
               <div>
+                <Label>Slug da URL (endereço personalizado)</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">{window.location.origin}/</span>
+                  <Input
+                    value={layoutSlug}
+                    onChange={(e) => setLayoutSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                    placeholder="meu-slug"
+                    maxLength={50}
+                    className="font-mono text-sm"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Este será o link de login personalizado para você e seus usuários. Ex: seudominio.com/gpswill
+                </p>
+              </div>
+
+              <div>
                 <Label>Nome da Empresa (tela de login)</Label>
                 <Input value={layoutCompanyName} onChange={(e) => setLayoutCompanyName(e.target.value)} placeholder="Nome da sua empresa" maxLength={50} />
               </div>
@@ -587,21 +625,51 @@ const ConfiguracoesPage = () => {
                 </div>
               </div>
 
-              <Button size="sm" onClick={() => {
-                localStorage.setItem('layout_company_name', layoutCompanyName);
-                localStorage.setItem('layout_primary_color', layoutPrimaryColor);
-                if (layoutLogo) localStorage.setItem('layout_logo', layoutLogo);
-                else localStorage.removeItem('layout_logo');
+              <Button size="sm" disabled={slugSaving} onClick={async () => {
+                setSlugSaving(true);
+                try {
+                  // Save to localStorage
+                  localStorage.setItem('layout_company_name', layoutCompanyName);
+                  localStorage.setItem('layout_primary_color', layoutPrimaryColor);
+                  if (layoutLogo) localStorage.setItem('layout_logo', layoutLogo);
+                  else localStorage.removeItem('layout_logo');
 
-                const hsl = hexToHSL(layoutPrimaryColor);
-                if (hsl) {
-                  document.documentElement.style.setProperty('--primary', hsl);
-                  localStorage.setItem('layout_primary_hsl', hsl);
+                  const hsl = hexToHSL(layoutPrimaryColor);
+                  if (hsl) {
+                    document.documentElement.style.setProperty('--primary', hsl);
+                    localStorage.setItem('layout_primary_hsl', hsl);
+                  }
+
+                  // Save to backend (slug + branding)
+                  const res = await api.saveBranding({
+                    slug: layoutSlug || undefined,
+                    layout_company_name: layoutCompanyName,
+                    layout_logo: layoutLogo,
+                    layout_primary_color: layoutPrimaryColor,
+                  });
+
+                  if (!res.success) {
+                    toast.error(res.error || 'Erro ao salvar branding no servidor');
+                    return;
+                  }
+
+                  // Update current_user in localStorage with slug
+                  if (layoutSlug) {
+                    try {
+                      const cu = JSON.parse(localStorage.getItem('current_user') || '{}');
+                      cu.slug = layoutSlug;
+                      localStorage.setItem('current_user', JSON.stringify(cu));
+                    } catch {}
+                  }
+
+                  toast.success('Layout salvo! A tela de login será atualizada.');
+                } catch (err: any) {
+                  toast.error(err?.message || 'Erro ao salvar layout');
+                } finally {
+                  setSlugSaving(false);
                 }
-
-                toast.success('Layout salvo! A tela de login será atualizada.');
               }}>
-                <Save className="mr-2 h-3 w-3" /> Salvar Layout
+                <Save className="mr-2 h-3 w-3" /> {slugSaving ? 'Salvando...' : 'Salvar Layout'}
               </Button>
             </CardContent>
           </CollapsibleContent>

@@ -245,6 +245,12 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS client_limit INT DEFAULT 0 AFTER role
 ALTER TABLE users ADD COLUMN IF NOT EXISTS expires_at DATE NULL AFTER client_limit;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions JSON AFTER expires_at;
 
+-- Slug para URL personalizada (ex: /gpswill)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS slug VARCHAR(100) AFTER permissions;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS layout_company_name VARCHAR(255) AFTER slug;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS layout_logo LONGTEXT AFTER layout_company_name;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS layout_primary_color VARCHAR(10) AFTER layout_logo;
+
 -- Definir primeiro usuário como admin
 UPDATE users SET role = 'admin' WHERE id = (SELECT min_id FROM (SELECT MIN(id) AS min_id FROM users) AS t);
 

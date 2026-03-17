@@ -32,6 +32,10 @@ export interface SaasUser {
   expires_at: string | null;
   permissions: string[];
   is_active: boolean;
+  slug: string | null;
+  layout_company_name: string | null;
+  layout_logo: string | null;
+  layout_primary_color: string | null;
   createdAt: string;
 }
 
@@ -170,6 +174,18 @@ class ApiService {
 
   async deleteUser(id: string) {
     return this.request<void>(`/auth/users/${id}`, { method: 'DELETE' });
+  }
+
+  // ===== BRANDING =====
+  async getBranding(slug: string) {
+    return this.request<{ slug: string; company_name: string; logo: string | null; primary_color: string | null; owner_id: string }>(`/auth/branding/${encodeURIComponent(slug)}`);
+  }
+
+  async saveBranding(data: { slug?: string; layout_company_name?: string; layout_logo?: string | null; layout_primary_color?: string | null }) {
+    return this.request<void>('/auth/branding', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   }
 
   // ===== CLIENTES =====
