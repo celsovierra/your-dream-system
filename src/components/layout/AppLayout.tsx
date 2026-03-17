@@ -8,6 +8,7 @@ import {
   LogOut,
   LayoutDashboard,
   Users,
+  UserCircle,
   MessageSquare,
   ListTodo,
   FileText,
@@ -22,6 +23,7 @@ import {
   DollarSign,
   ScrollText,
 } from 'lucide-react';
+import TraccarUsersDialog from './TraccarUsersDialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -58,6 +60,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [deploying, setDeploying] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<{ device: TraccarDevice; position?: TraccarPosition } | null>(null);
   const [hasAutoOpenedMap, setHasAutoOpenedMap] = useState(false);
+  const [showTraccarUsers, setShowTraccarUsers] = useState(false);
   const [hasUpdate, setHasUpdate] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
   const [deployCheckError, setDeployCheckError] = useState<string | null>(null);
@@ -463,6 +466,13 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             </div>
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setShowTraccarUsers(true)}
+                title="Usuários Traccar"
+                className="rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
+              >
+                <UserCircle className="h-5 w-5" />
+              </button>
+              <button
                 onClick={() => setDarkMode(!darkMode)}
                 title={darkMode ? 'Modo claro' : 'Modo escuro'}
                 className="rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-200"
@@ -492,6 +502,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           </main>
         )}
       </div>
+      <TraccarUsersDialog open={showTraccarUsers} onOpenChange={setShowTraccarUsers} />
     </div>
   );
 };
