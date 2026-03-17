@@ -427,15 +427,23 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
       </aside>
 
       <button
-        onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onClick={() => {
+          if (window.innerWidth >= 1024) {
+            setSidebarCollapsed((prev) => !prev);
+            return;
+          }
+
+          setSidebarOpen((prev) => !prev);
+          setSidebarCollapsed(false);
+        }}
         title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
-        style={{ left: sidebarCollapsed ? '4.5rem' : '19rem' }}
+        style={{ left: sidebarCollapsed ? '1rem' : '19rem' }}
         className={cn(
-          "fixed top-[1.25rem] z-[1100] hidden lg:flex items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-2xl hover:bg-accent hover:text-accent-foreground hover:scale-110 active:scale-95 transition-all duration-200",
+          "fixed top-4 z-[1100] flex items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-2xl hover:bg-accent hover:text-accent-foreground hover:scale-110 active:scale-95 transition-all duration-200",
           sidebarCollapsed ? 'h-12 w-12' : 'h-8 w-8'
         )}
       >
-        {sidebarCollapsed ? <PanelLeft className="h-6 w-6" /> : <PanelLeftClose className="h-4 w-4" />}
+        {sidebarCollapsed || window.innerWidth < 1024 ? <PanelLeft className="h-6 w-6" /> : <PanelLeftClose className="h-4 w-4" />}
       </button>
 
       {/* Main content */}
