@@ -298,19 +298,19 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         )}
       >
         <div className={cn("flex items-center border-b border-sidebar-border px-3 gap-2", sidebarCollapsed ? "h-12 justify-center" : "h-16")}>
-          <div className={cn("flex items-center gap-2 flex-1 min-w-0", sidebarCollapsed && "justify-center")}>
-            {(() => {
-              const customLogo = localStorage.getItem('layout_logo');
-              return customLogo
-                ? <img src={customLogo} alt="" className="h-7 w-7 shrink-0 rounded object-contain" />
-                : <Receipt className="h-7 w-7 shrink-0 text-sidebar-primary" />;
-            })()}
-            {!sidebarCollapsed && (
+          {!sidebarCollapsed && (
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {(() => {
+                const customLogo = localStorage.getItem('layout_logo');
+                return customLogo
+                  ? <img src={customLogo} alt="" className="h-7 w-7 shrink-0 rounded object-contain" />
+                  : <Receipt className="h-7 w-7 shrink-0 text-sidebar-primary" />;
+              })()}
               <span className="text-lg font-bold tracking-tight text-sidebar-primary-foreground truncate">
                 {localStorage.getItem('layout_company_name') || 'CobrançaPro'}
               </span>
-            )}
-          </div>
+            </div>
+          )}
           {!sidebarCollapsed && (
             <div className="flex shrink-0 gap-1.5 items-center">
               <Link
