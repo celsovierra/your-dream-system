@@ -51,8 +51,9 @@ function buildDeployCommand() {
     git stash push --include-untracked -m "auto-deploy-$(date +%s)" >/dev/null 2>&1 || true &&
     git fetch origin "$BRANCH" &&
     git pull --rebase origin "$BRANCH" &&
+    sed -i '/react-leaflet/d' package.json &&
     rm -rf node_modules package-lock.json &&
-    npm install --legacy-peer-deps &&
+    npm install &&
     npm run build &&
     node -e "
       const fs = require('fs');
