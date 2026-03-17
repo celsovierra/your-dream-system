@@ -460,9 +460,19 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {children}
-        </main>
+        {selectedVehicle ? (
+          <div className="flex-1 min-h-0">
+            <VehicleMapView
+              device={selectedVehicle.device}
+              position={selectedVehicle.position}
+              onClose={() => setSelectedVehicle(null)}
+            />
+          </div>
+        ) : (
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+            {children}
+          </main>
+        )}
       </div>
     </div>
   );
