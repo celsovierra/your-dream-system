@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Car, MapPin, Loader2, WifiOff, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Car, MapPin, Loader2, WifiOff, RefreshCw, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userStorageGet } from '@/services/auth';
 import api from '@/services/api';
