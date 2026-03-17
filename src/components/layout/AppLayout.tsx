@@ -279,7 +279,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="relative flex h-screen overflow-hidden">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -325,19 +325,6 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           </Link>
         </div>
 
-        {/* Collapse/expand toggle - outside sidebar edge */}
-        <button
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
-          className={cn(
-            "absolute z-50 hidden lg:flex items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-xl hover:bg-accent hover:text-accent-foreground hover:scale-110 active:scale-95 transition-all duration-200",
-            sidebarCollapsed
-              ? 'top-4 -right-6 h-12 w-12 shadow-[0_4px_12px_rgba(0,0,0,0.3)]'
-              : 'top-5 -right-3.5 h-8 w-8'
-          )}
-        >
-          {sidebarCollapsed ? <PanelLeft className="h-6 w-6" /> : <PanelLeftClose className="h-4 w-4" />}
-        </button>
 
         <nav className="flex-1 overflow-y-auto p-2">
           <SidebarVehicles
@@ -419,6 +406,18 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           </div>
         )}
       </aside>
+
+      <button
+        onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+        title={sidebarCollapsed ? 'Expandir menu' : 'Recolher menu'}
+        style={{ left: sidebarCollapsed ? '3rem' : '16.5rem' }}
+        className={cn(
+          "absolute top-4 z-[70] hidden lg:flex items-center justify-center rounded-full border-2 border-border bg-card text-muted-foreground shadow-xl hover:bg-accent hover:text-accent-foreground hover:scale-110 active:scale-95 transition-all duration-200",
+          sidebarCollapsed ? 'h-12 w-12' : 'h-8 w-8'
+        )}
+      >
+        {sidebarCollapsed ? <PanelLeft className="h-6 w-6" /> : <PanelLeftClose className="h-4 w-4" />}
+      </button>
 
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
