@@ -117,7 +117,7 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
         toast.success(`${liveDevice.name} bloqueado!`);
       }
     }
-  }, [blocked, device.name, sendCommand]);
+  }, [blocked, liveDevice.name, sendCommand]);
 
   useEffect(() => {
     if (!mapRef.current || !position) return;
