@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import SidebarVehicles from './SidebarVehicles';
 import { Button } from '@/components/ui/button';
 import { isAdmin } from '@/services/auth';
 import {
