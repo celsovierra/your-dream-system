@@ -213,10 +213,10 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   }, [sidebarCollapsed]);
 
   useEffect(() => {
-    if (location.pathname !== '/' && selectedVehicle) {
+    if (location.pathname !== '/' && location.pathname !== '/financeiro' && selectedVehicle) {
       setSelectedVehicle(null);
     }
-  }, [location.pathname, selectedVehicle]);
+  }, [location.pathname]);
 
   useEffect(() => {
     const confirmPendingDeploy = async () => {
