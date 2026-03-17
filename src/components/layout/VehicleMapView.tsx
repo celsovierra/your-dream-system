@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { MapPin, Calendar, Battery, Satellite, Gauge, Power, ChevronDown, ChevronUp, Car, Lock, Unlock, Anchor, Route, Map as MapIcon, Pencil, History, Loader2, Layers, X } from 'lucide-react';
+import { MapPin, Calendar, Battery, Satellite, Gauge, Power, ChevronDown, ChevronUp, Car, Lock, Unlock, Anchor, Route, Map as MapIcon, Pencil, History, Loader2, Layers, X, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -7,6 +7,7 @@ import type { TraccarDevice, TraccarPosition } from './SidebarVehicles';
 import { userStorageGet } from '@/services/auth';
 import api from '@/services/api';
 import { toast } from 'sonner';
+import { getVehicleStopTime } from '@/hooks/useVehicleStopTime';
 
 interface VehicleMapViewProps {
   device: TraccarDevice;
