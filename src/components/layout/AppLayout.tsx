@@ -405,7 +405,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         <nav className={cn("flex-1 overflow-y-auto p-2", sidebarCollapsed && "hidden")}>
           <SidebarVehicles
             collapsed={sidebarCollapsed}
-            autoSelectFirst={location.pathname === '/' && !hasAutoOpenedMap}
+            autoSelectFirst={!hasAutoOpenedMap || (sidebarCollapsed && !selectedVehicle)}
             selectedDeviceId={selectedVehicle?.device.id ?? null}
             onSelectDevice={(device, position) => {
               setSelectedVehicle({ device, position });
