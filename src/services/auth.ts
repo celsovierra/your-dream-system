@@ -14,6 +14,7 @@ export interface AppUser {
   client_limit?: number;
   expires_at?: string | null;
   permissions?: string[];
+  slug?: string | null;
   createdAt: string;
 }
 
