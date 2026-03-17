@@ -276,7 +276,7 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
                 <Route className="h-4 w-4" />
               </button>
               <button title="Street View" className="flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors">
-                <Map className="h-4 w-4" />
+                <MapIcon className="h-4 w-4" />
               </button>
               <button title="Histórico" className="flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors">
                 <History className="h-4 w-4" />
