@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, MapPin, Calendar, Battery, Satellite, Gauge, Power, ChevronDown, ChevronUp, Car, Lock, Unlock, Anchor, Route, Map, Pencil, History, Loader2 } from 'lucide-react';
+import { MapPin, Calendar, Battery, Satellite, Gauge, Power, ChevronDown, ChevronUp, Car, Lock, Unlock, Anchor, Route, Map as MapIcon, Pencil, History, Loader2, Layers, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -21,6 +21,8 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
   const [cardCollapsed, setCardCollapsed] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [blocking, setBlocking] = useState(false);
+  const [mapType, setMapType] = useState<'satellite' | 'roadmap'>('satellite');
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
 
   const sendCommand = useCallback(async (type: 'engineStop' | 'engineResume') => {
     const traccar_url = userStorageGet('traccar_url');
@@ -89,10 +91,15 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
       const map = L.map(mapRef.current, { zoomControl: false }).setView([position.latitude, position.longitude], 15);
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      const tileUrl = mapType === 'satellite'
+        ? 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+        : 'https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+
+      const tileLayer = L.tileLayer(tileUrl, {
         attribution: '© Google Maps',
         maxZoom: 20,
       }).addTo(map);
+      tileLayerRef.current = tileLayer;
 
       const icon = L.divIcon({
         html: `<div style="background:hsl(var(--primary));color:white;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.4);border:3px solid white;">
@@ -121,7 +128,7 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
         mapInstanceRef.current = null;
       }
     };
-  }, [position, device.name]);
+  }, [position, device.name, mapType]);
 
   const formatDateTime = (dateStr: string) => {
     try {
@@ -153,7 +160,16 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
 
   return (
     <div className="relative flex flex-col h-full">
-      {/* Close button removed - user closes via sidebar navigation */}
+      {/* Map type selector */}
+      <button
+        onClick={() => setMapType(mapType === 'satellite' ? 'roadmap' : 'satellite')}
+        className="absolute top-3 right-14 z-[1000] rounded-lg px-3 py-2 bg-slate-900/80 backdrop-blur-sm shadow-lg hover:bg-slate-900 text-white transition-colors flex items-center gap-1.5 text-xs font-medium"
+        title={mapType === 'satellite' ? 'Mapa normal' : 'Satélite'}
+      >
+        <Layers className="h-4 w-4" />
+        {mapType === 'satellite' ? 'Mapa' : 'Satélite'}
+      </button>
+
 
       {/* Vehicle info card */}
       {cardOpen && position && (
@@ -269,7 +285,7 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
                 <Route className="h-4 w-4" />
               </button>
               <button title="Street View" className="flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors">
-                <Map className="h-4 w-4" />
+                <MapIcon className="h-4 w-4" />
               </button>
               <button title="Histórico" className="flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors">
                 <History className="h-4 w-4" />
