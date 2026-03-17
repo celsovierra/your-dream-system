@@ -278,85 +278,54 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                     : "border-sidebar-border bg-sidebar-accent/30 hover:bg-sidebar-accent/60 hover:border-sidebar-foreground/20"
                 )}
               >
-                {/* Top row: icon + name + actions + status */}
-                <div className="flex items-start gap-2.5">
-                  <span className="text-2xl leading-none mt-0.5">{getCategoryIcon(device.category)}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className={cn("font-bold text-xs truncate", isSelected ? "text-primary" : "text-sidebar-foreground")}>
-                        {device.name}
-                      </span>
-                      <span className={cn(
-                        "text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0",
-                        isOnline
-                          ? "bg-emerald-500/20 text-emerald-400"
-                          : "bg-destructive/20 text-destructive"
-                      )}>
-                        {isOnline ? 'Online' : 'Offline'}
-                      </span>
-                    </div>
-                    {device.model && (
-                      <p className="text-[10px] text-sidebar-foreground/50 truncate">{device.model}</p>
-                    )}
-                  </div>
-                  {/* Action buttons */}
-                  <div className="flex items-center gap-0.5 shrink-0">
-                    <button
-                      onClick={e => { e.stopPropagation(); }}
-                      title="Compartilhar"
-                      className="rounded-md p-1.5 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-                    >
-                      <Share2 className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={e => { e.stopPropagation(); }}
-                      title="Editar"
-                      className="rounded-md p-1.5 text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={e => { e.stopPropagation(); }}
-                      title="Bloquear"
-                      className="rounded-md p-1.5 text-sidebar-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
-                    >
-                      <ShieldOff className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Telemetry row */}
-                <div className="flex items-center gap-3 mt-2 flex-wrap">
-                  {/* Ignition */}
-                  <span className={cn("flex items-center gap-1 text-[10px] font-medium",
-                    ignition ? "text-emerald-400" : "text-destructive/80"
+                {/* Row 1: Name + Status + Actions */}
+                <div className="flex items-center gap-2">
+                  <span className="text-lg leading-none shrink-0">{getCategoryIcon(device.category)}</span>
+                  <span className={cn("font-bold text-[11px] truncate flex-1 min-w-0", isSelected ? "text-primary" : "text-sidebar-foreground")}>
+                    {device.name}
+                  </span>
+                  <span className={cn(
+                    "text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 uppercase tracking-wide",
+                    isOnline ? "bg-emerald-500/20 text-emerald-400" : "bg-destructive/20 text-destructive"
                   )}>
-                    <span className="text-[9px]">⚡</span> {ignition ? 'Lig' : 'Des'}
+                    {isOnline ? 'Online' : 'Offline'}
                   </span>
-                  {/* Signal */}
-                  <span className="flex items-center gap-1 text-[10px] font-medium text-sidebar-foreground/60">
-                    <Wifi className="h-3 w-3" /> OK
-                  </span>
-                  {/* Speed */}
-                  <span className="flex items-center gap-1 text-[10px] font-medium text-sidebar-foreground/60">
-                    <Gauge className="h-3 w-3" /> {Math.round(speed)} km/h
-                  </span>
-                  {/* Satellites */}
-                  {sat !== undefined && (
-                    <span className="flex items-center gap-1 text-[10px] font-medium text-sidebar-foreground/60">
-                      <Radio className="h-3 w-3" /> {sat}
-                    </span>
-                  )}
-                  {/* Voltage */}
-                  {power !== undefined && (
-                    <span className="flex items-center gap-1 text-[10px] font-medium text-sidebar-foreground/60">
-                      <Battery className="h-3 w-3" /> {power.toFixed(1)}V
-                    </span>
-                  )}
+                  <div className="flex items-center shrink-0 -mr-1">
+                    <button onClick={e => e.stopPropagation()} title="Compartilhar" className="rounded p-1 text-sidebar-foreground/30 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+                      <Share2 className="h-3 w-3" />
+                    </button>
+                    <button onClick={e => e.stopPropagation()} title="Editar" className="rounded p-1 text-sidebar-foreground/30 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                    <button onClick={e => e.stopPropagation()} title="Bloquear" className="rounded p-1 text-sidebar-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-colors">
+                      <ShieldOff className="h-3 w-3" />
+                    </button>
+                  </div>
                 </div>
 
-                {/* Bottom row: stopped time + last update */}
-                <div className="flex items-center justify-between mt-2">
+                {device.model && (
+                  <p className="text-[10px] text-sidebar-foreground/40 truncate ml-7 -mt-0.5">{device.model}</p>
+                )}
+
+                {/* Row 2: Telemetry - compact single line */}
+                <div className="flex items-center gap-2 mt-1.5 ml-7 text-[10px] text-sidebar-foreground/50">
+                  <span className={cn("font-semibold", ignition ? "text-emerald-400" : "text-destructive/70")}>
+                    ⚡{ignition ? 'Lig' : 'Des'}
+                  </span>
+                  <span>📶OK</span>
+                  <span>⏱{Math.round(speed)}km/h</span>
+                  {sat !== undefined && <span>📡{sat}</span>}
+                </div>
+
+                {/* Row 3: Voltage on its own if present */}
+                {power !== undefined && (
+                  <div className="ml-7 mt-0.5 text-[10px] text-sidebar-foreground/50">
+                    🔋 {power.toFixed(1)}V
+                  </div>
+                )}
+
+                {/* Row 4: Status + time */}
+                <div className="flex items-center justify-between mt-1.5 ml-7">
                   {stoppedTime ? (
                     <span className="flex items-center gap-1 text-[10px] font-semibold text-destructive">
                       <Clock className="h-3 w-3" /> Parado {stoppedTime}
@@ -366,7 +335,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
                       <Clock className="h-3 w-3" /> Em movimento
                     </span>
                   )}
-                  <span className="text-[10px] text-sidebar-foreground/40">
+                  <span className="text-[9px] text-sidebar-foreground/35">
                     {formatDateTime(pos?.fixTime || device.lastUpdate)}
                   </span>
                 </div>
