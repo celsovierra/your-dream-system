@@ -273,8 +273,10 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
             const speed = pos?.speed ?? 0;
             const sat = pos?.attributes?.sat;
             const power = pos?.attributes?.power;
-            const isMoving = pos?.attributes?.motion || speed > 1;
-            const stoppedTime = !isMoving ? formatStoppedTime(pos?.fixTime || device.lastUpdate) : '';
+            const isStopped = ignition === false;
+            // Use device.lastUpdate as reference for when ignition turned off
+            // fixTime updates constantly; lastUpdate is more stable for stopped calc
+            const stoppedTime = isStopped ? formatStoppedTime(device.lastUpdate) : '';
 
             return (
               <div
