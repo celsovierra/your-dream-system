@@ -214,7 +214,8 @@ router.put('/users/:id', async (req, res) => {
 // DELETE /api/auth/users/:id
 router.delete('/users/:id', async (req, res) => {
   try {
-    const [user] = await query('SELECT role FROM users WHERE id = ?', [req.params.id]);
+    const rows = await query('SELECT role FROM users WHERE id = ?', [req.params.id]);
+    const user = rows.find(r => r && typeof r === 'object' && 'role' in r);
     if (user && user.role === 'admin') {
       return res.status(403).json({ success: false, error: 'Não é possível remover o administrador' });
     }
