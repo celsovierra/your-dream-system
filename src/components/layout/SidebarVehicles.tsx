@@ -39,7 +39,7 @@ interface SidebarVehiclesProps {
   autoSelectFirst?: boolean;
 }
 
-const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: SidebarVehiclesProps) => {
+const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSelectFirst = false }: SidebarVehiclesProps) => {
   const [devices, setDevices] = useState<TraccarDevice[]>([]);
   const [positions, setPositions] = useState<TraccarPosition[]>([]);
   const [loading, setLoading] = useState(false);
