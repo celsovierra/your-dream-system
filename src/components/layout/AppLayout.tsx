@@ -612,11 +612,12 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             />
           </div>
         ) : (
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+          <main className="flex-1 overflow-y-auto p-4 pb-20 md:pb-4 lg:p-6">
             {children}
           </main>
         )}
       </div>
+      <MobileBottomNav />
       <TraccarUsersDialog open={showTraccarUsers} onOpenChange={setShowTraccarUsers} />
     </div>
   );
