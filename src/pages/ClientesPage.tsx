@@ -398,6 +398,19 @@ const ClientesPage = () => {
           await ensureWhatsAppConnected(waConfig);
           const { error } = await invokeEvolutionProxy({ action: 'send-text', to: baixaClient.phone, message, api_url: waConfig.api_url, api_key: waConfig.api_key, instance_name: waConfig.instance_name });
           if (error) throw new Error(error);
+
+          // Registrar recibo na fila como enviado
+          await addQueueItem({
+            client_id: baixaClient.id,
+            client_name: baixaClient.name,
+            client_phone: baixaClient.phone,
+            type: 'receipt',
+            amount: totalAmount,
+            due_date: baixaClient.due_date || undefined,
+            days_overdue: 0,
+            message,
+          });
+
           toast.success('Recibo enviado via WhatsApp!', { id: `receipt-${baixaClient.id}` });
         } catch (err: any) { toast.error(err?.message || 'Erro ao enviar recibo', { id: `receipt-${baixaClient.id}` }); }
       }
