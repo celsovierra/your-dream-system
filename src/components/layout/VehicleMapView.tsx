@@ -20,12 +20,12 @@ const VehicleMapView = ({ device: initialDevice, position: initialPosition, onCl
   const markerRef = useRef<L.Marker | null>(null);
   const [cardOpen, setCardOpen] = useState(true);
   const [cardCollapsed, setCardCollapsed] = useState(false);
-  const [blocked, setBlocked] = useState(false);
+  const [blockedMap, setBlockedMap] = useState<Record<number, boolean>>({});
   const [blocking, setBlocking] = useState(false);
   const [mapType, setMapType] = useState<'satellite' | 'roadmap'>('satellite');
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const anchorCircleRef = useRef<L.Circle | null>(null);
-  const [anchorActive, setAnchorActive] = useState(false);
+  const [anchorMap, setAnchorMap] = useState<Record<number, boolean>>({});
   const [livePosition, setLivePosition] = useState<TraccarPosition | undefined>(initialPosition);
   const [liveDevice, setLiveDevice] = useState<TraccarDevice>(initialDevice);
 
