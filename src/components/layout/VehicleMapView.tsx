@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
-import { X, MapPin, Calendar, Battery, Satellite, Gauge, Power, ChevronDown, ChevronUp, Car, Lock, Anchor, Route, Map, Pencil, History } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { X, MapPin, Calendar, Battery, Satellite, Gauge, Power, ChevronDown, ChevronUp, Car, Lock, Unlock, Anchor, Route, Map, Pencil, History, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { TraccarDevice, TraccarPosition } from './SidebarVehicles';
+import { userStorageGet } from '@/services/auth';
+import api from '@/services/api';
+import { toast } from 'sonner';
 
 interface VehicleMapViewProps {
   device: TraccarDevice;
@@ -16,6 +19,61 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
   const mapInstanceRef = useRef<L.Map | null>(null);
   const [cardOpen, setCardOpen] = useState(true);
   const [cardCollapsed, setCardCollapsed] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [blocking, setBlocking] = useState(false);
+
+  const sendCommand = useCallback(async (type: 'engineStop' | 'engineResume') => {
+    const traccar_url = userStorageGet('traccar_url');
+    const traccar_user = userStorageGet('traccar_user');
+    const traccar_password = userStorageGet('traccar_password');
+
+    if (!traccar_url || !traccar_user || !traccar_password) {
+      toast.error('Credenciais do Traccar não configuradas');
+      return false;
+    }
+
+    setBlocking(true);
+    try {
+      const result = await api.traccarProxy({
+        traccar_url,
+        traccar_user,
+        traccar_password,
+        endpoint: '/api/commands/send',
+        method: 'POST',
+        body: {
+          deviceId: device.id,
+          type,
+        },
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Erro ao enviar comando');
+      }
+
+      return true;
+    } catch (err: any) {
+      toast.error(`Falha: ${err?.message || 'erro desconhecido'}`);
+      return false;
+    } finally {
+      setBlocking(false);
+    }
+  }, [device.id]);
+
+  const handleToggleBlock = useCallback(async () => {
+    if (blocked) {
+      const ok = await sendCommand('engineResume');
+      if (ok) {
+        setBlocked(false);
+        toast.success(`${device.name} desbloqueado!`);
+      }
+    } else {
+      const ok = await sendCommand('engineStop');
+      if (ok) {
+        setBlocked(true);
+        toast.success(`${device.name} bloqueado!`);
+      }
+    }
+  }, [blocked, device.name, sendCommand]);
 
   useEffect(() => {
     if (!mapRef.current || !position) return;
@@ -189,9 +247,25 @@ const VehicleMapView = ({ device, position, onClose }: VehicleMapViewProps) => {
 
             {/* Action buttons - always visible */}
             <div className="flex items-center gap-1.5 px-4 pb-3">
-              <button className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg px-3 py-2 text-[11px] font-bold transition-colors">
-                <Lock className="h-3.5 w-3.5" />
-                BLOQUEAR
+              <button
+                onClick={handleToggleBlock}
+                disabled={blocking}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-bold transition-colors",
+                  blocked
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    : "bg-red-600 hover:bg-red-700 text-white",
+                  blocking && "opacity-70 cursor-not-allowed"
+                )}
+              >
+                {blocking ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : blocked ? (
+                  <Unlock className="h-3.5 w-3.5" />
+                ) : (
+                  <Lock className="h-3.5 w-3.5" />
+                )}
+                {blocking ? 'ENVIANDO...' : blocked ? 'DESBLOQUEAR' : 'BLOQUEAR'}
               </button>
               <button title="Âncora" className="flex items-center justify-center h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors">
                 <Anchor className="h-4 w-4" />
