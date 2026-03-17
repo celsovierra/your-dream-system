@@ -315,6 +315,19 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
           </div>
           {!sidebarCollapsed && (
             <>
+              <Link
+                to="/configuracoes"
+                onClick={() => setSidebarOpen(false)}
+                title="Configurações"
+                className={cn(
+                  'flex items-center justify-center rounded-lg h-9 w-9 shrink-0 transition-all duration-200',
+                  location.pathname === '/configuracoes'
+                    ? 'bg-gradient-to-b from-rose-400 to-rose-600 text-white shadow-[0_4px_6px_-1px_rgba(244,63,94,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] scale-105'
+                    : 'bg-gradient-to-b from-rose-500/80 to-rose-700/80 text-white/90 shadow-[0_2px_4px_-1px_rgba(244,63,94,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] hover:from-rose-400 hover:to-rose-600 hover:shadow-[0_4px_6px_-1px_rgba(244,63,94,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95'
+                )}
+              >
+                <Settings className="h-5 w-5 drop-shadow-sm" />
+              </Link>
               <button
                 onClick={() => setShowTraccarUsers(true)}
                 title="Usuários Traccar"
