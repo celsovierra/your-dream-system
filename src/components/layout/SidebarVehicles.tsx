@@ -98,34 +98,6 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
     return payload;
   };
 
-  // Buscar eventos ignitionOff em lote (com cache de 5 min)
-  const fetchIgnitionOffEvents = useCallback(async () => {
-    // Verificar cache frontend
-    if (ignitionEventsCache && Date.now() - ignitionEventsCache.timestamp < FRONTEND_CACHE_TTL) {
-      setIgnitionOffEvents(ignitionEventsCache.data);
-      return;
-    }
-
-    const creds = getCredentials();
-    if (!creds.traccar_url || !creds.traccar_user || !creds.traccar_password) return;
-
-    try {
-      const result = await api.getIgnitionOffEvents({
-        traccar_url: creds.traccar_url,
-        traccar_user: creds.traccar_user,
-        traccar_password: creds.traccar_password,
-      });
-
-      if (result.success && result.data) {
-        const eventsData = (result.data as any).data || result.data;
-        const events = typeof eventsData === 'object' && eventsData !== null ? eventsData as Record<string, string> : {};
-        ignitionEventsCache = { data: events, timestamp: Date.now() };
-        setIgnitionOffEvents(events);
-      }
-    } catch {
-      // Silencioso — não quebra a UI
-    }
-  }, [getCredentials]);
 
   const fetchDevices = useCallback(async () => {
     const creds = getCredentials();
