@@ -204,7 +204,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         }
       }
 
-      const checkData = await checkForUpdates();
+      const checkData = await checkForUpdates(true);
       if (!checkData) {
         continue;
       }
