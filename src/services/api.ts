@@ -127,8 +127,9 @@ class ApiService {
       return { success: false, error: `Erro de conexão com o servidor: ${message}` };
     }
   }
-
   // ===== AUTH =====
+  // SaaS user type
+  // { id, name, email, phone, role, client_limit, expires_at, permissions, is_active, createdAt }
   async login(email: string, password: string) {
     return this.request<{ token: string; user: SaasUser }>('/auth/login', {
       method: 'POST',
