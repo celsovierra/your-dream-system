@@ -135,30 +135,52 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: Sideba
     );
   }
 
+  const filteredDevices = useMemo(() => {
+    if (!search.trim()) return devices;
+    const q = search.toLowerCase();
+    return devices.filter((d) => d.name.toLowerCase().includes(q));
+  }, [devices, search]);
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-3 py-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/60">
-          Veículos ({devices.length})
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+          Veículos ({filteredDevices.length})
         </span>
         <button
           onClick={fetchDevices}
           disabled={loading}
           className="rounded p-1 hover:bg-sidebar-accent transition-colors text-sidebar-foreground/50 hover:text-sidebar-foreground"
         >
-          <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+          <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
         </button>
+      </div>
+
+      {/* Search */}
+      <div className="px-2 pb-2">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-sidebar-foreground/40" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar veículo..."
+            className="w-full rounded-lg bg-sidebar-accent/50 border border-sidebar-border pl-8 pr-3 py-1.5 text-xs text-sidebar-foreground placeholder:text-sidebar-foreground/40 focus:outline-none focus:ring-1 focus:ring-sidebar-primary"
+          />
+        </div>
       </div>
 
       {loading && devices.length === 0 ? (
         <div className="flex items-center justify-center p-4">
           <Loader2 className="h-5 w-5 animate-spin text-sidebar-foreground/50" />
         </div>
-      ) : devices.length === 0 ? (
-        <p className="text-xs text-sidebar-foreground/50 text-center p-4">Nenhum veículo encontrado</p>
+      ) : filteredDevices.length === 0 ? (
+        <p className="text-xs text-sidebar-foreground/50 text-center p-4">
+          {devices.length === 0 ? 'Nenhum veículo encontrado' : 'Nenhum resultado'}
+        </p>
       ) : (
-        <div className="flex-1 overflow-y-auto space-y-0.5 px-2">
-          {devices.map((device) => {
+        <div className="flex-1 overflow-y-auto space-y-px px-2">
+          {filteredDevices.map((device) => {
             const pos = getDevicePosition(device.id);
             const isSelected = selectedDeviceId === device.id;
             return (
