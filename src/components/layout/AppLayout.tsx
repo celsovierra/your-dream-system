@@ -213,17 +213,14 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
     const confirmPendingDeploy = async () => {
       const pending = localStorage.getItem('deploy_pending');
       if (pending) {
-        // Tenta confirmar que a API está respondendo com o código atualizado
         const data = await checkForUpdates();
-        if (data && !data.hasUpdate) {
-          // API respondeu e está atualizada — agora sim registra o horário real
-          const confirmedAt = new Date().toISOString();
-          localStorage.setItem('last_deploy_at', confirmedAt);
+        if (data && !data.hasUpdate && data.runningStartedAt) {
+          localStorage.setItem('last_deploy_at', data.runningStartedAt);
           localStorage.removeItem('deploy_pending');
-          setLastDeployAt(confirmedAt);
+          setLastDeployAt(data.runningStartedAt);
           return;
         }
-        // Se ainda não confirmou, remove o flag para não ficar preso
+
         localStorage.removeItem('deploy_pending');
       }
     };
