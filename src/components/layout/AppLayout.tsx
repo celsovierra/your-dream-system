@@ -57,6 +57,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
   const [deploying, setDeploying] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<{ device: TraccarDevice; position?: TraccarPosition } | null>(null);
+  const [hasAutoOpenedMap, setHasAutoOpenedMap] = useState(false);
   const [hasUpdate, setHasUpdate] = useState(false);
   const [lastDeployAt, setLastDeployAt] = useState<string | null>(() => localStorage.getItem('last_deploy_at'));
   const [deployCheckError, setDeployCheckError] = useState<string | null>(null);
@@ -329,8 +330,13 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
         <nav className="flex-1 overflow-y-auto p-2">
           <SidebarVehicles
             collapsed={sidebarCollapsed}
+            autoSelectFirst={location.pathname === '/' && !hasAutoOpenedMap}
             selectedDeviceId={selectedVehicle?.device.id ?? null}
-            onSelectDevice={(device, position) => { setSelectedVehicle({ device, position }); setSidebarCollapsed(true); }}
+            onSelectDevice={(device, position) => {
+              setSelectedVehicle({ device, position });
+              setSidebarCollapsed(true);
+              setHasAutoOpenedMap(true);
+            }}
           />
         </nav>
 

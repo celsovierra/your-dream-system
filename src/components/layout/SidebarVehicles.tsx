@@ -36,9 +36,10 @@ interface SidebarVehiclesProps {
   collapsed: boolean;
   onSelectDevice?: (device: TraccarDevice, position?: TraccarPosition) => void;
   selectedDeviceId?: number | null;
+  autoSelectFirst?: boolean;
 }
 
-const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: SidebarVehiclesProps) => {
+const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSelectFirst = false }: SidebarVehiclesProps) => {
   const [devices, setDevices] = useState<TraccarDevice[]>([]);
   const [positions, setPositions] = useState<TraccarPosition[]>([]);
   const [loading, setLoading] = useState(false);
@@ -148,6 +149,12 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId }: Sideba
   const handleClick = (device: TraccarDevice) => {
     onSelectDevice?.(device, getDevicePosition(device.id));
   };
+
+  useEffect(() => {
+    if (!autoSelectFirst || loading || !onSelectDevice || selectedDeviceId || devices.length === 0) return;
+    const first = devices[0];
+    onSelectDevice(first, getDevicePosition(first.id));
+  }, [autoSelectFirst, loading, onSelectDevice, selectedDeviceId, devices, positions]);
 
   if (!configured) {
     return (
