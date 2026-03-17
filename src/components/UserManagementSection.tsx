@@ -181,6 +181,7 @@ export default function UserManagementSection() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Slug</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead className="text-center">Limite</TableHead>
                 <TableHead>Validade</TableHead>
