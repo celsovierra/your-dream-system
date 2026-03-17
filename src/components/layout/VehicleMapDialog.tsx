@@ -48,8 +48,9 @@ const VehicleMapDialog = ({ open, onOpenChange, device, position }: VehicleMapDi
 
       const map = L.map(mapRef.current).setView([position.latitude, position.longitude], 15);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
+      L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        attribution: '© Google Maps',
+        maxZoom: 20,
       }).addTo(map);
 
       const icon = L.divIcon({
