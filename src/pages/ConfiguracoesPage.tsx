@@ -406,7 +406,7 @@ const ConfiguracoesPage = () => {
             </CardContent>
           </CollapsibleContent>
         </Card>
-      </Collapsible>}
+      </Collapsible>
 
       <Collapsible open={openSection === 'traccar'} onOpenChange={() => toggleSection('traccar')}>
         <Card>
