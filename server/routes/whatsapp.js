@@ -20,7 +20,7 @@ async function tryFetch(url, options) {
 // Proxy para Evolution API — replica a lógica da Edge Function evolution-proxy
 router.post('/', async (req, res) => {
   try {
-    const { api_url, api_key, instance_name, action, to, message } = req.body;
+    const { api_url, api_key, instance_name, action, to, message, queue_item } = req.body;
 
     if (!api_url || !api_key || !instance_name) {
       return res.status(400).json({ error: 'Parâmetros obrigatórios: api_url, api_key, instance_name' });
