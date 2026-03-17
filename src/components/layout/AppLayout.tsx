@@ -537,7 +537,7 @@ const AppLayout = ({ children, onLogout }: LayoutProps) => {
             </p>
             {runningVersion && (
               <p className="text-[10px] text-sidebar-foreground/40 text-center font-mono mt-1">
-                build {runningVersion}
+                v{runningVersion}
               </p>
             )}
           </div>
