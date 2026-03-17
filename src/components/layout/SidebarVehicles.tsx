@@ -126,8 +126,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
       const nextPositions = Array.isArray(posData) ? (posData as TraccarPosition[]) : [];
       setPositions(nextPositions);
 
-      // Update ignition off times based on current ignition state (local Brasília time)
-      updateIgnitionOffTimes(nextDevices, nextPositions);
+
     } catch (err: any) {
       const message = err?.message || 'Erro ao carregar veículos do Traccar';
       setDevices([]);
