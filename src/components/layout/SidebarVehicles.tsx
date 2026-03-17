@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Car, Loader2, WifiOff, RefreshCw, Search, Share2, Pencil, ShieldOff, Wifi, Gauge, Radio, Battery, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { userStorageGet } from '@/services/auth';
@@ -88,6 +88,10 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
   const [configured, setConfigured] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Stores the timestamp (Date.now()) when each device's ignition turned OFF
+  const ignitionOffTimesRef = useRef<Map<number, number>>(new Map());
+  // Tick counter to force re-render every minute for live countdown
+  const [, setTick] = useState(0);
 
   const getCredentials = useCallback(() => {
     const traccar_url = userStorageGet('traccar_url');
@@ -157,6 +161,29 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
       window.removeEventListener('focus', handleRefresh);
     };
   }, [fetchDevices]);
+
+
+  // Track ignition state changes and record when ignition turns OFF
+  useEffect(() => {
+    const map = ignitionOffTimesRef.current;
+    for (const device of devices) {
+      const pos = positions.find(p => p.deviceId === device.id);
+      const ignition = pos?.attributes?.ignition;
+      if (ignition === false) {
+        if (!map.has(device.id)) {
+          map.set(device.id, Date.now());
+        }
+      } else {
+        map.delete(device.id);
+      }
+    }
+  }, [devices, positions]);
+
+  // Tick every 30s to update stopped time counters live
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const getDevicePosition = (deviceId: number) => positions.find((p) => p.deviceId === deviceId);
 
@@ -274,9 +301,11 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
             const sat = pos?.attributes?.sat;
             const power = pos?.attributes?.power;
             const isStopped = ignition === false;
-            // Use device.lastUpdate as reference for when ignition turned off
-            // fixTime updates constantly; lastUpdate is more stable for stopped calc
-            const stoppedTime = isStopped ? formatStoppedTime(device.lastUpdate) : '';
+            // Use locally stored timestamp of when ignition turned OFF
+            const ignitionOffAt = ignitionOffTimesRef.current.get(device.id);
+            const stoppedTime = isStopped && ignitionOffAt
+              ? formatStoppedTime(new Date(ignitionOffAt).toISOString())
+              : '';
 
             return (
               <div
