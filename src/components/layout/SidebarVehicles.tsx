@@ -151,7 +151,7 @@ const SidebarVehicles = ({ collapsed, onSelectDevice, selectedDeviceId, autoSele
   }, [fetchDevices]);
 
   useEffect(() => {
-    const timer = setInterval(() => setTick((v) => v + 1), 30000);
+    const timer = setInterval(() => setTick((v) => v + 1), 5000);
     return () => clearInterval(timer);
   }, []);
 
