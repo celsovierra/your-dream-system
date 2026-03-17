@@ -43,35 +43,6 @@ interface SidebarVehiclesProps {
   autoSelectFirst?: boolean;
 }
 
-const IGNITION_OFF_STORAGE_KEY = 'traccar_ignition_off_times';
-
-function loadIgnitionOffTimes(): Record<number, number> {
-  try {
-    const raw = localStorage.getItem(IGNITION_OFF_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveIgnitionOffTimes(map: Record<number, number>) {
-  try {
-    localStorage.setItem(IGNITION_OFF_STORAGE_KEY, JSON.stringify(map));
-  } catch { /* ignore */ }
-}
-
-function formatStoppedDuration(offTimestampMs: number): string {
-  const diff = Date.now() - offTimestampMs;
-  if (diff <= 0) return '0min';
-
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}min`;
-  const hours = Math.floor(mins / 60);
-  const remMins = mins % 60;
-  if (hours < 24) return `${hours}h ${remMins}min`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ${hours % 24}h`;
-}
 
 function formatDateTime(dateStr: string) {
   if (!dateStr) return '';
