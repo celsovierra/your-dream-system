@@ -159,6 +159,65 @@ export type Database = {
           },
         ]
       }
+      client_billing_config: {
+        Row: {
+          amount: number
+          auto_charge: boolean
+          billing_cycle: string
+          cobrar: boolean
+          created_at: string
+          desconto: number
+          due_day: number
+          id: string
+          next_due_date: string | null
+          tenant_id: string
+          updated_at: string
+          user_id: number
+          user_name: string | null
+          user_phone: string | null
+        }
+        Insert: {
+          amount?: number
+          auto_charge?: boolean
+          billing_cycle?: string
+          cobrar?: boolean
+          created_at?: string
+          desconto?: number
+          due_day?: number
+          id?: string
+          next_due_date?: string | null
+          tenant_id: string
+          updated_at?: string
+          user_id: number
+          user_name?: string | null
+          user_phone?: string | null
+        }
+        Update: {
+          amount?: number
+          auto_charge?: boolean
+          billing_cycle?: string
+          cobrar?: boolean
+          created_at?: string
+          desconto?: number
+          due_day?: number
+          id?: string
+          next_due_date?: string | null
+          tenant_id?: string
+          updated_at?: string
+          user_id?: number
+          user_name?: string | null
+          user_phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_billing_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -222,6 +281,137 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_invites: {
+        Row: {
+          client_data: Json | null
+          client_name: string | null
+          client_user_id: number | null
+          created_at: string
+          expires_at: string
+          google_drive_file_id: string | null
+          google_drive_file_url: string | null
+          id: string
+          signed_at: string | null
+          status: string
+          template_id: string | null
+          tenant_id: string
+          token: string
+        }
+        Insert: {
+          client_data?: Json | null
+          client_name?: string | null
+          client_user_id?: number | null
+          created_at?: string
+          expires_at?: string
+          google_drive_file_id?: string | null
+          google_drive_file_url?: string | null
+          id?: string
+          signed_at?: string | null
+          status?: string
+          template_id?: string | null
+          tenant_id: string
+          token?: string
+        }
+        Update: {
+          client_data?: Json | null
+          client_name?: string | null
+          client_user_id?: number | null
+          created_at?: string
+          expires_at?: string
+          google_drive_file_id?: string | null
+          google_drive_file_url?: string | null
+          id?: string
+          signed_at?: string | null
+          status?: string
+          template_id?: string | null
+          tenant_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_invites_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_invites_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_templates: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_drive_config: {
+        Row: {
+          client_id: string | null
+          client_secret: string | null
+          created_at: string
+          folder_id: string | null
+          id: string
+          refresh_token: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          client_secret?: string | null
+          created_at?: string
+          folder_id?: string | null
+          id?: string
+          refresh_token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          client_secret?: string | null
+          created_at?: string
+          folder_id?: string | null
+          id?: string
+          refresh_token?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       message_templates: {
         Row: {
           content: string
@@ -249,6 +439,80 @@ export type Database = {
           name?: string
           owner_id?: string | null
           type?: string
+        }
+        Relationships: []
+      }
+      tenant_whatsapp_config: {
+        Row: {
+          api_key: string | null
+          api_url: string | null
+          created_at: string
+          id: string
+          instance_name: string | null
+          is_active: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string | null
+          api_url?: string | null
+          created_at?: string
+          id?: string
+          instance_name?: string | null
+          is_active?: boolean
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string | null
+          api_url?: string | null
+          created_at?: string
+          id?: string
+          instance_name?: string | null
+          is_active?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_whatsapp_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          admin_email: string | null
+          admin_password: string | null
+          api_url: string | null
+          created_at: string
+          id: string
+          name: string
+          slug: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_email?: string | null
+          admin_password?: string | null
+          api_url?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          slug?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_email?: string | null
+          admin_password?: string | null
+          api_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
